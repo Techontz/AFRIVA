@@ -1,0 +1,195 @@
+@import "tailwindcss";
+
+/* Afriva design tokens — white, red & black */
+@theme {
+  --color-bg: #000000;
+  --color-surface: #111111;
+  --color-surface-2: #1a1a1a;
+  --color-surface-3: #222222;
+  --color-border: #262626;
+  --color-text: #ffffff;
+  --color-text-muted: #b3b3b3;
+  --color-text-dim: #737373;
+  --color-primary: #e1122b;
+  --color-primary-hover: #b80e22;
+  --color-primary-2: #8b0a1a;
+  --color-success: #22c55e;
+  --color-danger: #ef4444;
+
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+
+  --radius-poster: 8px;
+
+  --ease-brand: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --animate-shimmer: shimmer 1.6s linear infinite;
+  --animate-fade-in: fade-in 200ms ease-out both;
+  --animate-pop-in: pop-in 220ms var(--ease-brand) both;
+
+  @keyframes shimmer {
+    0% {
+      background-position: -400px 0;
+    }
+    100% {
+      background-position: 400px 0;
+    }
+  }
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes pop-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+
+@utility bg-brand {
+  background-image: linear-gradient(135deg, #e1122b, #8b0a1a);
+}
+
+@utility text-brand {
+  background-image: linear-gradient(135deg, #e1122b, #8b0a1a);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@utility skeleton {
+  background-color: var(--color-surface);
+  background-image: linear-gradient(
+    90deg,
+    var(--color-surface) 0px,
+    var(--color-surface-2) 120px,
+    var(--color-surface) 240px
+  );
+  background-size: 800px 100%;
+  animation: var(--animate-shimmer);
+}
+
+@utility rank-outline {
+  color: transparent;
+  -webkit-text-stroke: 2px var(--color-text-dim);
+}
+
+@utility rank-outline-brand {
+  background-image: linear-gradient(135deg, #e1122b, #8b0a1a);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-stroke: 0;
+}
+
+@utility site-container {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 1680px;
+  padding-inline: 1rem;
+  @media (width >= 40rem) {
+    padding-inline: 1.5rem;
+  }
+  @media (width >= 64rem) {
+    padding-inline: 2.5rem;
+  }
+  @media (width >= 96rem) {
+    padding-inline: 5rem;
+  }
+  @media (width >= 112rem) {
+    padding-inline: 10rem;
+  }
+}
+
+@utility pb-safe {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+:root {
+  color-scheme: dark;
+}
+
+/* Public viewer site: light body. Admin/studio keep the dark defaults above. */
+.site-light {
+  --color-bg: #ffffff;
+  --color-surface: #f2f2f2;
+  --color-surface-2: #e4e4e4;
+  --color-surface-3: #d6d6d6;
+  --color-border: #e5e5e5;
+  --color-text: #1a1a1a;
+  --color-text-muted: #555555;
+  --color-text-dim: #888888;
+  color-scheme: light;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+/* Dark chrome (header, footer, immersive feed) inside the light site. */
+.chrome-dark {
+  --color-bg: #2b2b2b;
+  --color-surface: #3a3a3a;
+  --color-surface-2: #3a3a3a;
+  --color-surface-3: #474747;
+  --color-border: #3a3a3a;
+  --color-text: #ffffff;
+  --color-text-muted: #d0d0d0;
+  --color-text-dim: #9a9a9a;
+  color-scheme: dark;
+  color: var(--color-text);
+}
+
+html,
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  letter-spacing: -0.02em;
+}
+
+::selection {
+  background: rgb(225 18 43 / 0.4);
+}
+
+:focus-visible:not([tabindex="-1"]) {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+input[type="number"]::-webkit-inner-spin-button {
+  opacity: 0.4;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}

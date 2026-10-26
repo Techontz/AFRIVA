@@ -2,10 +2,11 @@
 
 namespace App\Http\Resources;
 
+use App\Models\CompanyEarning;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-/** @mixin \App\Models\CompanyEarning */
+/** @mixin CompanyEarning */
 class CompanyEarningResource extends JsonResource
 {
     public function toArray(Request $request): array

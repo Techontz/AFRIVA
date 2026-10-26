@@ -13,9 +13,10 @@ import { api, errorMessage } from "@/lib/api";
 import { formatDate, formatNumber, initials } from "@/lib/format";
 import { useDebounced, useList } from "@/lib/hooks";
 import type { Role, User } from "@/lib/types";
+import { useT } from "@/lib/i18n";
 
 const roleTone = { super_admin: "brand", company: "info", viewer: "neutral" } as const;
-const roleLabel: Record<Role, string> = { super_admin: "Super admin", company: "Company", viewer: "Viewer" };
+const roleLabel: Record<Role, string> = { super_admin: "Staff", company: "Creator", viewer: "Viewer" };
 
 export default function UsersPage() {
   const [search, setSearch] = useState("");
@@ -25,12 +26,13 @@ export default function UsersPage() {
   const { items, meta, loading, error, reload, setItems } = useList<User>("/admin/users", { search: q, role, page });
 
   const [editing, setEditing] = useState<User | null>(null);
-  const [form, setForm] = useState({ status: "active", role: "viewer" as Role, coins_adjust: "" });
+  const [form, setForm] = useState({ status: "active", role: "viewer" as Role, coins_adjust: "", coins_reason: "" });
   const [saving, setSaving] = useState(false);
+  const t = useT();
 
   const openEdit = (u: User) => {
     setEditing(u);
-    setForm({ status: u.status ?? "active", role: u.role, coins_adjust: "" });
+    setForm({ status: u.status ?? "active", role: u.role, coins_adjust: "", coins_reason: "" });
   };
 
   const save = async (e: React.FormEvent) => {
@@ -38,8 +40,13 @@ export default function UsersPage() {
     if (!editing) return;
     setSaving(true);
     const adjust = Number(form.coins_adjust || 0);
-    const body: Record<string, unknown> = { status: form.status, role: form.role };
-    if (adjust) body.coins_adjust = adjust;
+    const body: Record<string, unknown> = { status: form.status };
+    // Staff roles are managed on the Staff page; here only viewer ↔ creator.
+    if (editing.role !== "super_admin") body.role = form.role;
+    if (adjust) {
+      body.coins_adjust = adjust;
+      body.coins_reason = form.coins_reason || null;
+    }
     try {
       const updated = await api.put<User>(`/admin/users/${editing.id}`, body);
       setItems((list) =>
@@ -54,7 +61,7 @@ export default function UsersPage() {
             : u,
         ),
       );
-      toast.success("User updated");
+      toast.success(t("User updated"));
       setEditing(null);
     } catch (err) {
       toast.error(errorMessage(err));
@@ -67,7 +74,7 @@ export default function UsersPage() {
 
   return (
     <>
-      <PageHeader title="Users" description="Viewers, studio accounts and administrators." />
+      <PageHeader title="Users" description="Viewers, creators and staff." />
       <Toolbar>
         <SearchBox
           value={search}
@@ -84,12 +91,12 @@ export default function UsersPage() {
             setRole(e.target.value);
             setPage(1);
           }}
-          aria-label="Filter by role"
+          aria-label={t("Filter by role")}
         >
-          <option value="">All roles</option>
-          <option value="viewer">Viewers</option>
-          <option value="company">Companies</option>
-          <option value="super_admin">Super admins</option>
+          <option value="">{t("All roles")}</option>
+          <option value="viewer">{t("Viewers")}</option>
+          <option value="company">{t("Creators")}</option>
+          <option value="super_admin">{t("Staff")}</option>
         </Select>
       </Toolbar>
 
@@ -110,7 +117,7 @@ export default function UsersPage() {
                     <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-surface-2 text-xs font-bold">{initials(u.name)}</div>
                     <div className="min-w-0">
                       <p className="truncate font-semibold">{u.name}</p>
-                      <p className="truncate text-xs text-text-dim">{u.email ?? u.phone ?? "—"}</p>
+                      <p className="truncate text-xs text-text-dim">{u.email ?? u.phone ?? "-"}</p>
                     </div>
                   </div>
                 ),
@@ -120,7 +127,7 @@ export default function UsersPage() {
                 header: "Role",
                 render: (u) => (
                   <div className="flex flex-col items-start gap-0.5">
-                    <Pill tone={roleTone[u.role] ?? "neutral"}>{roleLabel[u.role] ?? u.role}</Pill>
+                    <Pill tone={roleTone[u.role] ?? "neutral"}>{t(roleLabel[u.role] ?? u.role)}</Pill>
                     {u.company?.name && <span className="text-[11px] text-text-dim">{u.company.name}</span>}
                   </div>
                 ),
@@ -137,7 +144,7 @@ export default function UsersPage() {
               {
                 key: "vip",
                 header: "VIP",
-                render: (u) => (u.active_subscription ? <Pill tone="gold">{u.active_subscription.type}</Pill> : <span className="text-text-dim">—</span>),
+                render: (u) => (u.active_subscription ? <Pill tone="gold">{t(u.active_subscription.type)}</Pill> : <span className="text-text-dim">-</span>),
               },
               { key: "status", header: "Status", render: (u) => <StatusPill status={u.status ?? "active"} /> },
               { key: "joined", header: "Joined", render: (u) => formatDate(u.created_at) },
@@ -147,7 +154,7 @@ export default function UsersPage() {
                 className: "text-right",
                 render: (u) => (
                   <Button size="sm" variant="ghost" onClick={() => openEdit(u)}>
-                    Manage
+                    {t("Manage")}
                   </Button>
                 ),
               },
@@ -164,35 +171,44 @@ export default function UsersPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Status">
                 <Select value={form.status} onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}>
-                  <option value="active">Active</option>
-                  <option value="suspended">Suspended</option>
+                  <option value="active">{t("Active")}</option>
+                  <option value="suspended">{t("Suspended")}</option>
                 </Select>
               </Field>
               <Field label="Role">
-                <Select value={form.role} onChange={(e) => setForm((f) => ({ ...f, role: e.target.value as Role }))}>
-                  <option value="viewer">Viewer</option>
-                  <option value="company">Company</option>
-                  <option value="super_admin">Super admin</option>
+                <Select
+                  value={form.role}
+                  disabled={editing.role === "super_admin"}
+                  onChange={(e) => setForm((f) => ({ ...f, role: e.target.value as Role }))}
+                >
+                  <option value="viewer">{t("Viewer")}</option>
+                  <option value="company">{t("Creator")}</option>
+                  {editing.role === "super_admin" && <option value="super_admin">{t("Staff")}</option>}
                 </Select>
               </Field>
             </div>
             <Field
               label="Adjust coins"
-              hint={`Current balance ${formatNumber(editing.coins)} → ${formatNumber(Math.max(0, editing.coins + adjust))}. Use a negative number to deduct.`}
+              hint={t("Current balance {from} → {to}. Use a negative number to deduct.", { from: formatNumber(editing.coins), to: formatNumber(Math.max(0, editing.coins + adjust)) })}
             >
               <Input
                 type="number"
                 value={form.coins_adjust}
                 onChange={(e) => setForm((f) => ({ ...f, coins_adjust: e.target.value }))}
-                placeholder="e.g. 100 or -50"
+                placeholder={t("e.g. 100 or -50")}
               />
             </Field>
+            {adjust !== 0 && (
+              <Field label="Reason" hint="Saved in the coin ledger and audit log">
+                <Input value={form.coins_reason} onChange={(e) => setForm((f) => ({ ...f, coins_reason: e.target.value }))} placeholder={t("e.g. Compensation for a failed payment")} />
+              </Field>
+            )}
             <div className="flex justify-end gap-2">
               <Button type="button" variant="ghost" onClick={() => setEditing(null)}>
-                Cancel
+                {t("Cancel")}
               </Button>
               <Button type="submit" loading={saving}>
-                Save
+                {t("Save")}
               </Button>
             </div>
           </form>

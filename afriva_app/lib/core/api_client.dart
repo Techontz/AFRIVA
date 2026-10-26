@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
 import 'config.dart';
+import 'i18n.dart';
 
 /// Error raised for any failed API call, mapped from the SPEC §6 error
 /// envelope `{ "message", "code", "errors"? }`.
@@ -59,6 +60,11 @@ class ApiClient {
         if (t != null && t.isNotEmpty) {
           options.headers['Authorization'] = 'Bearer $t';
         }
+        // Stable anonymous id so guests count once in analytics (SPEC §8.3).
+        final d = deviceId;
+        if (d != null && d.isNotEmpty) {
+          options.headers['X-Device-Id'] = d;
+        }
         handler.next(options);
       },
       onError: (error, handler) {
@@ -80,6 +86,9 @@ class ApiClient {
   final Dio _dio;
   /// Sanctum bearer token for the current session (null when signed out).
   String? token;
+
+  /// Sent as `X-Device-Id` on every request once loaded (see DeviceId).
+  String? deviceId;
   UnauthorizedCallback? onUnauthorized;
 
   bool get hasToken => token != null && token!.isNotEmpty;
@@ -88,8 +97,28 @@ class ApiClient {
   Future<Map<String, dynamic>> getJson(String path, {Map<String, dynamic>? query}) =>
       _send(() => _dio.get(path, queryParameters: _clean(query)));
 
-  Future<Map<String, dynamic>> postJson(String path, {Object? body}) =>
-      _send(() => _dio.post(path, data: body ?? const {}));
+  Future<Map<String, dynamic>> postJson(String path, {Object? body, Map<String, String>? headers}) =>
+      _send(() => _dio.post(path, data: body ?? const {}, options: headers == null ? null : Options(headers: headers)));
+
+  /// Multipart upload (files) with optional progress callback (sent, total bytes).
+  /// Laravel reads PUT/PATCH multipart only via `_method`, so callers POST with `_method` in [form].
+  Future<Map<String, dynamic>> postMultipart(
+    String path,
+    FormData form, {
+    void Function(int sent, int total)? onSendProgress,
+    CancelToken? cancelToken,
+  }) =>
+      _send(() => _dio.post(
+            path,
+            data: form,
+            cancelToken: cancelToken,
+            onSendProgress: onSendProgress,
+            options: Options(
+              contentType: 'multipart/form-data',
+              sendTimeout: const Duration(minutes: 30),
+              receiveTimeout: const Duration(minutes: 5),
+            ),
+          ));
 
   Future<Map<String, dynamic>> putJson(String path, {Object? body}) =>
       _send(() => _dio.put(path, data: body ?? const {}));
@@ -100,8 +129,8 @@ class ApiClient {
   Future<dynamic> get(String path, {Map<String, dynamic>? query}) async =>
       (await getJson(path, query: query))['data'];
 
-  Future<dynamic> post(String path, {Object? body}) async =>
-      (await postJson(path, body: body))['data'];
+  Future<dynamic> post(String path, {Object? body, Map<String, String>? headers}) async =>
+      (await postJson(path, body: body, headers: headers))['data'];
 
   Map<String, dynamic>? _clean(Map<String, dynamic>? q) {
     if (q == null) return null;
@@ -133,16 +162,16 @@ class ApiClient {
       case DioExceptionType.sendTimeout:
       case DioExceptionType.receiveTimeout:
         return ApiException(
-          message: 'Afriva is taking too long to respond. Please try again.',
+          message: trNow('Afriva is taking too long to respond. Please try again.'),
           code: 'timeout',
         );
       case DioExceptionType.connectionError:
         return ApiException(
-          message: "Can't reach Afriva right now. Check your connection and try again.",
+          message: trNow("Can't reach Afriva right now. Check your connection and try again."),
           code: 'network_error',
         );
       case DioExceptionType.cancel:
-        return ApiException(message: 'Request cancelled', code: 'cancelled');
+        return ApiException(message: trNow('Request cancelled'), code: 'cancelled');
       default:
         break;
     }
@@ -166,7 +195,7 @@ class ApiClient {
 
     final message = (body['message'] as String?)?.trim().isNotEmpty == true
         ? body['message'] as String
-        : switch (status) {
+        : trNow(switch (status) {
             401 => 'Please log in to continue.',
             402 => 'This episode is locked.',
             403 => "You don't have access to this.",
@@ -174,7 +203,7 @@ class ApiClient {
             422 => 'Please check the highlighted fields.',
             429 => 'Too many attempts. Please wait a moment.',
             _ => 'Something went wrong. Please try again.',
-          };
+          });
 
     final errors = body['errors'] is Map
         ? Map<String, dynamic>.from(body['errors'] as Map)
@@ -193,5 +222,5 @@ class ApiClient {
 /// Human readable message for any error thrown in the app.
 String errorMessage(Object error) {
   if (error is ApiException) return error.message;
-  return 'Something went wrong. Please try again.';
+  return trNow('Something went wrong. Please try again.');
 }

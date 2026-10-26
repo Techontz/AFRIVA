@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../core/auth_guard.dart';
 import '../../core/format.dart';
 import '../../core/haptics.dart';
+import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import '../../models/commerce.dart';
 import '../../services/commerce_service.dart';
@@ -19,7 +20,7 @@ import 'checkout_screen.dart';
 class VipScreen extends StatefulWidget {
   const VipScreen({super.key, this.initialSection});
 
-  /// `vip` | `episodes` | `coins` — scrolls that group into view.
+  /// `vip` | `episodes` | `coins`, scrolls that group into view.
   final String? initialSection;
 
   @override
@@ -101,18 +102,18 @@ class _VipScreenState extends State<VipScreen> {
                 padding: EdgeInsets.fromLTRB(16, 4, 16, bottom + 120),
                 children: [
                   const _StatusHeader(),
-                  ..._group('vip', 'VIP subscriptions', 'Unlimited access to every episode',
+                  ..._group('vip', context.tr('VIP subscriptions'), context.tr('Unlimited access to every episode'),
                       plans.where((p) => p.isSubscription).toList()),
-                  ..._group('episodes', 'Episode packs', 'Unlock any episodes you choose',
+                  ..._group('episodes', context.tr('Episode packs'), context.tr('Unlock any episodes you choose'),
                       plans.where((p) => p.isEpisodePack).toList()),
-                  ..._group('coins', 'Coins', 'Unlock single episodes with coins',
+                  ..._group('coins', context.tr('Coins'), context.tr('Unlock single episodes with coins'),
                       plans.where((p) => p.isCoins).toList()),
                   if (plans.isEmpty)
-                    const StateMessage(icon: Icons.storefront_outlined, title: 'No plans available right now'),
+                    StateMessage(icon: Icons.storefront_outlined, title: context.tr('No plans available right now')),
                   const SizedBox(height: 16),
                   Text(
-                    'Payments are processed securely by your chosen provider. '
-                    'VIP renews only when you pay again — no automatic charges.',
+                    context.tr('Payments are processed securely by your chosen provider. '
+                        'VIP renews only when you pay again. No automatic charges.'),
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.labelSmall,
                   ),
@@ -144,7 +145,7 @@ class _VipScreenState extends State<VipScreen> {
                     ),
                   ),
                   PillButton(
-                    label: 'Continue',
+                    label: context.tr('Continue'),
                     icon: Icons.lock_rounded,
                     light: _selected!.isSubscription,
                     onPressed: _continue,
@@ -224,7 +225,7 @@ class _StatusHeader extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  auth.isVip ? "You're VIP" : 'Watch everything with VIP',
+                  context.tr(auth.isVip ? "You're VIP" : 'Watch everything with VIP'),
                   style: text.titleLarge!.copyWith(color: AppColors.primary),
                 ),
               ),
@@ -234,13 +235,13 @@ class _StatusHeader extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             auth.isVip && sub?.endsAt != null
-                ? '${sub!.label} · active until ${Fmt.date(sub.endsAt)}'
-                : 'Unlimited episodes · New dramas every week · HD streaming',
+                ? context.tr('{plan} · active until {date}', {'plan': sub!.label, 'date': Fmt.date(sub.endsAt)})
+                : context.tr('Unlimited episodes · New dramas every week · HD streaming'),
             style: text.bodySmall!.copyWith(color: AppColors.chipText),
           ),
           if (sub != null && !sub.isTimeBased && sub.episodesRemaining != null) ...[
             const SizedBox(height: 6),
-            Text('${sub.episodesRemaining} pack episodes remaining', style: text.labelSmall),
+            Text(context.tr('{n} pack episodes remaining', {'n': sub.episodesRemaining}), style: text.labelSmall),
           ],
         ],
       ),
@@ -307,8 +308,8 @@ class _PlanCard extends StatelessWidget {
                             gradient: AppColors.brandGradient,
                             borderRadius: BorderRadius.circular(AppRadii.pill),
                           ),
-                          child: const Text('Most popular',
-                              style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800)),
+                          child: Text(context.tr('Most popular'),
+                              style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800)),
                         ),
                       ],
                     ],
@@ -318,8 +319,8 @@ class _PlanCard extends StatelessWidget {
                     plan.description.isNotEmpty
                         ? plan.description
                         : plan.isEpisodePack
-                            ? 'Unlock ${plan.episodeQuota ?? ''} episodes of any drama'
-                            : 'All episodes unlocked for ${plan.durationDays ?? ''} days',
+                            ? context.tr('Unlock {n} episodes of any drama', {'n': plan.episodeQuota ?? ''})
+                            : context.tr('All episodes unlocked for {n} days', {'n': plan.durationDays ?? ''}),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: text.labelSmall,
@@ -346,9 +347,9 @@ class _PlanCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(Fmt.grouped(plan.price), style: text.titleMedium!.copyWith(fontSize: 18)),
-                Text('${plan.currency} ${plan.periodLabel}'.trim(), style: text.labelSmall),
+                Text('${plan.currency} ${context.tr(plan.periodLabel)}'.trim(), style: text.labelSmall),
                 if (perDay != null && plan.isSubscription)
-                  Text('≈ ${Fmt.grouped(perDay)}/day',
+                  Text(context.tr('≈ {n}/day', {'n': Fmt.grouped(perDay)}),
                       style: text.labelSmall!.copyWith(color: accent, fontSize: 10)),
               ],
             ),
@@ -387,7 +388,7 @@ class _CoinPlanCard extends StatelessWidget {
               children: [
                 CoinAmount(plan.coins ?? 0, size: 20),
                 if (bonus > 0)
-                  Text('+$bonus bonus', style: text.labelSmall!.copyWith(color: AppColors.success)),
+                  Text(context.tr('+{n} bonus', {'n': bonus}), style: text.labelSmall!.copyWith(color: AppColors.success)),
                 const Spacer(),
                 Text(Fmt.money(plan.price, plan.currency), style: text.titleSmall),
               ],

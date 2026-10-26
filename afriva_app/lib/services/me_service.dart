@@ -19,6 +19,9 @@ class MeService {
   Future<List<Payment>> payments() async =>
       asList(await _api.get('/me/payments'), Payment.fromJson);
 
+  /// Coin ledger: purchases, bonuses, unlocks and refunds (newest first).
+  Future<List<CoinTransaction>> coins() async => asList(await _api.get('/me/coins'), CoinTransaction.fromJson);
+
   Future<List<HistoryEntry>> history() async =>
       asList(await _api.get('/me/history'), HistoryEntry.fromJson);
 

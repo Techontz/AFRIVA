@@ -2,6 +2,7 @@ import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import '../../state/auth_state.dart';
 import '../../state/favorites_state.dart';
@@ -69,7 +70,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                 FadeTransition(
                   opacity: tag,
                   child: Text(
-                    'Short dramas. Big African stories.',
+                    context.tr('Short dramas. Big African stories.'),
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 ),

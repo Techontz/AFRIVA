@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/i18n.dart';
 import '../../models/drama.dart';
 import '../../models/episode.dart';
 import '../../state/auth_state.dart';
@@ -41,8 +42,10 @@ Future<Episode?> showEpisodesSheet(
                       Text(drama.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: text.titleMedium),
                       const SizedBox(height: 4),
                       Text(
-                        '${episodes.length} episodes'
-                        '${drama.freeEpisodes > 0 && !isVip ? ' · EP 1-${drama.freeEpisodes} free' : ''}',
+                        ctx.tr('{n} episodes', {'n': episodes.length}) +
+                            (drama.freeEpisodes > 0
+                                ? ' · ${ctx.tr('EP 1-{n} free', {'n': drama.freeEpisodes})}'
+                                : ''),
                         style: text.labelSmall,
                       ),
                     ],

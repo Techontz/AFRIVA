@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import '../../models/drama.dart';
 import '../../services/catalog_service.dart';
@@ -98,11 +99,11 @@ class _DramaGridState extends State<DramaGrid> with AutomaticKeepAliveClientMixi
     if (_items.isEmpty) {
       return RefreshIndicator(
         onRefresh: () => _load(reset: true),
-        child: const ScrollableFill(
+        child: ScrollableFill(
           child: StateMessage(
             icon: Icons.movie_filter_outlined,
-            title: 'No dramas here yet',
-            message: 'New stories land every week. Check back soon.',
+            title: context.tr('No dramas here yet'),
+            message: context.tr('New stories land every week. Check back soon.'),
           ),
         ),
       );
@@ -135,9 +136,9 @@ class _DramaGridState extends State<DramaGrid> with AutomaticKeepAliveClientMixi
                       ? const SizedBox.square(
                           dimension: 22, child: CircularProgressIndicator(strokeWidth: 2.4))
                       : _error != null
-                          ? TextButton(onPressed: _load, child: const Text('Tap to load more'))
+                          ? TextButton(onPressed: _load, child: Text(context.tr('Tap to load more')))
                           : !_hasMore
-                              ? Text("You've reached the end",
+                              ? Text(context.tr("You've reached the end"),
                                   style: Theme.of(context).textTheme.labelSmall)
                               : const SizedBox.shrink(),
                 ),

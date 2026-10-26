@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { ApiError, errorMessage } from "@/lib/api";
 import { homeForRole, useAuth } from "@/lib/auth";
 import { cn } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 import type { User } from "@/lib/types";
 import { Button } from "../ui/Button";
 import { Field, Input } from "../ui/Form";
@@ -19,6 +20,7 @@ function safeNext(v: string | null) {
 
 export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const { user, loading, login, register } = useAuth();
+  const t = useT();
   const router = useRouter();
   const params = useSearchParams();
   const next = safeNext(params.get("next"));
@@ -43,10 +45,10 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const errs: Record<string, string> = {};
-    if (mode === "register" && !form.name.trim()) errs.name = "Tell us your name";
-    if (!form.login.trim()) errs.login = mode === "login" ? "Enter your email or phone" : `Enter your ${via}`;
-    if (form.password.length < (mode === "register" ? 8 : 1)) errs.password = mode === "register" ? "Use at least 8 characters" : "Enter your password";
-    if (mode === "register" && form.password !== form.confirm) errs.confirm = "Passwords don't match";
+    if (mode === "register" && !form.name.trim()) errs.name = t("Tell us your name");
+    if (!form.login.trim()) errs.login = mode === "login" ? t("Enter your email or phone") : via === "email" ? t("Enter your email") : t("Enter your phone");
+    if (form.password.length < (mode === "register" ? 8 : 1)) errs.password = mode === "register" ? t("Use at least 8 characters") : t("Enter your password");
+    if (mode === "register" && form.password !== form.confirm) errs.confirm = t("Passwords don't match");
     setErrors(errs);
     if (Object.keys(errs).length) return;
 
@@ -60,7 +62,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
               password: form.password,
               ...(via === "email" ? { email: form.login.trim() } : { phone: form.login.replace(/\s/g, "") }),
             });
-      toast.success(mode === "login" ? `Karibu tena, ${u.name.split(" ")[0]}!` : `Karibu Afriva, ${u.name.split(" ")[0]}!`);
+      toast.success(mode === "login" ? t("Welcome back, {name}!", { name: u.name.split(" ")[0] }) : t("Welcome to Afriva, {name}!", { name: u.name.split(" ")[0] }));
       router.replace(destination(u));
     } catch (err) {
       if (err instanceof ApiError && err.errors) {
@@ -85,14 +87,14 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
       <div className="relative w-full max-w-[420px]">
         <div className="mb-6 flex flex-col items-center text-center">
           <LogoMark size={48} />
-          <h1 className="mt-4 text-2xl font-extrabold tracking-tight">{isLogin ? "Welcome back" : "Create your account"}</h1>
+          <h1 className="mt-4 text-2xl font-extrabold tracking-tight">{isLogin ? t("Welcome back") : t("Create your account")}</h1>
           <p className="mt-1 text-sm text-text-muted">
-            {isLogin ? "Log in to continue your dramas." : "Save your progress, build My List and go VIP."}
+            {isLogin ? t("Log in to continue your dramas.") : t("Save your progress, build My List and go VIP.")}
           </p>
         </div>
         <form onSubmit={submit} noValidate className="space-y-4 rounded-3xl border border-border bg-bg p-6 shadow-xl sm:p-7">
           {!isLogin && (
-            <Field label="Full name" htmlFor="name" error={errors.name}>
+            <Field label={t("Full name")} htmlFor="name" error={errors.name}>
               <Input id="name" autoComplete="name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
             </Field>
           )}
@@ -105,13 +107,13 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
                   onClick={() => setVia(v)}
                   className={cn("flex-1 rounded-full py-1.5 capitalize transition", via === v ? "bg-surface text-text shadow" : "text-text-dim")}
                 >
-                  {v}
+                  {v === "email" ? t("Email") : t("Phone")}
                 </button>
               ))}
             </div>
           )}
           <Field
-            label={isLogin ? "Email or phone" : via === "email" ? "Email" : "Phone number"}
+            label={isLogin ? t("Email or phone") : via === "email" ? t("Email") : t("Phone number")}
             htmlFor="login"
             error={errors.login}
           >
@@ -119,12 +121,12 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
               id="login"
               type={!isLogin && via === "email" ? "email" : !isLogin ? "tel" : "text"}
               autoComplete={isLogin ? "username" : via === "email" ? "email" : "tel"}
-              placeholder={isLogin ? "you@example.com or +2557…" : via === "email" ? "you@example.com" : "+255 7XX XXX XXX"}
+              placeholder={isLogin ? t("you@example.com or +2557…") : via === "email" ? "you@example.com" : "+255 7XX XXX XXX"}
               value={form.login}
               onChange={(e) => setForm({ ...form, login: e.target.value })}
             />
           </Field>
-          <Field label="Password" htmlFor="password" error={errors.password}>
+          <Field label={t("Password")} htmlFor="password" error={errors.password}>
             <div className="relative">
               <Input
                 id="password"
@@ -138,14 +140,14 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
                 type="button"
                 onClick={() => setShowPw((s) => !s)}
                 className="absolute right-2 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full text-text-dim hover:text-text"
-                aria-label={showPw ? "Hide password" : "Show password"}
+                aria-label={showPw ? t("Hide password") : t("Show password")}
               >
                 <Icon name="eye" size={17} />
               </button>
             </div>
           </Field>
           {!isLogin && (
-            <Field label="Confirm password" htmlFor="confirm" error={errors.confirm}>
+            <Field label={t("Confirm password")} htmlFor="confirm" error={errors.confirm}>
               <Input
                 id="confirm"
                 type={showPw ? "text" : "password"}
@@ -156,17 +158,17 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
             </Field>
           )}
           <Button type="submit" loading={busy} size="lg" className="w-full">
-            {isLogin ? "Log in" : "Create account"}
+            {isLogin ? t("Log in") : t("Create account")}
           </Button>
           <p className="text-center text-sm text-text-muted">
-            {isLogin ? "New to Afriva? " : "Already have an account? "}
+            {isLogin ? t("New to Afriva?") : t("Already have an account?")}{" "}
             <Link href={`${isLogin ? "/register" : "/login"}${q}`} className="font-semibold text-primary hover:underline">
-              {isLogin ? "Create an account" : "Log in"}
+              {isLogin ? t("Create an account") : t("Log in")}
             </Link>
           </p>
         </form>
         <p className="mt-6 text-center text-xs text-text-dim">
-          Studio partner or admin? Log in here — you&apos;ll be taken to your portal.
+          {t("Studio partner or admin? Log in here and you'll be taken to your portal.")}
         </p>
       </div>
     </div>

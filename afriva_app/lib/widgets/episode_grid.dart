@@ -1,8 +1,10 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../core/haptics.dart';
+import '../core/i18n.dart';
 import '../core/theme.dart';
 import '../models/episode.dart';
+import 'badges.dart';
 
 /// Episode number grid with range tabs (1-30, 31-60, …) and lock markers.
 class EpisodeGrid extends StatefulWidget {
@@ -54,7 +56,7 @@ class _EpisodeGridState extends State<EpisodeGrid> {
         crossAxisCount: widget.columns,
         mainAxisSpacing: 8,
         crossAxisSpacing: 8,
-        childAspectRatio: 1.05,
+        childAspectRatio: 0.88,
       ),
       itemCount: slice.length,
       itemBuilder: (_, i) {
@@ -62,7 +64,8 @@ class _EpisodeGridState extends State<EpisodeGrid> {
         return _EpisodeTile(
           episode: e,
           current: e.number == widget.currentNumber,
-          showLock: e.isLocked && !widget.isVip,
+          // The API computes `access` per viewer (VIP, unlocks, series rules); older payloads fall back to isVip.
+          showLock: e.access.isNotEmpty ? e.isLocked : e.isLocked && !widget.isVip,
           onTap: () {
             Haptics.tap();
             widget.onTap(e);
@@ -161,6 +164,13 @@ class _EpisodeTile extends StatelessWidget {
                         ),
                       ),
               ),
+              // Scope §02: the viewer sees up front which episodes are free and what locked ones cost.
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 3,
+                child: Center(child: _AccessLabel(episode: episode, locked: showLock, current: current)),
+              ),
               if (showLock)
                 Positioned(
                   top: 0,
@@ -223,4 +233,30 @@ class _PlayingBarsState extends State<_PlayingBars> with SingleTickerProviderSta
           ],
         ),
       );
+}
+
+/// "Bure" for free episodes, "VIP" for VIP-only ones, coin price for other locked ones.
+class _AccessLabel extends StatelessWidget {
+  const _AccessLabel({required this.episode, required this.locked, required this.current});
+  final Episode episode;
+  final bool locked;
+  final bool current;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = current ? Colors.white : (locked ? AppColors.primary : AppColors.textMuted);
+    final style = TextStyle(color: color, fontSize: 8.5, fontWeight: FontWeight.w800, height: 1);
+    if (episode.isFree) return Text(context.tr('FREE'), style: style);
+    if (!locked) return const SizedBox.shrink();
+    if (episode.vipOnly) return Text('VIP', style: style);
+    if (episode.priceCoins <= 0) return const SizedBox.shrink();
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const CoinIcon(size: 8),
+        const SizedBox(width: 2),
+        Text('${episode.priceCoins}', style: style),
+      ],
+    );
+  }
 }

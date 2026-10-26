@@ -7,6 +7,7 @@ import { ApiDownState, EmptyState, Pill, type Tone } from "@/components/ui/Feedb
 import { Select } from "@/components/ui/Form";
 import { formatDate, formatMoney, pickNum } from "@/lib/format";
 import { useList } from "@/lib/hooks";
+import { useT } from "@/lib/i18n";
 import type { Earning } from "@/lib/types";
 
 const SOURCES: Record<string, { label: string; tone: Tone }> = {
@@ -16,6 +17,7 @@ const SOURCES: Record<string, { label: string; tone: Tone }> = {
 };
 
 export default function StudioEarningsPage() {
+  const t = useT();
   const [page, setPage] = useState(1);
   const [source, setSource] = useState("");
   const { items, meta, loading, error, reload } = useList<Earning>("/studio/earnings", { page, per_page: 25, source });
@@ -30,12 +32,12 @@ export default function StudioEarningsPage() {
 
   return (
     <>
-      <PageHeader title="Earnings" description="Your revenue share from VIP subscriptions, episode packs and coin unlocks." />
+      <PageHeader title={t("Earnings")} description={t("Your revenue share from VIP subscriptions, episode packs and coin unlocks.")} />
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard label={fromServer ? "Total earned" : "Total (this page)"} icon="wallet" accent="success" value={formatMoney(total)} loading={loading && !items.length} />
-        <StatCard label="VIP pool" icon="crown" accent="info" value={formatMoney(bySource("subscription_pool"))} loading={loading && !items.length} />
-        <StatCard label="Episode packs" icon="layers" value={formatMoney(bySource("episode_pack"))} loading={loading && !items.length} />
-        <StatCard label="Coin unlocks" icon="coin" accent="gold" value={formatMoney(bySource("coins"))} loading={loading && !items.length} />
+        <StatCard label={fromServer ? t("Total earned") : t("Total (this page)")} icon="wallet" accent="success" value={formatMoney(total)} loading={loading && !items.length} />
+        <StatCard label={t("VIP pool")} icon="crown" accent="info" value={formatMoney(bySource("subscription_pool"))} loading={loading && !items.length} />
+        <StatCard label={t("Episode packs")} icon="layers" value={formatMoney(bySource("episode_pack"))} loading={loading && !items.length} />
+        <StatCard label={t("Coin unlocks")} icon="coin" accent="gold" value={formatMoney(bySource("coins"))} loading={loading && !items.length} />
       </div>
 
       <div className="mt-6">
@@ -47,35 +49,35 @@ export default function StudioEarningsPage() {
               setSource(e.target.value);
               setPage(1);
             }}
-            aria-label="Filter by source"
+            aria-label={t("Filter by source")}
           >
-            <option value="">All sources</option>
+            <option value="">{t("All sources")}</option>
             {Object.entries(SOURCES).map(([k, v]) => (
               <option key={k} value={k}>
-                {v.label}
+                {t(v.label)}
               </option>
             ))}
           </Select>
         </Toolbar>
         {error && !items.length ? (
-          <ApiDownState action={<Button onClick={reload}>Retry</Button>} />
+          <ApiDownState action={<Button onClick={reload}>{t("Retry")}</Button>} />
         ) : (
           <DataTable
             loading={loading}
             rows={items}
             rowKey={(e) => e.id}
-            empty={<EmptyState className="border-0 bg-transparent" icon="wallet" title="No earnings yet" description="Earnings appear as viewers unlock and watch your dramas." />}
+            empty={<EmptyState className="border-0 bg-transparent" icon="wallet" title={t("No earnings yet")} description={t("Earnings appear as viewers unlock and watch your dramas.")} />}
             columns={[
-              { key: "date", header: "Date", render: (e) => formatDate(e.period_date ?? e.created_at) },
+              { key: "date", header: t("Date"), render: (e) => formatDate(e.period_date ?? e.created_at) },
               {
                 key: "source",
-                header: "Source",
-                render: (e) => <Pill tone={SOURCES[e.source]?.tone ?? "neutral"}>{SOURCES[e.source]?.label ?? e.source}</Pill>,
+                header: t("Source"),
+                render: (e) => <Pill tone={SOURCES[e.source]?.tone ?? "neutral"}>{SOURCES[e.source] ? t(SOURCES[e.source]!.label) : e.source}</Pill>,
               },
-              { key: "drama", header: "Drama", render: (e) => e.drama?.title ?? <span className="text-text-dim">All dramas</span> },
+              { key: "drama", header: t("Drama"), render: (e) => e.drama?.title ?? <span className="text-text-dim">{t("All dramas")}</span> },
               {
                 key: "amount",
-                header: "Amount",
+                header: t("Amount"),
                 className: "text-right",
                 render: (e) => <span className="font-semibold text-success">+{formatMoney(e.amount)}</span>,
               },

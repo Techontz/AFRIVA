@@ -41,6 +41,16 @@ class CatalogService {
   Future<DramaDetail> drama(String slug) async =>
       DramaDetail.fromJson(asMap(await _api.get('/dramas/$slug')));
 
+  /// "Ripoti": copyright / content problem with a series. [reason]: copyright | inappropriate | misleading | other.
+  Future<String> report(int dramaId, {required String reason, String? details, String? contact}) async {
+    final data = asMap(await _api.post('/dramas/$dramaId/report', body: {
+      'reason': reason,
+      if (details != null && details.trim().isNotEmpty) 'details': details.trim(),
+      if (contact != null && contact.trim().isNotEmpty) 'contact': contact.trim(),
+    }));
+    return asString(data['message']);
+  }
+
   Future<List<FeedItem>> feed() async => asList(await _api.get('/feed'), FeedItem.fromJson)
       .where((f) => (f.episode.videoUrl ?? '').isNotEmpty)
       .toList();

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Drama;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -26,18 +27,30 @@ class DramaRequest extends FormRequest
             'backdrop_url' => ['nullable', 'string', 'max:500'],
             'poster' => ['nullable', 'image', 'max:8192'],
             'backdrop' => ['nullable', 'image', 'max:8192'],
-            'free_episodes' => ['sometimes', 'integer', 'min:0', 'max:1000'],
-            'coins_per_episode' => ['sometimes', 'integer', 'min:0', 'max:100000'],
-            'status' => ['sometimes', Rule::in(['draft', 'published'])],
-            'is_featured' => ['sometimes', 'boolean'],
-            'badge' => ['nullable', Rule::in(['hot', 'new', 'vip'])],
+            'trailer_url' => ['nullable', 'string', 'max:1000'],
+            'trailer' => ['nullable', 'file', 'mimetypes:video/mp4,video/quicktime,video/webm,video/x-matroska', 'max:204800'],
+            'age_rating' => ['nullable', Rule::in(Drama::AGE_RATINGS)],
             'language' => ['nullable', 'string', 'max:20'],
-            'release_date' => ['nullable', 'date'],
+            // Publishing rules: staff only. Creators propose content; AFRIVA sets dates, prices and free episodes.
+            'free_episodes' => $this->staffOnly(['sometimes', 'integer', 'min:0', 'max:1000']),
+            'coins_per_episode' => $this->staffOnly(['sometimes', 'integer', 'min:0', 'max:100000']),
+            'access_mode' => $this->staffOnly(['sometimes', Rule::in(Drama::ACCESS_MODES)]),
+            'status' => $this->staffOnly(['sometimes', Rule::in(['draft', 'published'])]),
+            'publish_at' => $this->staffOnly(['nullable', 'date']),
+            'is_featured' => $this->staffOnly(['sometimes', 'boolean']),
+            'badge' => $this->staffOnly(['nullable', Rule::in(['hot', 'new', 'vip'])]),
+            'release_date' => $this->staffOnly(['nullable', 'date']),
             'category_ids' => ['sometimes', 'array'],
             'category_ids.*' => ['integer', 'exists:categories,id'],
             'tags' => ['sometimes', 'array'],
             'tags.*' => ['string', 'max:60'],
         ];
+    }
+
+    /** @param list<mixed> $rules */
+    protected function staffOnly(array $rules): array
+    {
+        return $this->is('api/v1/admin/*') ? $rules : ['exclude'];
     }
 
     protected function isAdminCreate(): bool

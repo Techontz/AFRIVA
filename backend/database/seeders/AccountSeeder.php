@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Company;
+use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
@@ -19,14 +20,20 @@ class AccountSeeder extends Seeder
         ['Lagos Reel House', 'lagos-reel-house', 'NG', 70.00, '+234 1 280 0003',
             'Fast-paced Nollywood-style romance, comedy and revenge series made in Lagos.'],
         ['Zanzibar Tales', 'zanzibar-tales', 'TZ', 75.00, '+255 24 223 0004',
-            'Stories from Stone Town and the Swahili coast — history, mystery and love by the ocean.'],
+            'Stories from Stone Town and the Swahili coast, history, mystery and love by the ocean.'],
     ];
 
     public function run(): void
     {
         User::updateOrCreate(['email' => 'admin@afriva.com'], [
-            'name' => 'Afriva Admin', 'password' => 'password', 'role' => User::ROLE_SUPER_ADMIN, 'status' => 'active',
+            'name' => 'Afriva Admin', 'password' => 'password', 'role' => User::ROLE_SUPER_ADMIN, 'staff_role' => 'owner', 'status' => 'active',
         ]);
+        // One demo account per staff role (scope §05 "Roles & records").
+        foreach (['editor' => 'Mhariri', 'reviewer' => 'Mkaguzi', 'finance' => 'Fedha'] as $role => $label) {
+            User::updateOrCreate(['email' => "{$role}@afriva.com"], [
+                'name' => "AFRIVA {$label}", 'password' => 'password', 'role' => User::ROLE_SUPER_ADMIN, 'staff_role' => $role, 'status' => 'active',
+            ]);
+        }
 
         foreach (self::COMPANIES as [$name, $slug, $country, $share, $phone, $desc]) {
             $company = Company::updateOrCreate(['slug' => $slug], [
@@ -37,6 +44,8 @@ class AccountSeeder extends Seeder
                 'revenue_share_percent' => $share,
                 'status' => 'active',
                 'description' => $desc,
+                'agreement_accepted_at' => now(),
+                'agreement_version' => Setting::get('creator_agreement_version'),
                 'logo_url' => "https://picsum.photos/seed/afriva-logo-{$slug}/200/200",
             ]);
             User::updateOrCreate(['email' => "{$slug}@afriva.com"], [

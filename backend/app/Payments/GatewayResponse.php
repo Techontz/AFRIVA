@@ -8,7 +8,9 @@ namespace App\Payments;
 final class GatewayResponse
 {
     public const SUCCESS = 'success';
+
     public const PENDING = 'pending';
+
     public const FAILED = 'failed';
 
     /** @param array<string,mixed> $raw */

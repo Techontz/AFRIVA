@@ -4,22 +4,25 @@ import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/haptics.dart';
+import '../../core/i18n.dart';
 import '../../core/theme.dart';
 
 class AppShell extends StatelessWidget {
   const AppShell({super.key, required this.shell});
   final StatefulNavigationShell shell;
 
+  /// Scope §03: Nyumbani · Tafuta · Vipendwa · Profile.
   static const _items = [
     (Icons.home_outlined, Icons.home_rounded, 'Home'),
-    (Icons.play_circle_outline_rounded, Icons.play_circle_fill_rounded, 'For You'),
-    (Icons.bookmark_border_rounded, Icons.bookmark_rounded, 'My List'),
+    (Icons.search_rounded, Icons.manage_search_rounded, 'Search'),
+    (Icons.favorite_border_rounded, Icons.favorite_rounded, 'Favorites'),
     (Icons.person_outline_rounded, Icons.person_rounded, 'Profile'),
   ];
 
   @override
   Widget build(BuildContext context) {
-    final immersive = shell.currentIndex == 1;
+    // No tab hosts video any more (For You opens full screen), so the bar is never immersive.
+    const immersive = false;
     return Scaffold(
       backgroundColor: immersive ? Colors.black : AppColors.bg,
       extendBody: true,
@@ -90,10 +93,11 @@ class _NavItem extends StatelessWidget {
         : immersive
             ? Colors.white70
             : AppColors.textDim;
+    final text = context.tr(label);
     return Semantics(
       selected: selected,
       button: true,
-      label: label,
+      label: text,
       child: InkResponse(
         onTap: onTap,
         radius: 36,
@@ -115,7 +119,7 @@ class _NavItem extends StatelessWidget {
                     color: color,
                     fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
                   ),
-              child: Text(label),
+              child: Text(text),
             ),
           ],
         ),

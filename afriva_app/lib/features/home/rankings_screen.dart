@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import '../../models/drama.dart';
 import '../../services/catalog_service.dart';
@@ -22,11 +23,11 @@ class RankingsScreen extends StatelessWidget {
       initialIndex: initial,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Rankings'),
+          title: Text(context.tr('Rankings')),
           bottom: TabBar(
             isScrollable: true,
             indicatorSize: TabBarIndicatorSize.label,
-            tabs: [for (final t in _types) Tab(text: t.$2)],
+            tabs: [for (final t in _types) Tab(text: context.tr(t.$2))],
           ),
         ),
         body: TabBarView(
@@ -71,7 +72,7 @@ class _RankingListState extends State<_RankingList> with AutomaticKeepAliveClien
         }
         final items = snap.data ?? const [];
         if (items.isEmpty) {
-          return const StateMessage(icon: Icons.leaderboard_outlined, title: 'No rankings yet');
+          return StateMessage(icon: Icons.leaderboard_outlined, title: context.tr('No rankings yet'));
         }
         return RefreshIndicator(
           color: AppColors.primary,

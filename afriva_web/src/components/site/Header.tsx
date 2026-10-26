@@ -4,14 +4,18 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/lib/auth";
+import { LANGS, useLang, useT } from "@/lib/i18n";
 import { cn, formatNumber, initials } from "@/lib/format";
 import { buttonClass } from "../ui/Button";
 import { Icon, type IconName } from "../ui/Icon";
 import { Logo } from "../ui/Logo";
 
+// Nyumbani · Vinjari · Vipendwa · VIP · App (search sits in the header; Profile is the avatar).
 const NAV: { href: string; label: string; icon: IconName }[] = [
   { href: "/", label: "Home", icon: "home" },
   { href: "/browse", label: "Browse", icon: "grid" },
+  { href: "/account?tab=list", label: "Favorites", icon: "bookmark" },
+  { href: "/vip", label: "VIP", icon: "crown" },
   { href: "/app", label: "App", icon: "download" },
 ];
 
@@ -35,6 +39,7 @@ function useDismiss(open: boolean, close: () => void, ref: React.RefObject<HTMLE
 }
 
 function SearchField({ onDone, className, autoFocus }: { onDone?: () => void; className?: string; autoFocus?: boolean }) {
+  const t = useT();
   const router = useRouter();
   const [q, setQ] = useState("");
   return (
@@ -54,21 +59,17 @@ function SearchField({ onDone, className, autoFocus }: { onDone?: () => void; cl
         autoFocus={autoFocus}
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        placeholder="Search"
-        aria-label="Search dramas"
+        placeholder={t("Search")}
+        aria-label={t("Search dramas")}
         className="h-11 w-full rounded-full border border-transparent bg-[#3A3A3A] pl-11 pr-4 text-[15px] text-white placeholder:text-[#9A9A9A] transition focus:border-white/30 focus:outline-none"
       />
     </form>
   );
 }
 
-const LANGS = [
-  { code: "en", short: "EN", label: "English" },
-  { code: "sw", short: "SW", label: "Kiswahili" },
-] as const;
-
 function LanguageMenu({ className }: { className?: string }) {
-  const [lang, setLang] = useState<(typeof LANGS)[number]["code"]>("en");
+  const { lang, setLang } = useLang();
+  const t = useT();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useDismiss(open, () => setOpen(false), ref);
@@ -79,7 +80,7 @@ function LanguageMenu({ className }: { className?: string }) {
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        aria-label={`Language: ${current.label}`}
+        aria-label={t("Language: {lang}", { lang: current.label })}
         className="flex items-center gap-1.5 py-2 text-[17px] font-normal text-white transition hover:text-primary xl:text-xl"
       >
         {current.label}
@@ -88,7 +89,7 @@ function LanguageMenu({ className }: { className?: string }) {
       {open && (
         <ul
           role="listbox"
-          aria-label="Language"
+          aria-label={t("Language")}
           className="absolute left-0 top-12 z-50 w-40 overflow-hidden rounded-xl border border-border bg-surface p-1 shadow-2xl animate-pop-in"
         >
           {LANGS.map((l) => (
@@ -115,6 +116,7 @@ function LanguageMenu({ className }: { className?: string }) {
 
 function UserMenu() {
   const { user, logout } = useAuth();
+  const t = useT();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -124,15 +126,17 @@ function UserMenu() {
   const vip = !!user.active_subscription;
 
   const items: { href: string; label: string; icon: IconName }[] = [
-    { href: "/account", label: "My account", icon: "user" },
+    { href: "/account", label: "Profile", icon: "user" },
     { href: "/foryou", label: "For You", icon: "play" },
-    { href: "/account?tab=list", label: "My List", icon: "bookmark" },
+    { href: "/account?tab=list", label: "Favorites", icon: "bookmark" },
     { href: "/account?tab=history", label: "Watch history", icon: "history" },
-    { href: "/account?tab=payments", label: "Payments", icon: "wallet" },
+    { href: "/account?tab=coins", label: "Coins", icon: "coin" },
+    { href: "/account?tab=payments", label: "Transactions", icon: "wallet" },
     { href: "/vip", label: vip ? "VIP & coins" : "Go VIP", icon: "crown" },
+    { href: "/account?tab=creator", label: "Submit your work", icon: "upload" },
   ];
   if (user.role === "super_admin") items.unshift({ href: "/admin", label: "Admin portal", icon: "shield" });
-  if (user.role === "company") items.unshift({ href: "/studio", label: "Studio portal", icon: "film" });
+  if (user.role === "company") items.unshift({ href: "/studio", label: "Creator Studio", icon: "film" });
 
   return (
     <div className="relative" ref={ref}>
@@ -140,7 +144,7 @@ function UserMenu() {
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label="Account menu"
+        aria-label={t("Account menu")}
         className="flex items-center rounded-full transition hover:opacity-90"
       >
         <span
@@ -177,7 +181,7 @@ function UserMenu() {
                 onClick={() => setOpen(false)}
                 className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-text-muted transition hover:bg-surface-2 hover:text-text"
               >
-                <Icon name={it.icon} size={17} /> {it.label}
+                <Icon name={it.icon} size={17} /> {t(it.label)}
               </Link>
             ))}
             <button
@@ -189,7 +193,7 @@ function UserMenu() {
               }}
               className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-text-muted transition hover:bg-surface-2 hover:text-primary"
             >
-              <Icon name="logout" size={17} /> Log out
+              <Icon name="logout" size={17} /> {t("Log out")}
             </button>
           </div>
         </div>
@@ -210,10 +214,11 @@ function DefaultAvatar() {
 
 function AuthSlot() {
   const { user, loading } = useAuth();
+  const t = useT();
   if (loading) return <div className="skeleton h-11 w-11 rounded-full" />;
   if (user) return <UserMenu />;
   return (
-    <Link href="/login" aria-label="Log in" title="Log in" className="grid h-11 w-11 place-items-center overflow-hidden rounded-full bg-[#5A5A5A] text-[#BDBDBD] transition hover:text-white">
+    <Link href="/login" aria-label={t("Log in")} title={t("Log in")} className="grid h-11 w-11 place-items-center overflow-hidden rounded-full bg-[#5A5A5A] text-[#BDBDBD] transition hover:text-white">
       <DefaultAvatar />
     </Link>
   );
@@ -222,9 +227,14 @@ function AuthSlot() {
 function HeaderInner() {
   const pathname = usePathname();
   const { user } = useAuth();
+  const t = useT();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
+  const isActive = (href: string) => {
+    const path = href.split("?")[0]!;
+    if (href.includes("?")) return false;
+    return path === "/" ? pathname === "/" : pathname.startsWith(path);
+  };
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -244,13 +254,13 @@ function HeaderInner() {
         <div className="site-container flex h-16 items-center gap-3 lg:h-[88px] lg:gap-10 xl:gap-14 min-[1800px]:gap-[120px]">
           <button
             className="-ml-2 grid h-10 w-10 place-items-center rounded-full text-white hover:bg-white/10 lg:hidden"
-            aria-label="Open menu"
+            aria-label={t("Open menu")}
             aria-expanded={menuOpen}
             onClick={() => setMenuOpen(true)}
           >
             <Icon name="menu" size={22} />
           </button>
-          <Link href="/" aria-label="Afriva home" className="shrink-0">
+          <Link href="/" aria-label={t("Afriva home")} className="shrink-0">
             <span className="hidden lg:block">
               <Logo size={34} />
             </span>
@@ -259,7 +269,7 @@ function HeaderInner() {
             </span>
           </Link>
 
-          <nav className="hidden items-center gap-10 lg:flex xl:gap-14 min-[1800px]:gap-[120px]" aria-label="Main">
+          <nav className="hidden items-center gap-10 lg:flex xl:gap-14 min-[1800px]:gap-[120px]" aria-label={t("Main")}>
             {NAV.map((n) => (
               <Link
                 key={n.href}
@@ -270,7 +280,7 @@ function HeaderInner() {
                   isActive(n.href) ? "text-primary" : "text-white hover:text-primary",
                 )}
               >
-                {n.label}
+                {t(n.label)}
               </Link>
             ))}
             <LanguageMenu />
@@ -281,15 +291,15 @@ function HeaderInner() {
             <Link
               href="/search"
               className="grid h-10 w-10 place-items-center rounded-full bg-[#3A3A3A] text-white lg:hidden"
-              aria-label="Search"
+              aria-label={t("Search")}
             >
               <Icon name="search" size={18} />
             </Link>
             <a
               href={FEEDBACK_HREF}
               className="hidden h-11 w-11 place-items-center rounded-full bg-[#3A3A3A] text-white transition hover:bg-[#474747] sm:grid"
-              aria-label="Help & feedback"
-              title="Help & feedback"
+              aria-label={t("Help & feedback")}
+              title={t("Help & feedback")}
             >
               <Icon name="headset" size={20} />
             </a>
@@ -299,20 +309,26 @@ function HeaderInner() {
       </header>
 
       {menuOpen && (
-        <div className="chrome-dark fixed inset-0 z-[60] lg:hidden" role="dialog" aria-modal="true" aria-label="Menu">
+        <div className="chrome-dark fixed inset-0 z-[60] lg:hidden" role="dialog" aria-modal="true" aria-label={t("Menu")}>
           <div className="absolute inset-0 bg-black/70 animate-fade-in" onClick={() => setMenuOpen(false)} />
           <div className="absolute inset-y-0 left-0 flex w-[85vw] max-w-xs flex-col border-r border-border bg-bg pb-safe animate-pop-in">
             <div className="flex h-16 items-center justify-between px-4">
               <Logo size={22} />
-              <button onClick={() => setMenuOpen(false)} className="grid h-10 w-10 place-items-center rounded-full hover:bg-surface-2" aria-label="Close menu">
+              <button onClick={() => setMenuOpen(false)} className="grid h-10 w-10 place-items-center rounded-full hover:bg-surface-2" aria-label={t("Close menu")}>
                 <Icon name="x" />
               </button>
             </div>
             <div className="px-4 pb-3">
               <SearchField onDone={() => setMenuOpen(false)} />
             </div>
-            <nav className="flex-1 overflow-y-auto px-2" aria-label="Mobile">
-              {[...NAV, { href: "/foryou", label: "For You", icon: "play" as IconName }, { href: "/vip", label: "VIP", icon: "crown" as IconName }, ...(user ? [{ href: "/account", label: "My account", icon: "user" as IconName }] : [])].map((n) => (
+            <nav className="flex-1 overflow-y-auto px-2" aria-label={t("Mobile")}>
+              {[
+                ...NAV,
+                { href: "/search", label: "Search", icon: "search" as IconName },
+                { href: "/foryou", label: "For You", icon: "play" as IconName },
+                ...(user ? [{ href: "/account", label: "Profile", icon: "user" as IconName }] : []),
+                { href: "/account?tab=creator", label: "Submit your work", icon: "upload" as IconName },
+              ].map((n) => (
                 <Link
                   key={n.href}
                   href={n.href}
@@ -323,21 +339,21 @@ function HeaderInner() {
                   )}
                 >
                   <Icon name={n.icon} size={19} className={isActive(n.href) ? "text-primary" : undefined} />
-                  {n.label}
+                  {t(n.label)}
                 </Link>
               ))}
               <a
                 href={FEEDBACK_HREF}
                 className="flex items-center gap-3 rounded-xl px-3 py-3 text-[15px] font-semibold text-text-muted hover:bg-surface-2 hover:text-text"
               >
-                <Icon name="headset" size={19} /> Help & feedback
+                <Icon name="headset" size={19} /> {t("Help & feedback")}
               </a>
             </nav>
             <div className="flex items-center justify-between gap-3 border-t border-border p-4">
               <LanguageMenu />
               {!user && (
                 <Link href="/login" onClick={() => setMenuOpen(false)} className={buttonClass("primary", "sm")}>
-                  Log in
+                  {t("Log in")}
                 </Link>
               )}
             </div>

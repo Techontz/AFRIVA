@@ -1,23 +1,28 @@
 import { cn } from "@/lib/format";
 
-/** Afriva logo: red rounded-square app icon with a white play mark + "Afriva" wordmark. */
-export function Logo({ className, size = 26, mark = true }: { className?: string; size?: number; mark?: boolean }) {
-  return (
-    <span className={cn("inline-flex items-center gap-2.5 select-none text-text", className)} aria-label="Afriva">
-      {mark && <LogoMark size={size * 1.25} />}
-      <span className="font-semibold leading-none tracking-[-0.02em]" style={{ fontSize: size * 0.94 }} aria-hidden="true">
-        Afriva
-      </span>
-    </span>
-  );
+const LOGO_SRC = "/afriva-logo.png";
+const LOGO_RATIO = 900 / 293;
+
+/** Afriva logo: white "AFRIVA" wordmark on a red block. `size` matches the old text size. */
+export function Logo({ className, size = 26 }: { className?: string; size?: number }) {
+  return <LogoImage height={size * 1.25} className={className} />;
 }
 
-/** Red rounded-square app icon with a white play triangle. */
+/** Compact logo for standalone spots (auth card, loading screens). */
 export function LogoMark({ size = 26 }: { size?: number }) {
+  return <LogoImage height={size * 0.75} />;
+}
+
+function LogoImage({ height, className }: { height: number; className?: string }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true">
-      <rect width="32" height="32" rx="8" fill="#E1122B" />
-      <path d="M12 9.4v13.2a1.4 1.4 0 0 0 2.12 1.2l10.6-6.6a1.4 1.4 0 0 0 0-2.4l-10.6-6.6A1.4 1.4 0 0 0 12 9.4Z" fill="#fff" />
-    </svg>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={LOGO_SRC}
+      alt="Afriva"
+      width={Math.round(height * LOGO_RATIO)}
+      height={Math.round(height)}
+      className={cn("inline-block shrink-0 select-none", className)}
+      draggable={false}
+    />
   );
 }

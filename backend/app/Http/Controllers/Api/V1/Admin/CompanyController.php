@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCompanyRequest;
 use App\Http\Requests\UpdateCompanyRequest;
 use App\Http\Resources\CompanyResource;
+use App\Models\AuditLog;
 use App\Models\Company;
 use App\Models\User;
 use App\Services\ContentService;
@@ -29,7 +30,9 @@ class CompanyController extends Controller
             $q->where('status', $status);
         }
 
-        return $this->paginated($q->orderBy('name')->paginate($this->perPage(50)), CompanyResource::class);
+        return $this->paginated($q->orderByRaw("status = 'pending' DESC")->orderBy('name')->paginate($this->perPage(50)), CompanyResource::class, [
+            'pending' => Company::where('status', 'pending')->count(),
+        ]);
     }
 
     public function store(StoreCompanyRequest $request, ContentService $content): JsonResponse
@@ -69,6 +72,8 @@ class CompanyController extends Controller
             return $company;
         });
 
+        AuditLog::record('creator.create', $company, null, $company->name);
+
         return $this->ok(new CompanyResource($company->load('users')->loadCount('dramas')), null, 201);
     }
 
@@ -92,8 +97,12 @@ class CompanyController extends Controller
         if (! empty($data['owner_password'])) {
             $company->users()->where('role', User::ROLE_COMPANY)->each(fn (User $u) => $u->update(['password' => $data['owner_password']]));
         }
-        if (isset($data['status'])) {
+        // Creator accounts follow suspension; a pending creator can still log in and prepare drafts.
+        if (in_array($data['status'] ?? null, ['active', 'suspended'], true)) {
             $company->users()->update(['status' => $data['status']]);
+        }
+        if ($diff = AuditLog::diff($company, ['name', 'status', 'revenue_share_percent'])) {
+            AuditLog::record(isset($diff['status']) && $diff['status']['to'] === 'active' ? 'creator.approve' : 'creator.update', $company, $diff, $company->name);
         }
 
         return $this->ok(new CompanyResource($company->load('users')->loadCount('dramas')));
@@ -108,6 +117,7 @@ class CompanyController extends Controller
             });
             $company->delete();
         });
+        AuditLog::record('creator.delete', $company, null, $company->name);
 
         return $this->ok(['deleted' => true]);
     }

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { T } from "@/lib/i18n";
 import type { Drama } from "@/lib/types";
 import { Icon, type IconName } from "../ui/Icon";
 import { PosterCard, gridClass } from "./PosterCard";
@@ -6,10 +7,12 @@ import { PosterCard, gridClass } from "./PosterCard";
 export function SectionHeading({ title, href }: { title: string; href?: string; icon?: IconName }) {
   return (
     <div className="mb-5 flex items-center justify-between gap-4">
-      <h2 className="text-2xl font-bold tracking-tight text-text lg:text-[34px] lg:leading-tight">{title}</h2>
+      <h2 className="text-2xl font-bold tracking-tight text-text lg:text-[34px] lg:leading-tight">
+        <T>{title}</T>
+      </h2>
       {href && (
         <Link href={href} className="flex shrink-0 items-center gap-0.5 text-[15px] text-text transition-colors hover:text-primary lg:text-[19px]">
-          More <Icon name="chevron-right" size={20} />
+          <T>More</T> <Icon name="chevron-right" size={20} />
         </Link>
       )}
     </div>

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CheckoutRequest;
 use App\Http\Resources\PaymentResource;
@@ -28,29 +29,31 @@ class PaymentController extends Controller
         $method = PaymentMethod::where('code', $request->input('payment_method'))->firstOrFail();
 
         if ($method->type === 'mobile_money' && ! $request->filled('phone') && ! $request->user()->phone) {
-            throw ValidationException::withMessages(['phone' => ['A phone number is required for mobile money payments.']]);
+            throw ValidationException::withMessages(['phone' => ['Weka namba ya simu ya kulipia kwa mobile money.']]);
         }
         $phone = $request->input('phone') ?: ($method->type === 'mobile_money' ? $request->user()->phone : null);
+        $key = $request->header('Idempotency-Key') ?: $request->input('idempotency_key');
+        $key = is_string($key) && preg_match('/^[A-Za-z0-9_-]{8,80}$/', $key) ? $key : null;
 
-        [$payment, $response] = $this->payments->checkout($request->user(), $plan, $method->code, $phone, [
+        [$payment, $response] = $this->payments->checkout($request->user(), $plan, $method, $phone, [
             'card' => null, // card details are never stored or forwarded by this API
-        ]);
+        ], $key);
 
         $message = match ($payment->status) {
-            'success' => 'Payment successful. Enjoy Afriva!',
-            'failed' => $response->message ?: 'Payment failed.',
-            default => 'Pending — payment provider not yet connected.',
+            'success', 'refunded' => 'Malipo yamefanikiwa. Furahia AFRIVA!',
+            'failed' => ($response?->message ?: null) ?? 'Malipo hayakufanikiwa.',
+            'cancelled' => 'Malipo yameghairiwa.',
+            default => $method->type === 'mobile_money'
+                ? 'Thibitisha malipo kwenye simu yako kwa kuweka PIN. Tunasubiri uthibitisho kutoka kwa mtoa huduma.'
+                : 'Tunasubiri uthibitisho wa malipo kutoka kwa mtoa huduma.',
         };
-        if ($payment->status === 'pending' && $response->message && $response->message !== 'Provider not yet connected') {
-            $message = $response->message;
-        }
 
         $data = [
             'payment' => new PaymentResource($payment),
             'message' => $message,
-            'next_action' => $payment->status === 'pending' ? $response->nextAction : 'none',
+            'next_action' => $payment->status === 'pending' ? ($response?->nextAction ?? 'none') : 'none',
         ];
-        if ($response->redirectUrl) {
+        if ($response?->redirectUrl) {
             $data['redirect_url'] = $response->redirectUrl;
         }
         if ($payment->status === 'success') {
@@ -60,10 +63,10 @@ class PaymentController extends Controller
             $data['user_coins'] = (int) $user->coins;
         }
 
-        return $this->ok($data, null, 201);
+        return $this->ok($data, null, $response ? 201 : 200);
     }
 
-    /** GET /payments/{reference} — status polling (owner only). */
+    /** GET /payments/{reference}, status polling (owner only). */
     public function show(Request $request, string $reference): JsonResponse
     {
         $payment = Payment::with('plan')->where('reference', $reference)
@@ -81,9 +84,25 @@ class PaymentController extends Controller
         return $this->ok(new PaymentResource($payment));
     }
 
-    /** POST /payments/callback/{provider} — public webhook. */
+    /** GET /me/payments/{reference}/receipt (owner only). */
+    public function receipt(Request $request, string $reference): JsonResponse
+    {
+        $payment = Payment::where('reference', $reference)->where('user_id', $request->user()->id)->firstOrFail();
+        if (! in_array($payment->status, ['success', 'refunded'], true)) {
+            throw new ApiException('Risiti hutolewa baada ya malipo kuthibitishwa.', 'no_receipt', 404);
+        }
+
+        return $this->ok($this->payments->receipt($payment));
+    }
+
+    /** POST /payments/callback/{provider}, public webhook. The server, not the app, decides when a payment succeeded. */
     public function callback(Request $request, string $provider): JsonResponse
     {
+        // The sandbox approves whatever it is told, so it only accepts callbacks while the demo sandbox is switched on.
+        if ($provider === 'sandbox' && ! config('payments.sandbox.enabled')) {
+            return response()->json(['message' => 'Unknown payment provider.', 'code' => 'unknown_provider'], 404);
+        }
+
         try {
             $gateway = $this->manager->driver($provider);
         } catch (InvalidArgumentException) {

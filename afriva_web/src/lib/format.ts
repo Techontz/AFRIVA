@@ -1,4 +1,15 @@
 import clsx, { type ClassValue } from "clsx";
+import { getLang, type Vars } from "./i18n";
+
+/** Date locale for the active UI language. Browser only; server renders stay English. */
+function dateLocale(): string {
+  return typeof window !== "undefined" && getLang() === "sw" ? "sw-TZ" : "en-GB";
+}
+
+type Translate = (text: string, vars?: Vars) => string;
+
+const english: Translate = (text, vars) =>
+  vars ? text.replace(/\{(\w+)\}/g, (m, k: string) => (k in vars ? String(vars[k] ?? "") : m)) : text;
 
 export const cn = (...args: ClassValue[]) => clsx(args);
 
@@ -26,10 +37,10 @@ export function formatDuration(seconds: number | null | undefined): string {
 }
 
 export function formatDate(value: string | null | undefined, withTime = false): string {
-  if (!value) return "—";
+  if (!value) return "-";
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return value;
-  return d.toLocaleDateString("en-GB", {
+  return d.toLocaleDateString(dateLocale(), {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -40,7 +51,7 @@ export function formatDate(value: string | null | undefined, withTime = false): 
 export function shortDate(value: string): string {
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return value;
-  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  return d.toLocaleDateString(dateLocale(), { day: "numeric", month: "short" });
 }
 
 export function initials(name: string | null | undefined): string {
@@ -52,22 +63,28 @@ export function initials(name: string | null | undefined): string {
     .join("");
 }
 
-export function planSummary(plan: {
-  type: string;
-  duration_days: number | null;
-  episode_quota: number | null;
-  coins: number | null;
-  bonus_coins: number | null;
-}): string {
+/** Pass `t` from useT() to get the summary in the active language. */
+export function planSummary(
+  plan: {
+    type: string;
+    duration_days: number | null;
+    episode_quota: number | null;
+    coins: number | null;
+    bonus_coins: number | null;
+  },
+  t: Translate = english,
+): string {
   switch (plan.type) {
     case "weekly":
     case "monthly":
     case "yearly":
-      return `${plan.duration_days ?? ""} days unlimited VIP`.trim();
+      return t("{n} days unlimited VIP", { n: plan.duration_days ?? "" }).trim();
     case "episodes":
-      return `Unlock any ${plan.episode_quota ?? 0} episodes`;
+      return t("Unlock any {n} episodes", { n: plan.episode_quota ?? 0 });
     case "coins":
-      return `${formatNumber(plan.coins)} coins${plan.bonus_coins ? ` + ${plan.bonus_coins} bonus` : ""}`;
+      return plan.bonus_coins
+        ? t("{n} coins + {bonus} bonus", { n: formatNumber(plan.coins), bonus: plan.bonus_coins })
+        : t("{n} coins", { n: formatNumber(plan.coins) });
     default:
       return "";
   }

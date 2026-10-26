@@ -6,14 +6,15 @@ import { toast } from "sonner";
 import { LoadError, str } from "@/components/admin/helpers";
 import { DataTable, PageHeader, Pagination, SearchBox, Toolbar } from "@/components/portal/Kit";
 import { Button } from "@/components/ui/Button";
-import { StatusPill } from "@/components/ui/Feedback";
-import { Field, Input, Textarea } from "@/components/ui/Form";
+import { Pill, StatusPill } from "@/components/ui/Feedback";
+import { Field, Input, Select, Textarea } from "@/components/ui/Form";
 import { Icon } from "@/components/ui/Icon";
 import { ConfirmModal, Modal } from "@/components/ui/Modal";
 import { api, errorMessage } from "@/lib/api";
-import { initials } from "@/lib/format";
+import { formatDate, initials } from "@/lib/format";
 import { useDebounced, useList } from "@/lib/hooks";
 import type { Company } from "@/lib/types";
+import { useT } from "@/lib/i18n";
 
 interface Form {
   name: string;
@@ -44,8 +45,9 @@ const empty: Form = {
 export default function CompaniesPage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [status, setStatus] = useState("");
   const q = useDebounced(search);
-  const { items, meta, loading, error, reload, setItems } = useList<Company>("/admin/companies", { search: q, page });
+  const { items, meta, loading, error, reload, setItems } = useList<Company>("/admin/companies", { q, status, page });
 
   const [editing, setEditing] = useState<Company | null>(null);
   const [open, setOpen] = useState(false);
@@ -53,6 +55,7 @@ export default function CompaniesPage() {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<Company | null>(null);
   const [busy, setBusy] = useState(false);
+  const t = useT();
 
   const set = (k: keyof Form) => (e: { target: { value: string } }) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
@@ -97,10 +100,10 @@ export default function CompaniesPage() {
       if (editing) {
         const updated = await api.put<Company>(`/admin/companies/${editing.id}`, body);
         setItems((list) => list.map((c) => (c.id === editing.id ? { ...c, ...body, ...(updated ?? {}) } as Company : c)));
-        toast.success("Company updated");
+        toast.success(t("Creator updated"));
       } else {
         await api.post<Company>("/admin/companies", body);
-        toast.success("Company created — owner can now log in to the Studio");
+        toast.success(t("Creator created. The owner can now log in to the Studio"));
         reload();
       }
       setOpen(false);
@@ -112,11 +115,17 @@ export default function CompaniesPage() {
   };
 
   const toggleStatus = async (c: Company) => {
-    const status = c.status === "active" ? "suspended" : "active";
+    const status: Company["status"] = c.status === "active" ? "suspended" : "active";
     setItems((list) => list.map((x) => (x.id === c.id ? { ...x, status } : x)));
     try {
       await api.put(`/admin/companies/${c.id}`, { status });
-      toast.success(status === "active" ? `${c.name} reactivated` : `${c.name} suspended`);
+      toast.success(
+        status === "active"
+          ? c.status === "pending"
+            ? t("{name} approved. They can now send work for review", { name: c.name })
+            : t("{name} reactivated", { name: c.name })
+          : t("{name} suspended", { name: c.name }),
+      );
     } catch (err) {
       setItems((list) => list.map((x) => (x.id === c.id ? { ...x, status: c.status } : x)));
       toast.error(errorMessage(err));
@@ -129,7 +138,7 @@ export default function CompaniesPage() {
     try {
       await api.del(`/admin/companies/${deleting.id}`);
       setItems((list) => list.filter((x) => x.id !== deleting.id));
-      toast.success("Company deleted");
+      toast.success(t("Creator deleted"));
       setDeleting(null);
     } catch (err) {
       toast.error(errorMessage(err));
@@ -141,11 +150,11 @@ export default function CompaniesPage() {
   return (
     <>
       <PageHeader
-        title="Companies"
-        description="Studios and production houses publishing on Afriva."
+        title="Creators"
+        description="Studios and individual creators. New applications from the app wait here for approval."
         actions={
           <Button onClick={openCreate}>
-            <Icon name="plus" size={18} /> New company
+            <Icon name="plus" size={18} /> {t("New creator")}
           </Button>
         }
       />
@@ -156,8 +165,14 @@ export default function CompaniesPage() {
             setSearch(v);
             setPage(1);
           }}
-          placeholder="Search companies…"
+          placeholder="Search creators…"
         />
+        <Select className="sm:w-44" value={status} onChange={(e) => (setStatus(e.target.value), setPage(1))} aria-label={t("Filter by status")}>
+          <option value="">{t("All statuses")}</option>
+          <option value="pending">{t("Waiting for approval")}</option>
+          <option value="active">{t("Active")}</option>
+          <option value="suspended">{t("Suspended")}</option>
+        </Select>
       </Toolbar>
 
       {error && !items.length ? (
@@ -171,7 +186,7 @@ export default function CompaniesPage() {
             columns={[
               {
                 key: "name",
-                header: "Company",
+                header: "Creator",
                 render: (c) => (
                   <div className="flex items-center gap-3">
                     <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-xl bg-surface-2 text-xs font-bold">
@@ -186,15 +201,32 @@ export default function CompaniesPage() {
                       <Link href={`/admin/companies/${c.id}`} className="truncate font-semibold hover:text-primary">
                         {c.name}
                       </Link>
-                      <p className="truncate text-xs text-text-dim">{c.email ?? c.owner?.email ?? "—"}</p>
+                      <p className="truncate text-xs text-text-dim">{c.email ?? c.owner?.email ?? "-"}</p>
                     </div>
                   </div>
                 ),
               },
-              { key: "country", header: "Country", render: (c) => c.country ?? "—" },
+              { key: "country", header: "Country", render: (c) => c.country ?? "-" },
               { key: "share", header: "Revenue share", render: (c) => `${Number(c.revenue_share_percent)}%` },
-              { key: "dramas", header: "Dramas", render: (c) => c.dramas_count ?? "—" },
-              { key: "status", header: "Status", render: (c) => <StatusPill status={c.status} /> },
+              { key: "dramas", header: "Series", render: (c) => c.dramas_count ?? "-" },
+              {
+                key: "agreement",
+                header: "Agreement",
+                render: (c) =>
+                  c.agreement_accepted_at ? (
+                    <span className="text-xs">
+                      <Icon name="check" size={13} className="inline text-success" /> {formatDate(c.agreement_accepted_at)}
+                      {c.agreement_version ? ` · v${c.agreement_version}` : ""}
+                    </span>
+                  ) : (
+                    <Pill tone="gold">{t("Not accepted")}</Pill>
+                  ),
+              },
+              {
+                key: "status",
+                header: "Status",
+                render: (c) => (c.status === "pending" ? <Pill tone="info">{t("Waiting for approval")}</Pill> : <StatusPill status={c.status} />),
+              },
               {
                 key: "actions",
                 header: "",
@@ -202,18 +234,18 @@ export default function CompaniesPage() {
                 render: (c) => (
                   <div className="flex justify-end gap-1">
                     <Button size="sm" variant="ghost" href={`/admin/companies/${c.id}`}>
-                      Stats
+                      {t("Stats")}
                     </Button>
                     <Button size="sm" variant="ghost" onClick={() => openEdit(c)}>
-                      Edit
+                      {t("Edit")}
                     </Button>
-                    <Button size="sm" variant={c.status === "active" ? "ghost" : "secondary"} onClick={() => toggleStatus(c)}>
-                      {c.status === "active" ? "Suspend" : "Activate"}
+                    <Button size="sm" variant={c.status === "active" ? "ghost" : "primary"} onClick={() => toggleStatus(c)}>
+                      {c.status === "active" ? t("Suspend") : c.status === "pending" ? t("Approve") : t("Activate")}
                     </Button>
                     <button
                       onClick={() => setDeleting(c)}
                       className="grid h-8 w-8 place-items-center rounded-full text-text-dim hover:bg-danger/15 hover:text-danger"
-                      aria-label={`Delete ${c.name}`}
+                      aria-label={t("Delete {name}", { name: c.name })}
                     >
                       <Icon name="trash" size={16} />
                     </button>
@@ -226,9 +258,9 @@ export default function CompaniesPage() {
         </>
       )}
 
-      <Modal open={open} onClose={() => setOpen(false)} title={editing ? `Edit ${editing.name}` : "New company"} size="lg">
+      <Modal open={open} onClose={() => setOpen(false)} title={editing ? t("Edit {name}", { name: editing.name }) : "New creator"} size="lg">
         <form onSubmit={save} className="grid gap-4 sm:grid-cols-2">
-          <Field label="Company name" className="sm:col-span-2">
+          <Field label="Creator / studio name" className="sm:col-span-2">
             <Input required value={form.name} onChange={set("name")} placeholder="Kilima Studios" />
           </Field>
           <Field label="Email">
@@ -240,7 +272,7 @@ export default function CompaniesPage() {
           <Field label="Country (ISO code)">
             <Input value={form.country} onChange={set("country")} maxLength={2} />
           </Field>
-          <Field label="Revenue share %" hint="Company's share of attributed revenue">
+          <Field label="Revenue share %" hint="Creator's share of attributed revenue">
             <Input type="number" min={0} max={100} step="0.01" value={form.revenue_share_percent} onChange={set("revenue_share_percent")} />
           </Field>
           <Field label="Logo URL" className="sm:col-span-2">
@@ -252,7 +284,7 @@ export default function CompaniesPage() {
           {!editing && (
             <div className="rounded-2xl border border-border bg-surface-2/50 p-4 sm:col-span-2">
               <p className="mb-3 flex items-center gap-2 text-sm font-bold">
-                <Icon name="user" size={16} /> Studio owner login
+                <Icon name="user" size={16} /> {t("Studio owner login")}
               </p>
               <div className="grid gap-3 sm:grid-cols-3">
                 <Field label="Owner name">
@@ -269,10 +301,10 @@ export default function CompaniesPage() {
           )}
           <div className="flex justify-end gap-2 sm:col-span-2">
             <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
-              Cancel
+              {t("Cancel")}
             </Button>
             <Button type="submit" loading={saving}>
-              {editing ? "Save changes" : "Create company"}
+              {editing ? t("Save changes") : t("Create creator")}
             </Button>
           </div>
         </form>
@@ -284,11 +316,11 @@ export default function CompaniesPage() {
         onConfirm={remove}
         loading={busy}
         danger
-        title="Delete company?"
+        title="Delete creator?"
         message={
           <>
-            This permanently removes <b className="text-text">{deleting?.name}</b>. Consider suspending instead to keep its
-            history.
+            {t("This permanently removes")} <b className="text-text">{deleting?.name}</b>.{" "}
+            {t("Consider suspending instead to keep its history.")}
           </>
         }
         confirmLabel="Delete"

@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../core/i18n.dart';
 import '../../core/theme.dart';
 
 /// Holds card form fields. Only a non-sensitive summary is ever sent.
@@ -47,22 +48,22 @@ class _CardFormState extends State<CardForm> {
       children: [
         _CardPreview(controller: c, brandCode: widget.brandCode),
         const SizedBox(height: 16),
-        Text('Card details', style: text.titleSmall),
+        Text(context.tr('Card details'), style: text.titleSmall),
         const SizedBox(height: 10),
         TextFormField(
           controller: c.number,
           keyboardType: TextInputType.number,
           autofillHints: const [AutofillHints.creditCardNumber],
           inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(19), _CardNumberFormatter()],
-          decoration: const InputDecoration(
-            labelText: 'Card number',
+          decoration: InputDecoration(
+            labelText: context.tr('Card number'),
             hintText: '1234 5678 9012 3456',
-            prefixIcon: Icon(Icons.credit_card_rounded),
+            prefixIcon: const Icon(Icons.credit_card_rounded),
           ),
           onChanged: (_) => setState(() {}),
           validator: (v) {
             final d = (v ?? '').replaceAll(RegExp(r'\D'), '');
-            if (d.length < 13 || !_luhn(d)) return 'Enter a valid card number';
+            if (d.length < 13 || !_luhn(d)) return context.tr('Enter a valid card number');
             return null;
           },
         ),
@@ -76,17 +77,17 @@ class _CardFormState extends State<CardForm> {
                 keyboardType: TextInputType.number,
                 autofillHints: const [AutofillHints.creditCardExpirationDate],
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(4), _ExpiryFormatter()],
-                decoration: const InputDecoration(labelText: 'Expiry', hintText: 'MM/YY'),
+                decoration: InputDecoration(labelText: context.tr('Expiry'), hintText: 'MM/YY'),
                 onChanged: (_) => setState(() {}),
                 validator: (v) {
                   final parts = (v ?? '').split('/');
                   if (parts.length != 2) return 'MM/YY';
                   final mm = int.tryParse(parts[0]) ?? 0;
                   final yy = int.tryParse(parts[1]) ?? 0;
-                  if (mm < 1 || mm > 12) return 'Invalid month';
+                  if (mm < 1 || mm > 12) return context.tr('Invalid month');
                   final now = DateTime.now();
                   final exp = DateTime(2000 + yy, mm + 1);
-                  if (exp.isBefore(now)) return 'Card expired';
+                  if (exp.isBefore(now)) return context.tr('Card expired');
                   return null;
                 },
               ),
@@ -100,7 +101,7 @@ class _CardFormState extends State<CardForm> {
                 autofillHints: const [AutofillHints.creditCardSecurityCode],
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(4)],
                 decoration: const InputDecoration(labelText: 'CVC', hintText: '123'),
-                validator: (v) => (v ?? '').length < 3 ? 'Invalid CVC' : null,
+                validator: (v) => (v ?? '').length < 3 ? context.tr('Invalid CVC') : null,
               ),
             ),
           ],
@@ -110,9 +111,9 @@ class _CardFormState extends State<CardForm> {
           controller: c.name,
           textCapitalization: TextCapitalization.characters,
           autofillHints: const [AutofillHints.creditCardName],
-          decoration: const InputDecoration(labelText: 'Name on card', prefixIcon: Icon(Icons.person_outline_rounded)),
+          decoration: InputDecoration(labelText: context.tr('Name on card'), prefixIcon: const Icon(Icons.person_outline_rounded)),
           onChanged: (_) => setState(() {}),
-          validator: (v) => (v ?? '').trim().isEmpty ? 'Enter the name on the card' : null,
+          validator: (v) => (v ?? '').trim().isEmpty ? context.tr('Enter the name on the card') : null,
         ),
       ],
     );
@@ -144,7 +145,7 @@ class _CardPreview extends StatelessWidget {
     final isVisa = brandCode == 'visa';
     final d = controller.digits.padRight(16, '•');
     final groups = [for (var i = 0; i < 16; i += 4) d.substring(i, i + 4)].join('  ');
-    final name = controller.name.text.trim().isEmpty ? 'CARDHOLDER NAME' : controller.name.text.toUpperCase();
+    final name = controller.name.text.trim().isEmpty ? context.tr('CARDHOLDER NAME') : controller.name.text.toUpperCase();
     final exp = controller.expiry.text.isEmpty ? 'MM/YY' : controller.expiry.text;
     return AspectRatio(
       aspectRatio: 1.7,

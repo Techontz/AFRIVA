@@ -3,19 +3,26 @@ import { Suspense } from "react";
 import { PortalShell, type NavItem } from "@/components/portal/PortalShell";
 import { PortalFallback } from "@/components/portal/PortalFallback";
 
-export const metadata: Metadata = { title: { default: "Admin", template: "%s · Afriva Admin" } };
+export const metadata: Metadata = { title: { default: "Msimamizi", template: "%s · AFRIVA Admin" } };
 
+// Scope §05/§06 navigation; each item is shown only to staff roles with the permission (SPEC §8.6).
 const nav: NavItem[] = [
-  { href: "/admin", label: "Dashboard", icon: "chart", exact: true },
-  { href: "/admin/companies", label: "Companies", icon: "building" },
-  { href: "/admin/dramas", label: "Dramas", icon: "film" },
-  { href: "/admin/plans", label: "Plans", icon: "crown" },
-  { href: "/admin/categories", label: "Categories", icon: "tag" },
-  { href: "/admin/payment-methods", label: "Payment Methods", icon: "card" },
-  { href: "/admin/users", label: "Users", icon: "users" },
-  { href: "/admin/payments", label: "Payments", icon: "wallet" },
-  { href: "/admin/payouts", label: "Payouts", icon: "payout" },
-  { href: "/admin/settings", label: "Settings", icon: "settings" },
+  { href: "/admin", label: "Overview", icon: "chart", exact: true, perm: "dashboard" },
+  { href: "/admin/reviews", label: "Review", icon: "shield", perm: "review" },
+  { href: "/admin/dramas", label: "Series & Episodes", icon: "film", perm: ["content", "review", "publish"] },
+  { href: "/admin/videos", label: "Video Library", icon: "play", perm: "content" },
+  { href: "/admin/companies", label: "Creators", icon: "building", perm: "creators" },
+  { href: "/admin/payments", label: "Transactions", icon: "wallet", perm: "finance" },
+  { href: "/admin/analytics", label: "Analytics", icon: "trophy", perm: "analytics" },
+  { href: "/admin/reports", label: "Reports", icon: "alert", perm: "reports" },
+  { href: "/admin/users", label: "Users", icon: "users", perm: "users" },
+  { href: "/admin/settings", label: "Settings", icon: "settings", perm: "settings" },
+  { href: "/admin/categories", label: "Categories", icon: "tag", perm: "content", section: "More" },
+  { href: "/admin/plans", label: "Plans", icon: "crown", perm: "finance" },
+  { href: "/admin/payment-methods", label: "Payment Methods", icon: "card", perm: "finance" },
+  { href: "/admin/payouts", label: "Creator payouts", icon: "payout", perm: "finance" },
+  { href: "/admin/staff", label: "Staff", icon: "user", perm: "staff" },
+  { href: "/admin/audit-logs", label: "Audit log", icon: "history", perm: "audit" },
 ];
 
 export default function AdminLayout({ children }: LayoutProps<"/admin">) {

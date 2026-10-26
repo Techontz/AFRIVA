@@ -12,34 +12,60 @@ use App\Models\EpisodeUnlock;
 use App\Models\EpisodeView;
 use App\Models\User;
 use App\Models\WatchHistory;
+use App\Services\AnalyticsService;
+use App\Services\CoinLedger;
 use App\Services\EarningsService;
 use App\Services\EpisodeAccessService;
+use App\Support\VideoUrl;
 use App\Support\Viewer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class EpisodeController extends Controller
 {
     public function __construct(
         protected EpisodeAccessService $access,
         protected EarningsService $earnings,
+        protected CoinLedger $coins,
+        protected AnalyticsService $analytics,
     ) {}
 
+    /** Viewers only reach approved episodes of live series; staff and the owning creator can preview anything. */
     protected function findEpisode(int $id): Episode
     {
         $episode = Episode::with('drama.company')->findOrFail($id);
-        if ($episode->drama->status !== 'published') {
+        if (! $episode->drama->isLive() || ! $episode->isApproved()) {
             $user = Viewer::user();
             $canPreview = $user && ($user->isSuperAdmin() || ($user->isCompany() && $user->company_id === $episode->drama->company_id));
             if (! $canPreview) {
-                throw new ApiException('Resource not found.', 'not_found', 404);
+                throw new ApiException('Hakipatikani.', 'not_found', 404);
             }
         }
 
         return $episode;
     }
 
-    /** GET /episodes/{id}/play — auth optional. */
+    /** @return array<string,mixed> */
+    protected function lockedPayload(Episode $episode, ?User $user): array
+    {
+        $drama = $episode->drama;
+        $pack = $user?->activeEpisodePack();
+
+        return [
+            'episode_id' => $episode->id,
+            'coins_required' => $drama->access_mode === 'vip_only' ? 0 : (int) $drama->coins_per_episode,
+            'user_coins' => (int) ($user?->coins ?? 0),
+            'can_use_coins' => $drama->access_mode !== 'vip_only',
+            'can_use_pack' => $drama->access_mode !== 'vip_only' && (bool) $pack,
+            'can_use_vip' => $drama->access_mode !== 'coins_only',
+            'vip_only' => $drama->access_mode === 'vip_only',
+            'episodes_remaining' => (int) ($pack?->episodes_remaining ?? 0),
+            'requires_login' => $user === null,
+        ];
+    }
+
+    /** GET /episodes/{id}/play, auth optional. */
     public function play(int $id): JsonResponse
     {
         $episode = $this->findEpisode($id);
@@ -47,19 +73,13 @@ class EpisodeController extends Controller
         $user = Viewer::user();
 
         if (! $this->access->canWatch($user, $episode)) {
-            throw new ApiException(
-                $user ? 'This episode is locked. Subscribe to VIP or unlock it with coins.' : 'This episode is locked. Log in and subscribe or unlock it with coins.',
-                'episode_locked',
-                402,
-                ['unlock' => [
-                    'episode_id' => $episode->id,
-                    'coins_required' => (int) $drama->coins_per_episode,
-                    'user_coins' => (int) ($user?->coins ?? 0),
-                    'can_use_pack' => (bool) $user?->activeEpisodePack(),
-                    'episodes_remaining' => (int) ($user?->activeEpisodePack()?->episodes_remaining ?? 0),
-                    'requires_login' => $user === null,
-                ]]
-            );
+            $message = match (true) {
+                $user === null => 'Episode hii imefungwa. Ingia kisha ujiunge na VIP au uifungue kwa coins.',
+                $drama->access_mode === 'vip_only' => 'Episode hii ni ya wanachama wa VIP pekee.',
+                $drama->access_mode === 'coins_only' => 'Episode hii imefungwa. Ifungue kwa coins au kifurushi cha episodes.',
+                default => 'Episode hii imefungwa. Jiunge na VIP au uifungue kwa coins.',
+            };
+            throw new ApiException($message, 'episode_locked', 402, ['unlock' => $this->lockedPayload($episode, $user)]);
         }
 
         DB::transaction(function () use ($episode, $drama, $user) {
@@ -73,24 +93,42 @@ class EpisodeController extends Controller
             Episode::whereKey($episode->id)->increment('views');
             $drama->newQuery()->whereKey($drama->id)->increment('views');
 
-            if ($user) {
+        });
+
+        // Resume where the viewer left off in this episode; starting a different episode does not wipe that progress.
+        $resume = 0;
+        if ($user) {
+            $history = WatchHistory::where('user_id', $user->id)->where('drama_id', $drama->id)->first();
+            if ($history && (int) $history->episode_id === $episode->id) {
+                $resume = (int) $history->progress_seconds;
+            } else {
                 WatchHistory::updateOrCreate(
                     ['user_id' => $user->id, 'drama_id' => $drama->id],
                     ['episode_id' => $episode->id, 'progress_seconds' => 0],
                 );
             }
-        });
+        }
+        $duration = (int) $episode->duration_seconds;
+        if ($duration > 0 && $resume >= $duration - 5) {
+            $resume = 0;
+        }
+        $this->analytics->markActive($user, request());
 
-        $siblings = Episode::where('drama_id', $drama->id)
-            ->whereIn('number', [$episode->number - 1, $episode->number + 1])
-            ->pluck('id', 'number');
+        $prev = Episode::where('drama_id', $drama->id)->approved()->where('number', '<', $episode->number)->orderByDesc('number')->value('id');
+        $next = Episode::where('drama_id', $drama->id)->approved()->where('number', '>', $episode->number)->orderBy('number')->value('id');
 
         return $this->ok([
-            'video_url' => $episode->video_url,
+            'video_url' => VideoUrl::primary($episode),
+            'sources' => VideoUrl::sources($episode),
+            'subtitle_url' => $episode->subtitle_url,
+            'resume_seconds' => $resume,
+            // Send back with POST /events so watch time, completion and errors are tied to this playback.
+            'session_id' => (string) Str::uuid(),
             'episode' => (new EpisodeResource($episode))->withVideo(),
-            'drama' => ['id' => $drama->id, 'slug' => $drama->slug, 'title' => $drama->title, 'total_episodes' => (int) $drama->total_episodes, 'poster_url' => $drama->poster_url],
-            'next_episode_id' => $siblings[$episode->number + 1] ?? null,
-            'prev_episode_id' => $siblings[$episode->number - 1] ?? null,
+            'drama' => ['id' => $drama->id, 'slug' => $drama->slug, 'title' => $drama->title, 'total_episodes' => (int) $drama->total_episodes,
+                'free_episodes' => (int) $drama->free_episodes, 'poster_url' => $drama->poster_url],
+            'next_episode_id' => $next,
+            'prev_episode_id' => $prev,
         ]);
     }
 
@@ -107,20 +145,21 @@ class EpisodeController extends Controller
             return $this->ok($this->unlockPayload($episode, $user, $method, true));
         }
 
+        if ($drama->access_mode === 'vip_only') {
+            throw new ApiException('Episode hii ni ya wanachama wa VIP pekee; haiwezi kufunguliwa kwa coins.', 'vip_required', 402,
+                ['unlock' => $this->lockedPayload($episode, $user)]);
+        }
+
         DB::transaction(function () use ($episode, $drama, $user, $method) {
             $user = User::whereKey($user->id)->lockForUpdate()->first();
 
             if ($method === 'coins') {
                 $cost = (int) $drama->coins_per_episode;
                 if ($user->coins < $cost) {
-                    throw new ApiException('Not enough coins to unlock this episode.', 'insufficient_coins', 402, ['unlock' => [
-                        'episode_id' => $episode->id,
-                        'coins_required' => $cost,
-                        'user_coins' => (int) $user->coins,
-                        'can_use_pack' => (bool) $user->activeEpisodePack(),
-                    ]]);
+                    throw new ApiException('Huna coins za kutosha kufungua episode hii.', 'insufficient_coins', 402,
+                        ['unlock' => $this->lockedPayload($episode, $user)]);
                 }
-                $user->decrement('coins', $cost);
+                $this->coins->debit($user, $cost, 'unlock', ['episode_id' => $episode->id], "{$drama->title} · Episode {$episode->number}");
                 EpisodeUnlock::create([
                     'user_id' => $user->id, 'episode_id' => $episode->id, 'method' => 'coins', 'coins_spent' => $cost,
                 ]);
@@ -128,12 +167,8 @@ class EpisodeController extends Controller
             } else {
                 $pack = $user->activeEpisodePack();
                 if (! $pack) {
-                    throw new ApiException('You have no active episode pack.', 'no_episode_pack', 402, ['unlock' => [
-                        'episode_id' => $episode->id,
-                        'coins_required' => (int) $drama->coins_per_episode,
-                        'user_coins' => (int) $user->coins,
-                        'can_use_pack' => false,
-                    ]]);
+                    throw new ApiException('Huna kifurushi cha episodes kinachotumika.', 'no_episode_pack', 402,
+                        ['unlock' => $this->lockedPayload($episode, $user)]);
                 }
                 $pack->episodes_remaining = $pack->episodes_remaining - 1;
                 if ($pack->episodes_remaining <= 0) {

@@ -4,18 +4,19 @@ import { VipCheckout } from "@/components/site/VipCheckout";
 import { ApiDownState } from "@/components/ui/Feedback";
 import { Icon } from "@/components/ui/Icon";
 import { asArray } from "@/lib/api";
+import { T } from "@/lib/i18n";
 import { serverGet } from "@/lib/server-api";
 import type { PaymentMethod, Plan } from "@/lib/types";
 
 export const metadata: Metadata = {
-  title: "VIP",
-  description: "Go VIP on Afriva: unlimited episodes, episode packs and coins. Pay with M-Pesa, Mixx by Yas, Airtel Money, HaloPesa, cards or bank.",
+  title: "VIP na Coins",
+  description: "Jiunge na VIP ya AFRIVA, nunua vifurushi vya episode au coins. Lipa kwa M-Pesa, Mixx by Yas, Airtel Money, HaloPesa au kadi za kimataifa.",
 };
 
 const PERKS = [
   { icon: "play", title: "Every episode", text: "No locks, no waiting" },
   { icon: "sparkles", title: "New drops daily", text: "Fresh twists every day" },
-  { icon: "phone", title: "Pay your way", text: "Mobile money, card or bank" },
+  { icon: "phone", title: "Pay your way", text: "Mobile money or international cards" },
 ] as const;
 
 export default function VipPage({ searchParams }: PageProps<"/vip">) {
@@ -28,18 +29,25 @@ export default function VipPage({ searchParams }: PageProps<"/vip">) {
             <Icon name="crown" size={14} /> Afriva VIP
           </span>
           <h1 className="mt-4 text-3xl font-extrabold tracking-tight sm:text-5xl">
-            Binge every twist. <span className="text-primary">Skip every lock.</span>
+            <T>Binge every twist.</T>{" "}
+            <span className="text-primary">
+              <T>Skip every lock.</T>
+            </span>
           </h1>
           <p className="mt-3 text-[15px] text-text-muted">
-            Choose a VIP pass for unlimited watching, an episode pack, or top up coins to unlock episodes one by one.
+            <T>Choose a VIP pass for unlimited watching, an episode pack, or top up coins to unlock episodes one by one.</T>
           </p>
         </div>
         <div className="mx-auto mt-8 grid max-w-3xl grid-cols-3 gap-2 sm:gap-4">
           {PERKS.map((p) => (
             <div key={p.title} className="rounded-2xl border border-border bg-surface/60 p-3 text-center sm:p-4">
               <Icon name={p.icon} className="mx-auto text-primary" />
-              <p className="mt-2 text-xs font-bold sm:text-sm">{p.title}</p>
-              <p className="mt-0.5 hidden text-xs text-text-dim sm:block">{p.text}</p>
+              <p className="mt-2 text-xs font-bold sm:text-sm">
+                <T>{p.title}</T>
+              </p>
+              <p className="mt-0.5 hidden text-xs text-text-dim sm:block">
+                <T>{p.text}</T>
+              </p>
             </div>
           ))}
         </div>

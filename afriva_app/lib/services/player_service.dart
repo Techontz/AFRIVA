@@ -29,6 +29,16 @@ class PlayerService {
   Future<Json> unlock(int episodeId, String method) async =>
       asMap(await _api.post('/episodes/$episodeId/unlock', body: {'method': method}));
 
+  /// Player analytics (SPEC §8.3). Best-effort: never throws.
+  Future<void> sendEvents(List<Json> events) async {
+    if (events.isEmpty) return;
+    try {
+      await _api.post('/events', body: {'events': events});
+    } on ApiException {
+      // Analytics must never interrupt playback.
+    }
+  }
+
   Future<void> saveProgress(int episodeId, int seconds) async {
     if (!_api.hasToken) return;
     try {

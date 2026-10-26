@@ -4,10 +4,13 @@ import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/haptics.dart';
+import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import '../../models/drama.dart';
 import '../../models/home.dart';
 import '../../services/catalog_service.dart';
+import '../../state/auth_state.dart';
+import '../../widgets/net_image.dart';
 import '../../widgets/afriva_logo.dart';
 import '../../widgets/poster_card.dart';
 import '../../widgets/skeletons.dart';
@@ -44,7 +47,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final tabs = <String>['Home', 'Popular', 'New', ..._categories.map((c) => c.name)];
+    final tabs = <String>[
+      context.tr('Home'),
+      context.tr('Popular'),
+      context.tr('New'),
+      ..._categories.map((c) => c.name),
+    ];
     return DefaultTabController(
       key: ValueKey(tabs.length),
       length: tabs.length,
@@ -89,16 +97,16 @@ class _HomeHeader extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(16, 10, 12, 10),
               child: Row(
                 children: [
-                  const AfrivaLogo(size: 20, color: Colors.white),
+                  const AfrivaLogo(size: 20),
                   const SizedBox(width: 14),
                   Expanded(
                     child: GestureDetector(
                       onTap: () {
                         Haptics.tap();
-                        context.push('/search');
+                        context.go('/search');
                       },
                       child: Hero(
-                        tag: 'search-field',
+                        tag: 'search-field-home',
                         child: Material(
                           type: MaterialType.transparency,
                           child: Container(
@@ -112,7 +120,7 @@ class _HomeHeader extends StatelessWidget {
                               children: [
                                 Expanded(
                                   child: Text(
-                                    'Search',
+                                    context.tr('Search'),
                                     overflow: TextOverflow.ellipsis,
                                     style: text.bodyMedium!
                                         .copyWith(color: AppColors.topBarHint, fontSize: 13.5),
@@ -128,7 +136,7 @@ class _HomeHeader extends StatelessWidget {
                   ),
                   const SizedBox(width: 10),
                   Tooltip(
-                    message: 'Help & support',
+                    message: context.tr('Help & support'),
                     child: Material(
                       color: AppColors.topBarField,
                       shape: const CircleBorder(),
@@ -216,7 +224,7 @@ class _PopularTabState extends State<_PopularTab> with AutomaticKeepAliveClientM
       return;
     }
     final key = s.key.toLowerCase().replaceAll('_', '-');
-    final cat = widget.categories.where((c) => c.slug == key || key.contains(c.slug)).firstOrNull;
+    final cat = widget.categories.where((c) => c.slug == s.category || c.slug == key || key.contains(c.slug)).firstOrNull;
     final sort = key.contains('new') ? 'newest' : 'popular';
     final params = <String, String>{
       'title': s.title,
@@ -245,53 +253,39 @@ class _PopularTabState extends State<_PopularTab> with AutomaticKeepAliveClientM
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
+          const SliverToBoxAdapter(child: _Greeting()),
           if (data.banners.isNotEmpty)
             SliverToBoxAdapter(child: FeaturedBlock(dramas: data.banners)),
+          const SliverToBoxAdapter(child: _ForYouEntry()),
           if (data.banners.isEmpty && data.sections.isEmpty)
-            const SliverFillRemaining(
+            SliverFillRemaining(
               hasScrollBody: false,
               child: StateMessage(
                 icon: Icons.movie_filter_outlined,
-                title: 'Nothing to watch yet',
-                message: 'Our studios are busy filming. Pull down to refresh.',
+                title: context.tr('Nothing to watch yet'),
+                message: context.tr('Our studios are busy filming. Pull down to refresh.'),
               ),
             ),
-          for (final s in _ordered(data.sections)) ..._section(s),
+          // The API already orders sections per scope §02: Endelea kutazama, Zinazovuma, Mpya, categories.
+          for (final s in data.sections) ..._section(s),
           SliverToBoxAdapter(child: SizedBox(height: bottom)),
         ],
       ),
     );
   }
 
-  /// Featured banner first, then Must-sees, Trending, Hidden Gems, then
-  /// category sections, then anything else the API sends.
-  List<HomeSection> _ordered(List<HomeSection> sections) {
-    String norm(String k) => k.toLowerCase().replaceAll('_', '-');
-    const lead = ['must-watch', 'must-sees', 'must-see', 'trending', 'hidden-gems'];
-    final catSlugs = widget.categories.map((c) => c.slug).toSet();
-    final catKeys = {...catSlugs, 'romance', 'revenge', 'billionaire', 'family', 'village-life'};
-    int rank(HomeSection s) {
-      final k = norm(s.key);
-      final i = lead.indexOf(k);
-      if (i >= 0) return i;
-      if (catKeys.contains(k)) return 10;
-      return 20;
-    }
-
-    final indexed = sections.indexed.toList()
-      ..sort((a, b) {
-        final r = rank(a.$2).compareTo(rank(b.$2));
-        return r != 0 ? r : a.$1.compareTo(b.$1);
-      });
-    return [for (final e in indexed) e.$2];
-  }
-
-  static String _title(HomeSection s) =>
-      s.key.toLowerCase().startsWith('must') ? 'Must-sees' : s.title;
+  String _title(HomeSection s) =>
+      s.key.toLowerCase().startsWith('must') ? context.tr('Must-sees') : s.title;
 
   /// Every section renders as a 3-column poster grid (two rows).
   List<Widget> _section(HomeSection s) {
     if (s.dramas.isEmpty) return const [];
+    if (s.isContinue) {
+      return [
+        SliverToBoxAdapter(child: SectionHeader(title: context.tr('Continue watching'))),
+        SliverToBoxAdapter(child: _ContinueRow(dramas: s.dramas)),
+      ];
+    }
     return [
       SliverToBoxAdapter(child: SectionHeader(title: _title(s), onMore: () => _more(s))),
       SliverPadding(
@@ -303,5 +297,135 @@ class _PopularTabState extends State<_PopularTab> with AutomaticKeepAliveClientM
         ),
       ),
     ];
+  }
+}
+
+/// "Habari! Uangalie nini leo?" under the top bar (scope §03).
+class _Greeting extends StatelessWidget {
+  const _Greeting();
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final name = context.select<AuthState, String?>((a) => a.user?.name.split(' ').first);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+      child: Text(
+        name == null || name.isEmpty
+            ? context.tr('Hello! What would you like to watch today?')
+            : context.tr('Hello {name}! What would you like to watch today?', {'name': name}),
+        style: text.titleMedium!.copyWith(fontWeight: FontWeight.w800),
+      ),
+    );
+  }
+}
+
+/// Entry to the full-screen For You feed (it is no longer a tab).
+class _ForYouEntry extends StatelessWidget {
+  const _ForYouEntry();
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: Material(
+        color: AppColors.topBar,
+        borderRadius: BorderRadius.circular(AppRadii.card),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppRadii.card),
+          onTap: () {
+            Haptics.tap();
+            context.push('/foryou');
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                const Icon(Icons.play_circle_fill_rounded, color: AppColors.primary, size: 30),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(context.tr('For You'), style: text.titleSmall!.copyWith(color: Colors.white)),
+                      Text(
+                        context.tr('Swipe through the first episode of every series'),
+                        style: text.bodySmall!.copyWith(color: Colors.white70),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.chevron_right_rounded, color: Colors.white70),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// "Endelea kutazama": unfinished series with a progress bar; tapping resumes in the player.
+class _ContinueRow extends StatelessWidget {
+  const _ContinueRow({required this.dramas});
+  final List<Drama> dramas;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    return SizedBox(
+      height: 214,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: dramas.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 10),
+        itemBuilder: (context, i) {
+          final d = dramas[i];
+          final resume = d.resume;
+          final ep = resume?.episodeNumber ?? 1;
+          return GestureDetector(
+            onTap: () {
+              Haptics.tap();
+              context.push('/watch/${d.slug}/$ep');
+            },
+            child: SizedBox(
+              width: 112,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(AppRadii.poster),
+                    child: Stack(
+                      children: [
+                        SizedBox(width: 112, height: 150, child: NetImage(d.posterUrl, memCacheWidth: 240)),
+                        const Positioned.fill(
+                          child: Center(child: Icon(Icons.play_circle_fill_rounded, color: Colors.white, size: 36)),
+                        ),
+                        Positioned(
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          child: LinearProgressIndicator(
+                            value: resume?.progress ?? 0,
+                            minHeight: 3,
+                            color: AppColors.primary,
+                            backgroundColor: Colors.white24,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(d.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: text.labelLarge),
+                  Text(context.tr('EP {n}', {'n': ep}), style: text.labelSmall!.copyWith(color: AppColors.textMuted)),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 }

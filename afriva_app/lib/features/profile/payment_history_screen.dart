@@ -1,8 +1,10 @@
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/format.dart';
+import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import '../../models/commerce.dart';
 import '../../services/me_service.dart';
@@ -40,18 +42,18 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
   Widget build(BuildContext context) {
     final items = _items;
     return Scaffold(
-      appBar: AppBar(title: const Text('Payment history')),
+      appBar: AppBar(title: Text(context.tr('Payment history'))),
       body: items == null
           ? (_error != null ? ErrorState(error: _error!, onRetry: _load) : const ListSkeleton(thumbWidth: 40))
           : RefreshIndicator(
               color: AppColors.primary,
               onRefresh: _load,
               child: items.isEmpty
-                  ? const ScrollableFill(
+                  ? ScrollableFill(
                       child: StateMessage(
                         icon: Icons.receipt_long_outlined,
-                        title: 'No payments yet',
-                        message: 'Your VIP, episode pack and coin purchases will appear here.',
+                        title: context.tr('No payments yet'),
+                        message: context.tr('Your VIP, episode pack and coin purchases will appear here.'),
                       ),
                     )
                   : ListView.separated(
@@ -75,15 +77,19 @@ class _PaymentTile extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     final (color, icon) = switch (payment.status) {
       'success' => (AppColors.success, Icons.check_circle_rounded),
+      'refunded' => (AppColors.textMuted, Icons.undo_rounded),
       'failed' || 'cancelled' => (AppColors.danger, Icons.cancel_rounded),
       _ => (AppColors.primary, Icons.schedule_rounded),
     };
-    return Container(
+    // Every confirmed payment has a receipt (scope §07 "risiti na rekodi ya transaction").
+    return Material(
+      color: AppColors.surface,
+      borderRadius: BorderRadius.circular(AppRadii.card),
+      child: InkWell(
+      borderRadius: BorderRadius.circular(AppRadii.card),
+      onTap: payment.hasReceipt ? () => context.push('/receipt/${payment.reference}') : null,
+      child: Padding(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppRadii.card),
-      ),
       child: Row(
         children: [
           Icon(icon, color: color, size: 28),
@@ -92,12 +98,12 @@ class _PaymentTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(payment.planName ?? 'Afriva purchase', style: text.titleSmall),
+                Text(payment.planName ?? context.tr('Afriva purchase'), style: text.titleSmall),
                 const SizedBox(height: 2),
                 GestureDetector(
                   onLongPress: () {
                     Clipboard.setData(ClipboardData(text: payment.reference));
-                    showSnack(context, 'Reference copied');
+                    showSnack(context, context.tr('Reference copied'));
                   },
                   child: Text(
                     '${payment.reference}${payment.methodCode != null ? ' · ${payment.methodCode!.toUpperCase()}' : ''}',
@@ -121,16 +127,30 @@ class _PaymentTile extends StatelessWidget {
                   borderRadius: BorderRadius.circular(AppRadii.pill),
                 ),
                 child: Text(
-                  payment.status.isEmpty
-                      ? 'Pending'
-                      : payment.status[0].toUpperCase() + payment.status.substring(1),
+                  paymentStatusLabel(context, payment.status),
                   style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w700),
                 ),
               ),
+              if (payment.hasReceipt) ...[
+                const SizedBox(height: 4),
+                Text(context.tr('Receipt'), style: text.labelSmall!.copyWith(color: AppColors.primary)),
+              ],
             ],
           ),
         ],
       ),
+      ),
+      ),
     );
   }
 }
+
+/// Localised label for a payment status (`pending | success | failed | cancelled`).
+String paymentStatusLabel(BuildContext context, String status) => switch (status) {
+      '' || 'pending' => context.tr('Pending'),
+      'success' => context.tr('Success'),
+      'failed' => context.tr('Failed'),
+      'cancelled' => context.tr('Cancelled'),
+      'refunded' => context.tr('Refunded'),
+      _ => status[0].toUpperCase() + status.substring(1),
+    };

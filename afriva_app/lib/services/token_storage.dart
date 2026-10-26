@@ -28,7 +28,7 @@ class SecureTokenStorage implements TokenStorage {
     try {
       await _storage.write(key: _key, value: token);
     } catch (_) {
-      // Storage unavailable (e.g. locked keychain) — keep the in-memory session.
+      // Storage unavailable (e.g. locked keychain), keep the in-memory session.
     }
   }
 

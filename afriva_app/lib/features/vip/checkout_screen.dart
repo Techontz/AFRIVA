@@ -1,17 +1,21 @@
 import 'dart:async';
 
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/api_client.dart';
 import '../../core/config.dart';
+import '../../core/device_id.dart';
 import '../../core/format.dart';
 import '../../core/haptics.dart';
+import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import '../../models/commerce.dart';
 import '../../services/commerce_service.dart';
 import '../../state/auth_state.dart';
+import '../profile/payment_history_screen.dart' show paymentStatusLabel;
 import '../../widgets/buttons.dart';
 import '../../widgets/skeletons.dart';
 import '../../widgets/states.dart';
@@ -44,6 +48,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   Timer? _poll;
   DateTime? _pollStarted;
 
+  /// One key per checkout attempt: a retry after a dropped connection reuses it,
+  /// so the server returns the same payment instead of charging twice.
+  String? _attemptKey;
+
   @override
   void initState() {
     super.initState();
@@ -67,7 +75,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       if (!mounted) return;
       setState(() {
         _methods = methods;
-        _method ??= methods.firstOrNull;
+        // Only methods connected to a tested provider can be chosen (scope §07).
+        _method ??= methods.where((m) => m.isAvailable).firstOrNull;
       });
     } catch (e) {
       if (mounted) setState(() => _loadError = e);
@@ -84,7 +93,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   Future<void> _pay() async {
     final m = _method;
-    if (m == null) return;
+    if (m == null || !m.isAvailable) return;
     FocusScope.of(context).unfocus();
     if (!(_formKey.currentState?.validate() ?? true)) return;
     setState(() {
@@ -98,9 +107,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             phone: m.isMobileMoney ? _normalizePhone(_phone.text) : null,
             // Card data never leaves the device in full; the API ignores it for now.
             card: m.isCard ? _card.safeSummary(m.code) : null,
+            idempotencyKey: _attemptKey ??= DeviceId.random(24),
           );
       if (!mounted) return;
       _result = res;
+      if (!res.payment.isPending) _attemptKey = null;
       _payment = res.payment;
       if (res.payment.isSuccess) {
         _onSuccess();
@@ -147,7 +158,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         Haptics.medium();
         setState(() => _stage = _Stage.failed);
       } else if (manual) {
-        showSnack(context, 'Still waiting for confirmation from ${_method?.name ?? 'the provider'}.');
+        final name = _method?.name;
+        showSnack(
+          context,
+          name != null
+              ? context.tr('Still waiting for confirmation from {method}.', {'method': name})
+              : context.tr('Still waiting for confirmation from the provider.'),
+        );
       }
     } on ApiException catch (e) {
       if (manual && mounted) showSnack(context, e.message, error: true);
@@ -168,12 +185,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       canPop: !busy,
       child: Scaffold(
         appBar: AppBar(
-          title: Text(switch (_stage) {
+          title: Text(context.tr(switch (_stage) {
             _Stage.success => 'Payment complete',
             _Stage.pending => 'Confirm payment',
             _Stage.failed => 'Payment failed',
             _ => 'Checkout',
-          }),
+          })),
           leading: IconButton(
             icon: Icon(_stage == _Stage.success ? Icons.close_rounded : Icons.arrow_back_rounded),
             onPressed: busy ? null : () => Navigator.of(context).pop(_stage == _Stage.success),
@@ -229,10 +246,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 Text(p.name, style: text.titleSmall),
                 Text(
                   p.isCoins
-                      ? '${p.coins ?? 0} coins${(p.bonusCoins ?? 0) > 0 ? ' + ${p.bonusCoins} bonus' : ''}'
+                      ? ((p.bonusCoins ?? 0) > 0
+                          ? context.tr('{n} coins + {b} bonus', {'n': p.coins ?? 0, 'b': p.bonusCoins})
+                          : context.tr('{n} coins', {'n': p.coins ?? 0}))
                       : p.isEpisodePack
-                          ? '${p.episodeQuota ?? 0} episode unlocks'
-                          : '${p.durationDays ?? 0} days of VIP',
+                          ? context.tr('{n} episode unlocks', {'n': p.episodeQuota ?? 0})
+                          : context.tr('{n} days of VIP', {'n': p.durationDays ?? 0}),
                   style: text.labelSmall,
                 ),
               ],
@@ -253,15 +272,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           : const ListSkeleton(count: 4);
     }
     if (methods.isEmpty) {
-      return const StateMessage(
+      return StateMessage(
         icon: Icons.credit_card_off_rounded,
-        title: 'No payment methods available',
-        message: 'Please try again later.',
+        title: context.tr('No payment methods available'),
+        message: context.tr('Please try again later.'),
       );
     }
+    // Scope §07: Tanzania pays with mobile money; worldwide with cards / wallets.
     final groups = [
-      ('Mobile Money', Icons.phone_android_rounded, methods.where((m) => m.isMobileMoney).toList()),
-      ('Cards', Icons.credit_card_rounded, methods.where((m) => m.isCard).toList()),
+      ('Tanzania: mobile money', Icons.phone_android_rounded, methods.where((m) => m.isMobileMoney).toList()),
+      ('Worldwide: cards and wallets', Icons.credit_card_rounded, methods.where((m) => m.isCard).toList()),
       ('Bank', Icons.account_balance_rounded, methods.where((m) => m.isBank).toList()),
     ];
     final m = _method;
@@ -281,7 +301,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   children: [
                     Icon(icon, size: 18, color: AppColors.textMuted),
                     const SizedBox(width: 8),
-                    Text(label, style: text.titleSmall),
+                    Text(context.tr(label), style: text.titleSmall),
                   ],
                 ),
               ),
@@ -298,10 +318,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       method: x,
                       selected: m?.id == x.id,
                       onTap: () {
+                        if (!x.isAvailable) {
+                          showSnack(context, context.tr('{method} is coming soon.', {'method': x.name}));
+                          return;
+                        }
                         Haptics.tap();
                         setState(() {
                           _method = x;
                           _submitError = null;
+                          _attemptKey = null;
                         });
                       },
                     ),
@@ -322,11 +347,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           ],
           const SizedBox(height: 22),
           PillButton(
-            label: 'Pay ${Fmt.money(widget.plan.price, widget.plan.currency)}',
+            label: context.tr('Pay {amount}', {'amount': Fmt.money(widget.plan.price, widget.plan.currency)}),
             icon: Icons.lock_rounded,
             expand: true,
             loading: _stage == _Stage.processing,
-            onPressed: m == null ? null : _pay,
+            onPressed: m == null || !m.isAvailable ? null : _pay,
           ),
           const SizedBox(height: 12),
           Row(
@@ -334,7 +359,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             children: [
               const Icon(Icons.verified_user_outlined, size: 14, color: AppColors.textDim),
               const SizedBox(width: 6),
-              Text('Secure checkout · Afriva never stores card details', style: text.labelSmall),
+              Text(context.tr('Secure checkout · Afriva never stores card details'), style: text.labelSmall),
             ],
           ),
         ],
@@ -349,7 +374,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         key: ValueKey('mm-${m.code}'),
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('${m.name} number', style: text.titleSmall),
+          Text(context.tr('{method} number', {'method': m.name}), style: text.titleSmall),
           const SizedBox(height: 10),
           TextFormField(
             controller: _phone,
@@ -363,13 +388,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             onChanged: (_) => setState(() {}),
             validator: (v) {
               final d = _normalizePhone(v ?? '');
-              if (d.length != 12 || !d.startsWith('255')) return 'Enter a valid mobile number';
+              if (d.length != 12 || !d.startsWith('255')) return context.tr('Enter a valid mobile number');
               return null;
             },
           ),
           const SizedBox(height: 8),
           Text(
-            "You'll receive a prompt on your phone from ${m.name}. Enter your PIN to approve.",
+            context.tr("You'll receive a prompt on your phone from {method}. Enter your PIN to approve.", {'method': m.name}),
             style: text.labelSmall,
           ),
         ],
@@ -392,8 +417,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              "After you continue we'll show ${m.name} payment instructions and your reference number. "
-              'Your plan activates as soon as the bank confirms.',
+              context.tr(
+                "After you continue we'll show {method} payment instructions and your reference number. "
+                'Your plan activates as soon as the bank confirms.',
+                {'method': m.name},
+              ),
               style: text.bodySmall,
             ),
           ),
@@ -407,7 +435,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final p = _payment;
     final message = (_result?.message.isNotEmpty ?? false)
         ? _result!.message
-        : 'Waiting for confirmation from ${_method?.name ?? 'your provider'}.';
+        : _method?.name != null
+            ? context.tr('Waiting for confirmation from {method}.', {'method': _method?.name})
+            : context.tr('Waiting for confirmation from your provider.');
     final timedOut = _poll == null || !_poll!.isActive;
     return ListView(
       key: const ValueKey('pending'),
@@ -415,13 +445,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       children: [
         const Center(child: _PulsingRing()),
         const SizedBox(height: 26),
-        Text('Payment pending', style: text.headlineSmall, textAlign: TextAlign.center),
+        Text(context.tr('Payment pending'), style: text.headlineSmall, textAlign: TextAlign.center),
         const SizedBox(height: 10),
         Text(message, style: text.bodyMedium, textAlign: TextAlign.center),
         if (_result?.nextAction == 'await_ussd') ...[
           const SizedBox(height: 10),
           Text(
-            'Check your phone for the ${_method?.name ?? ''} prompt and enter your PIN.',
+            context.tr('Check your phone for the {method} prompt and enter your PIN.', {'method': _method?.name ?? ''}),
             style: text.bodySmall,
             textAlign: TextAlign.center,
           ),
@@ -429,22 +459,22 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         if (_result?.nextAction == 'redirect' && _result?.redirectUrl != null) ...[
           const SizedBox(height: 10),
           SelectableText(
-            'Complete payment at: ${_result!.redirectUrl}',
+            context.tr('Complete payment at: {url}', {'url': _result!.redirectUrl}),
             style: text.bodySmall,
             textAlign: TextAlign.center,
           ),
         ],
         const SizedBox(height: 24),
         _ReceiptRows(rows: [
-          ('Plan', widget.plan.name),
-          ('Amount', Fmt.money(p?.amount ?? widget.plan.price, p?.currency ?? widget.plan.currency)),
-          ('Method', _method?.name ?? '—'),
-          ('Reference', p?.reference ?? '—'),
-          ('Status', (p?.status ?? 'pending').toUpperCase()),
+          (context.tr('Plan'), widget.plan.name),
+          (context.tr('Amount'), Fmt.money(p?.amount ?? widget.plan.price, p?.currency ?? widget.plan.currency)),
+          (context.tr('Method'), _method?.name ?? '-'),
+          (context.tr('Reference'), p?.reference ?? '-'),
+          (context.tr('Status'), paymentStatusLabel(context, p?.status ?? 'pending').toUpperCase()),
         ]),
         const SizedBox(height: 24),
         PillButton(
-          label: timedOut ? 'Check status' : 'I have paid — check now',
+          label: context.tr(timedOut ? 'Check status' : 'I have paid, check now'),
           icon: Icons.refresh_rounded,
           secondary: true,
           expand: true,
@@ -453,11 +483,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         const SizedBox(height: 10),
         TextButton(
           onPressed: () => Navigator.of(context).pop(false),
-          child: const Text('Close — I’ll finish later'),
+          child: Text(context.tr('Close, I’ll finish later')),
         ),
         const SizedBox(height: 6),
         Text(
-          'You can track this payment anytime in Profile › Payment history.',
+          context.tr('You can track this payment anytime in Profile › Payment history.'),
           style: text.labelSmall,
           textAlign: TextAlign.center,
         ),
@@ -468,16 +498,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   Widget _buildSuccess() {
     final text = Theme.of(context).textTheme;
     final p = widget.plan;
-    final headline = p.isCoins
+    final headline = context.tr(p.isCoins
         ? 'Coins added!'
         : p.isEpisodePack
             ? 'Episode pack ready!'
-            : 'Welcome to VIP!';
+            : 'Welcome to VIP!');
     final sub = p.isCoins
-        ? '${(p.coins ?? 0) + (p.bonusCoins ?? 0)} coins are now in your wallet.'
+        ? context.tr('{n} coins are now in your wallet.', {'n': (p.coins ?? 0) + (p.bonusCoins ?? 0)})
         : p.isEpisodePack
-            ? 'Use your ${p.episodeQuota ?? ''} unlocks on any locked episode.'
-            : 'Every episode is unlocked. Enjoy the binge.';
+            ? context.tr('Use your {n} unlocks on any locked episode.', {'n': p.episodeQuota ?? ''})
+            : context.tr('Every episode is unlocked. Enjoy the binge.');
     return Padding(
       key: const ValueKey('success'),
       padding: const EdgeInsets.all(24),
@@ -510,10 +540,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           const SizedBox(height: 8),
           Text(sub, style: text.bodyMedium, textAlign: TextAlign.center),
           const SizedBox(height: 8),
-          Text('Ref ${_payment?.reference ?? ''}', style: text.labelSmall),
-          const SizedBox(height: 30),
+          Text(context.tr('Ref {ref}', {'ref': _payment?.reference ?? ''}), style: text.labelSmall),
+          const SizedBox(height: 12),
+          if ((_payment?.reference ?? '').isNotEmpty)
+            TextButton.icon(
+              onPressed: () => context.push('/receipt/${_payment!.reference}'),
+              icon: const Icon(Icons.receipt_long_rounded),
+              label: Text(context.tr('View receipt')),
+            ),
+          const SizedBox(height: 18),
           PillButton(
-            label: 'Start watching',
+            label: context.tr('Start watching'),
             icon: Icons.play_arrow_rounded,
             expand: true,
             light: p.isSubscription,
@@ -529,13 +566,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       key: const ValueKey('failed'),
       child: StateMessage(
         icon: Icons.error_outline_rounded,
-        title: 'Payment ${_payment?.status == 'cancelled' ? 'cancelled' : 'failed'}',
-        message: 'No money was taken. You can try again or choose another method.',
-        actionLabel: 'Try again',
+        title: context.tr(_payment?.status == 'cancelled' ? 'Payment cancelled' : 'Payment failed'),
+        message: context.tr('No money was taken. You can try again or choose another method.'),
+        actionLabel: context.tr('Try again'),
         onAction: () => setState(() {
           _stage = _Stage.form;
           _payment = null;
           _result = null;
+          _attemptKey = null;
         }),
       ),
     );

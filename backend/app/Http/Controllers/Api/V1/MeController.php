@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\CoinTransactionResource;
 use App\Http\Resources\DramaResource;
 use App\Http\Resources\HistoryResource;
 use App\Http\Resources\PaymentResource;
@@ -37,6 +38,14 @@ class MeController extends Controller
         return $this->paginated($p, PaymentResource::class);
     }
 
+    /** GET /me/coins: coin balance and ledger (purchases, bonuses, unlocks, refunds). */
+    public function coins(Request $request): JsonResponse
+    {
+        $p = $request->user()->coinTransactions()->with('episode.drama')->latest('id')->paginate($this->perPage(30));
+
+        return $this->paginated($p, CoinTransactionResource::class, ['balance' => (int) $request->user()->coins]);
+    }
+
     public function history(Request $request): JsonResponse
     {
         $p = $request->user()->watchHistories()
@@ -55,7 +64,7 @@ class MeController extends Controller
         return $this->paginated($p, DramaResource::class);
     }
 
-    /** POST /me/favorites/{drama_id} — toggle. */
+    /** POST /me/favorites/{drama_id}, toggle. */
     public function toggleFavorite(Request $request, int $dramaId): JsonResponse
     {
         $drama = Drama::findOrFail($dramaId);

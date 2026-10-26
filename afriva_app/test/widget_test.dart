@@ -1,7 +1,10 @@
 // Basic smoke tests that run fully offline (no API, no font downloads).
+import 'package:afriva_app/core/i18n.dart';
 import 'package:afriva_app/core/theme.dart';
 import 'package:afriva_app/models/drama.dart';
+import 'package:afriva_app/models/commerce.dart';
 import 'package:afriva_app/models/episode.dart';
+import 'package:afriva_app/models/studio.dart';
 import 'package:afriva_app/models/user.dart';
 import 'package:afriva_app/widgets/afriva_logo.dart';
 import 'package:afriva_app/widgets/badges.dart';
@@ -42,7 +45,8 @@ void main() {
       mainAxisSize: MainAxisSize.min,
       children: [DramaBadge('vip'), DramaBadge('new'), VipPill(), CoinAmount(200)],
     )));
-    expect(find.text('New'), findsOneWidget);
+    // The interface is Kiswahili by default (scope §01).
+    expect(find.text('Mpya'), findsOneWidget);
     expect(find.text('200'), findsOneWidget);
   });
 
@@ -77,5 +81,45 @@ void main() {
     });
     expect(u.isVip, isTrue);
     expect(u.initials, 'BK');
+  });
+
+  test('Kiswahili is the default language', () {
+    expect(I18n.language, 'Kiswahili');
+    expect(trNow('Continue watching'), 'Endelea kutazama');
+  });
+
+  test('Models parse project-scope payloads (SPEC §8)', () {
+    final e = Episode.fromJson({'id': 9, 'number': 9, 'is_free': false, 'is_unlocked': false, 'access': 'locked', 'price_coins': 30});
+    expect(e.isLocked, isTrue);
+    expect(e.priceCoins, 30);
+
+    final play = PlayResult.fromJson({
+      'video_url': 'https://x/master.m3u8',
+      'sources': [
+        {'quality': 'auto', 'label': 'Auto', 'url': 'https://x/master.m3u8', 'type': 'hls'},
+        {'quality': '720p', 'label': '720p', 'url': 'https://x/720p/index.m3u8', 'type': 'hls'},
+      ],
+      'resume_seconds': 42,
+      'session_id': 'abc-123',
+      'episode': {'id': 1, 'number': 1, 'access': 'free', 'is_free': true},
+    });
+    expect(play.playable.length, 2);
+    expect(play.resumeSeconds, 42);
+
+    final d = Drama.fromJson({'id': 1, 'slug': 's', 'title': 'T', 'resume': {'episode_number': 3, 'progress_seconds': 30, 'duration_seconds': 60}});
+    expect(d.resume!.episodeNumber, 3);
+    expect(d.resume!.progress, 0.5);
+
+    final m = PaymentMethod.fromJson({'id': 1, 'code': 'visa', 'name': 'Visa', 'type': 'card', 'is_available': false});
+    expect(m.isAvailable, isFalse);
+
+    final s = StudioDrama.fromJson({
+      'id': 5, 'slug': 'x', 'title': 'X', 'review_status': 'changes_requested',
+      'episodes': [{'id': 1, 'number': 1, 'review_status': 'changes_requested'}],
+      'reviews': [{'id': 1, 'action': 'request_changes', 'notes': 'Sauti'}],
+    });
+    expect(s.editable, isTrue);
+    expect(s.canSubmit, isTrue);
+    expect(s.reviews.first.notes, 'Sauti');
   });
 }

@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { cn, formatCompact } from "@/lib/format";
+import { T } from "@/lib/i18n";
 import type { Drama } from "@/lib/types";
 import { Icon } from "../ui/Icon";
 
@@ -17,9 +18,11 @@ export function RankingItem({ drama, rank, large }: { drama: Drama; rank: number
           large ? "text-[44px] sm:text-[52px]" : "text-[38px] sm:text-[44px]",
           rank <= 3 ? "rank-outline-brand" : "rank-outline",
         )}
-        aria-label={`Rank ${rank}`}
       >
-        {rank}
+        <span aria-hidden="true">{rank}</span>
+        <span className="sr-only">
+          <T vars={{ n: rank }}>{"Rank {n}"}</T>
+        </span>
       </span>
       <div className="relative aspect-[3/4] w-16 shrink-0 overflow-hidden rounded-md bg-surface-2 sm:w-[72px]">
         {drama.poster_url && (
@@ -47,7 +50,7 @@ export function RankingItem({ drama, rank, large }: { drama: Drama; rank: number
         )}
         <p className="mt-1.5 flex items-center gap-1 text-xs text-text-dim">
           <Icon name="flame" size={13} className="text-primary" />
-          {formatCompact(drama.views)} views · EP {drama.total_episodes}
+          <T vars={{ views: formatCompact(drama.views), n: drama.total_episodes }}>{"{views} views · EP {n}"}</T>
         </p>
       </div>
     </Link>

@@ -12,6 +12,8 @@ use App\Models\Category;
 use App\Models\Drama;
 use App\Models\PaymentMethod;
 use App\Models\Plan;
+use App\Models\WatchHistory;
+use App\Support\Viewer;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
@@ -35,31 +37,76 @@ class CatalogController extends Controller
             $banners = $this->base()->orderByDesc('views')->limit(5)->get();
         }
 
-        $sections = [
-            ['key' => 'must_watch', 'title' => 'Must-Watch', 'layout' => 'row',
-                'dramas' => $this->base()->where(fn ($q) => $q->where('badge', 'hot')->orWhere('is_featured', true))->orderByDesc('views')->limit(12)->get()],
-            ['key' => 'trending', 'title' => 'Trending Now', 'layout' => 'ranking',
-                'dramas' => $this->ranked('trending', 10)],
-            ['key' => 'new_releases', 'title' => 'New Releases', 'layout' => 'row',
-                'dramas' => $this->base()->orderByDesc('release_date')->orderByDesc('id')->limit(12)->get()],
-            ['key' => 'hidden_gems', 'title' => 'Hidden Gems', 'layout' => 'row',
-                'dramas' => $this->base()->orderBy('views')->limit(12)->get()],
-        ];
+        // Scope §02: Trending, New and Continue watching first; then category rows (Swahili categories).
+        $sections = [];
+        $continue = $this->continueWatching();
+        if ($continue->isNotEmpty()) {
+            $sections[] = ['key' => 'continue_watching', 'title' => 'Endelea kutazama', 'layout' => 'continue', 'dramas' => $continue];
+        }
+        $sections[] = ['key' => 'trending', 'title' => 'Zinazovuma', 'layout' => 'ranking', 'dramas' => $this->ranked('trending', 10)];
+        $sections[] = ['key' => 'new_releases', 'title' => 'Mpya', 'layout' => 'row',
+            'dramas' => $this->base()->orderByDesc('release_date')->orderByDesc('id')->limit(12)->get()];
+        $sections[] = ['key' => 'must_watch', 'title' => 'Lazima uone', 'layout' => 'row',
+            'dramas' => $this->base()->where(fn ($q) => $q->where('badge', 'hot')->orWhere('is_featured', true))->orderByDesc('views')->limit(12)->get()];
 
-        foreach (['romance' => 'Romance', 'revenge' => 'Revenge', 'billionaire' => 'Billionaire', 'family' => 'Family Drama', 'village-life' => 'Village Life'] as $slug => $title) {
-            $dramas = $this->base()->whereHas('categories', fn ($q) => $q->where('slug', $slug))->orderByDesc('views')->limit(12)->get();
+        foreach (Category::orderBy('sort_order')->orderBy('name')->get() as $category) {
+            $dramas = $this->base()->whereHas('categories', fn ($q) => $q->whereKey($category->id))->orderByDesc('views')->limit(12)->get();
             if ($dramas->isNotEmpty()) {
-                $sections[] = ['key' => str_replace('-', '_', $slug), 'title' => $title, 'layout' => 'row', 'dramas' => $dramas, 'category' => $slug];
+                $sections[] = ['key' => 'category_'.str_replace('-', '_', $category->slug), 'title' => $category->name, 'layout' => 'row',
+                    'dramas' => $dramas, 'category' => $category->slug];
             }
         }
 
-        $sections[] = ['key' => 'popular', 'title' => 'Popular on Afriva', 'layout' => 'grid',
+        $sections[] = ['key' => 'popular', 'title' => 'Maarufu kwenye AFRIVA', 'layout' => 'grid',
             'dramas' => $this->base()->orderByDesc('views')->limit(18)->get()];
 
         return $this->ok([
             'banners' => DramaResource::collection($banners),
             'sections' => array_map(fn ($s) => array_merge($s, ['dramas' => DramaResource::collection($s['dramas'])]), $sections),
         ]);
+    }
+
+    /**
+     * The signed-in viewer's unfinished series, newest first, each with a `resume` block.
+     *
+     * @return Collection<int,Drama>
+     */
+    protected function continueWatching(): Collection
+    {
+        $user = Viewer::user();
+        if (! $user) {
+            return new Collection;
+        }
+        $histories = WatchHistory::with('episode:id,drama_id,number,duration_seconds')
+            ->where('user_id', $user->id)->latest('updated_at')->limit(20)->get();
+        $dramas = $this->base()->whereIn('id', $histories->pluck('drama_id'))->get()->keyBy('id');
+
+        $out = new Collection;
+        foreach ($histories as $h) {
+            $drama = $dramas->get($h->drama_id);
+            $episode = $h->episode;
+            if (! $drama || ! $episode) {
+                continue;
+            }
+            $finishedEpisode = $episode->duration_seconds > 0 && $h->progress_seconds >= $episode->duration_seconds - 5;
+            if ($finishedEpisode && $episode->number >= $drama->total_episodes) {
+                continue;
+            }
+            // A finished episode resumes at the start of the next one.
+            $drama->setAttribute('resume', [
+                'episode_id' => $finishedEpisode ? null : $episode->id,
+                'episode_number' => $finishedEpisode ? $episode->number + 1 : $episode->number,
+                'progress_seconds' => $finishedEpisode ? 0 : (int) $h->progress_seconds,
+                'duration_seconds' => (int) $episode->duration_seconds,
+                'updated_at' => $h->updated_at?->toIso8601String(),
+            ]);
+            $out->push($drama);
+            if ($out->count() >= 12) {
+                break;
+            }
+        }
+
+        return $out;
     }
 
     public function categories(): JsonResponse
@@ -142,7 +189,8 @@ class CatalogController extends Controller
     public function show(string $slug): JsonResponse
     {
         $drama = $this->base()->where('slug', $slug)->firstOrFail();
-        $episodes = $drama->episodes()->get();
+        $episodes = $drama->episodes()->approved()->get();
+        $drama->setAttribute('total_duration_seconds', (int) $episodes->sum('duration_seconds'));
         $episodes->each->setRelation('drama', $drama);
 
         $catIds = $drama->categories->pluck('id');
@@ -166,8 +214,8 @@ class CatalogController extends Controller
         $limit = $this->perPage(20, 50);
         $page = max(1, (int) $request->query('page', 1));
 
-        $dramas = $this->base()->with(['episodes' => fn ($q) => $q->where('number', 1)])
-            ->whereHas('episodes', fn ($q) => $q->where('number', 1))
+        $dramas = $this->base()->with(['episodes' => fn ($q) => $q->approved()->where('number', 1)])
+            ->whereHas('episodes', fn ($q) => $q->approved()->where('number', 1))
             ->orderByDesc('views')->get();
 
         // Stable shuffle per day so pagination is consistent; seed param allows a client-side reshuffle.
@@ -205,9 +253,9 @@ class CatalogController extends Controller
         return $this->ok(
             PaymentMethodResource::collection(PaymentMethod::where('is_enabled', true)->orderBy('sort_order')->get()),
             ['groups' => [
-                ['type' => 'mobile_money', 'label' => 'Mobile Money'],
-                ['type' => 'card', 'label' => 'Cards'],
-                ['type' => 'bank', 'label' => 'Bank'],
+                ['type' => 'mobile_money', 'label' => 'Mobile money (Tanzania)'],
+                ['type' => 'card', 'label' => 'Kadi na wallet (dunia nzima)'],
+                ['type' => 'bank', 'label' => 'Benki'],
             ]]
         );
     }

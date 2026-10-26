@@ -3,6 +3,7 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 import { Icon } from "./Icon";
 
 export function Modal({
@@ -22,6 +23,7 @@ export function Modal({
   className?: string;
   hideClose?: boolean;
 }) {
+  const t = useT();
   const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -45,7 +47,7 @@ export function Modal({
 
   const widths = { sm: "max-w-sm", md: "max-w-lg", lg: "max-w-2xl", xl: "max-w-4xl" };
 
-  const host = (document.querySelector(".site-light") as HTMLElement | null) ?? document.body;
+  const host = (document.querySelector(".site-dark") as HTMLElement | null) ?? document.body;
   return createPortal(
     <div className="fixed inset-0 z-[100] flex items-end justify-center sm:items-center sm:p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-fade-in" onClick={onClose} />
@@ -55,19 +57,19 @@ export function Modal({
         role="dialog"
         aria-modal="true"
         className={cn(
-          "relative w-full max-h-[92dvh] overflow-y-auto rounded-t-3xl sm:rounded-3xl border border-border bg-surface shadow-2xl [.site-light_&]:bg-white outline-none animate-pop-in pb-safe",
+          "relative w-full max-h-[92dvh] overflow-y-auto rounded-t-3xl sm:rounded-3xl border border-border bg-surface shadow-2xl outline-none animate-pop-in pb-safe",
           widths[size],
           className,
         )}
       >
         {(title || !hideClose) && (
           <div className="sticky top-0 z-10 flex items-center justify-between gap-4 bg-surface/95 px-5 pt-5 pb-3 backdrop-blur">
-            <h2 className="text-lg font-bold">{title}</h2>
+            <h2 className="text-lg font-bold">{typeof title === "string" ? t(title) : title}</h2>
             {!hideClose && (
               <button
                 onClick={onClose}
                 className="grid h-9 w-9 place-items-center rounded-full text-text-muted transition hover:bg-surface-2 hover:text-text"
-                aria-label="Close"
+                aria-label={t("Close")}
               >
                 <Icon name="x" />
               </button>
@@ -100,12 +102,13 @@ export function ConfirmModal({
   danger?: boolean;
   loading?: boolean;
 }) {
+  const t = useT();
   return (
     <Modal open={open} onClose={onClose} title={title} size="sm">
-      <div className="text-sm text-text-muted">{message}</div>
+      <div className="text-sm text-text-muted">{typeof message === "string" ? t(message) : message}</div>
       <div className="mt-6 flex justify-end gap-2">
         <button onClick={onClose} className="h-10 rounded-full px-5 text-sm font-semibold text-text-muted hover:bg-surface-2">
-          Cancel
+          {t("Cancel")}
         </button>
         <button
           onClick={onConfirm}
@@ -115,7 +118,7 @@ export function ConfirmModal({
             danger ? "bg-danger hover:brightness-110" : "bg-primary hover:brightness-110",
           )}
         >
-          {loading ? "Working…" : confirmLabel}
+          {loading ? t("Working…") : t(confirmLabel)}
         </button>
       </div>
     </Modal>

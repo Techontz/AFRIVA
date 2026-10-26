@@ -75,5 +75,7 @@
 	</dict>
 	<key>UIStatusBarStyle</key>
 	<string>UIStatusBarStyleLightContent</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>AFRIVA inahitaji ruhusa ya kuchagua video na picha za kazi unayowasilisha.</string>
 </dict>
 </plist>

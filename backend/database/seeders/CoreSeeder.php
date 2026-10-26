@@ -7,6 +7,7 @@ use App\Models\PaymentMethod;
 use App\Models\Plan;
 use App\Models\Setting;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 /**
  * Reference data: settings, categories, plans, payment methods. Safe to re-run (upserts).
@@ -21,52 +22,60 @@ class CoreSeeder extends Seeder
         Setting::updateOrCreate(['key' => 'contact_business'], ['value' => 'business@afriva.com']);
         Setting::updateOrCreate(['key' => 'contact_press'], ['value' => 'press@afriva.com']);
 
-        $categories = ['Romance', 'Revenge', 'Billionaire', 'Family', 'Comedy', 'Thriller', 'Historical', 'Village Life', 'Campus'];
+        // Scope §03 categories (Kiswahili).
+        $categories = ['Mapenzi', 'Historia', 'Siri na Mafumbo', 'Vita na Mashujaa', 'Vichekesho', 'Upelelezi', 'Maisha', 'Hadithi za Afrika'];
         foreach ($categories as $i => $name) {
-            Category::updateOrCreate(['slug' => \Illuminate\Support\Str::slug($name)], ['name' => $name, 'sort_order' => $i + 1]);
+            Category::updateOrCreate(['slug' => Str::slug($name)], ['name' => $name, 'sort_order' => $i + 1]);
         }
 
-        $vipFeatures = ['Unlimited access to all episodes', 'New episodes daily', 'HD streaming', 'No ads'];
+        $vipFeatures = ['Episode zote bila kikomo', 'Episode mpya kila siku', 'Ubora wa HD', 'Bila matangazo'];
+        // [old English name (for upgrading existing rows), plan]
         $plans = [
-            ['name' => 'Weekly VIP', 'type' => 'weekly', 'price' => 3000, 'duration_days' => 7,
-                'description' => '7 days of unlimited Afriva dramas.', 'features' => $vipFeatures],
-            ['name' => 'Monthly VIP', 'type' => 'monthly', 'price' => 10000, 'duration_days' => 30, 'is_popular' => true,
-                'description' => '30 days of unlimited Afriva dramas. Most popular!', 'features' => $vipFeatures],
-            ['name' => 'Yearly VIP', 'type' => 'yearly', 'price' => 90000, 'duration_days' => 365,
-                'description' => 'A full year of Afriva — save 25% vs monthly.', 'features' => array_merge($vipFeatures, ['Best value'])],
-            ['name' => '6 Episodes', 'type' => 'episodes', 'price' => 10000, 'episode_quota' => 6,
-                'description' => 'Unlock any 6 locked episodes, no expiry.', 'features' => ['Unlock any 6 episodes', 'Never expires']],
-            ['name' => '15 Episodes', 'type' => 'episodes', 'price' => 20000, 'episode_quota' => 15,
-                'description' => 'Unlock any 15 locked episodes, no expiry.', 'features' => ['Unlock any 15 episodes', 'Never expires']],
-            ['name' => '100 Coins', 'type' => 'coins', 'price' => 1000, 'coins' => 100, 'bonus_coins' => 0,
-                'description' => 'Top up 100 coins to unlock episodes.', 'features' => ['100 coins']],
-            ['name' => '550 Coins', 'type' => 'coins', 'price' => 5000, 'coins' => 500, 'bonus_coins' => 50,
-                'description' => '500 coins + 50 bonus coins.', 'features' => ['500 coins', '+50 bonus coins']],
+            ['Weekly VIP', ['name' => 'VIP ya Wiki', 'type' => 'weekly', 'price' => 3000, 'duration_days' => 7,
+                'description' => 'Siku 7 za kutazama series zote za AFRIVA.', 'features' => $vipFeatures]],
+            ['Monthly VIP', ['name' => 'VIP ya Mwezi', 'type' => 'monthly', 'price' => 10000, 'duration_days' => 30, 'is_popular' => true,
+                'description' => 'Siku 30 za kutazama series zote. Inayopendwa zaidi!', 'features' => $vipFeatures]],
+            ['Yearly VIP', ['name' => 'VIP ya Mwaka', 'type' => 'yearly', 'price' => 90000, 'duration_days' => 365,
+                'description' => 'Mwaka mzima wa AFRIVA. Okoa 25% ukilinganisha na mwezi.', 'features' => array_merge($vipFeatures, ['Thamani bora'])]],
+            ['6 Episodes', ['name' => 'Episode 6', 'type' => 'episodes', 'price' => 10000, 'episode_quota' => 6,
+                'description' => 'Fungua episode zozote 6 zilizofungwa, haziishi muda.', 'features' => ['Fungua episode zozote 6', 'Haziishi muda']]],
+            ['15 Episodes', ['name' => 'Episode 15', 'type' => 'episodes', 'price' => 20000, 'episode_quota' => 15,
+                'description' => 'Fungua episode zozote 15 zilizofungwa, haziishi muda.', 'features' => ['Fungua episode zozote 15', 'Haziishi muda']]],
+            ['100 Coins', ['name' => 'Coins 100', 'type' => 'coins', 'price' => 1000, 'coins' => 100, 'bonus_coins' => 0,
+                'description' => 'Ongeza coins 100 za kufungua episode.', 'features' => ['Coins 100']]],
+            ['550 Coins', ['name' => 'Coins 550', 'type' => 'coins', 'price' => 5000, 'coins' => 500, 'bonus_coins' => 50,
+                'description' => 'Coins 500 + bonasi ya coins 50.', 'features' => ['Coins 500', '+50 bonasi']]],
         ];
-        foreach ($plans as $i => $p) {
+        foreach ($plans as $i => [$oldName, $p]) {
+            Plan::where('name', $oldName)->update(['name' => $p['name']]);
             Plan::updateOrCreate(['name' => $p['name']], array_merge([
                 'currency' => 'TZS', 'is_popular' => false, 'is_active' => true, 'sort_order' => $i + 1,
                 'duration_days' => null, 'episode_quota' => null, 'coins' => null, 'bonus_coins' => null,
             ], $p));
         }
 
+        // Scope §07: Tanzania mobile money + international cards/wallets. Banks and T-Pesa are kept but off.
+        // Nothing is marked integrated: a method is only switched on after a successful test with its provider.
         $methods = [
-            ['mpesa', 'M-Pesa', 'mobile_money', '#E60000'],
-            ['tigopesa', 'Mixx by Yas (Tigo Pesa)', 'mobile_money', '#00377B'],
-            ['airtelmoney', 'Airtel Money', 'mobile_money', '#ED1C24'],
-            ['halopesa', 'HaloPesa', 'mobile_money', '#F7941D'],
-            ['tpesa', 'T-Pesa', 'mobile_money', '#0072BC'],
-            ['visa', 'Visa', 'card', '#1A1F71'],
-            ['mastercard', 'Mastercard', 'card', '#EB001B'],
-            ['crdb', 'CRDB Bank', 'bank', '#00A651'],
-            ['nmb', 'NMB Bank', 'bank', '#005BAA'],
-            ['nbc', 'NBC Bank', 'bank', '#002F6C'],
+            ['mpesa', 'M-Pesa', 'mobile_money', '#E60000', true],
+            ['tigopesa', 'Mixx by Yas (Tigo Pesa)', 'mobile_money', '#00377B', true],
+            ['airtelmoney', 'Airtel Money', 'mobile_money', '#ED1C24', true],
+            ['halopesa', 'HaloPesa', 'mobile_money', '#F7941D', true],
+            ['visa', 'Visa', 'card', '#1A1F71', true],
+            ['mastercard', 'Mastercard', 'card', '#EB001B', true],
+            ['wallet', 'Wallet ya kidijitali', 'card', '#111827', false],
+            ['tpesa', 'T-Pesa', 'mobile_money', '#0072BC', false],
+            ['crdb', 'CRDB Bank', 'bank', '#00A651', false],
+            ['nmb', 'NMB Bank', 'bank', '#005BAA', false],
+            ['nbc', 'NBC Bank', 'bank', '#002F6C', false],
         ];
-        foreach ($methods as $i => [$code, $name, $type, $color]) {
-            PaymentMethod::updateOrCreate(['code' => $code], [
-                'name' => $name, 'type' => $type, 'color' => $color, 'logo_url' => null,
-                'is_enabled' => true, 'is_integrated' => false, 'sort_order' => $i + 1,
-            ]);
+        foreach ($methods as $i => [$code, $name, $type, $color, $enabled]) {
+            $method = PaymentMethod::firstOrNew(['code' => $code]);
+            $method->fill(['name' => $name, 'type' => $type, 'color' => $color, 'sort_order' => $i + 1]);
+            if (! $method->exists) {
+                $method->fill(['logo_url' => null, 'is_enabled' => $enabled, 'is_integrated' => false]);
+            }
+            $method->save();
         }
     }
 }

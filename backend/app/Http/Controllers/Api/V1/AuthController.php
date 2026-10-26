@@ -43,10 +43,10 @@ class AuthController extends Controller
             ->first();
 
         if (! $user || ! Hash::check($request->input('password'), $user->password)) {
-            throw new ApiException('These credentials do not match our records.', 'invalid_credentials', 401);
+            throw new ApiException('Barua pepe/namba ya simu au nenosiri si sahihi.', 'invalid_credentials', 401);
         }
         if ($user->status !== 'active') {
-            throw new ApiException('Your account is suspended.', 'account_suspended', 403);
+            throw new ApiException('Akaunti yako imesimamishwa.', 'account_suspended', 403);
         }
 
         return $this->ok([
@@ -59,7 +59,7 @@ class AuthController extends Controller
     {
         $request->user()->currentAccessToken()?->delete();
 
-        return $this->ok(['message' => 'Logged out.']);
+        return $this->ok(['message' => 'Umetoka.']);
     }
 
     public function me(Request $request): JsonResponse

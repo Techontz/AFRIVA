@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { Icon } from "@/components/ui/Icon";
 import { LogoMark } from "@/components/ui/Logo";
+import { T } from "@/lib/i18n";
 
-export const metadata: Metadata = { title: "Get the app", description: "Watch Afriva dramas on your phone — swipe through episodes, full-screen and vertical." };
+export const metadata: Metadata = { title: "Pakua App", description: "Tazama series za AFRIVA kwenye simu yako, skrini nzima na wima." };
 
 const FEATURES = [
   { icon: "play", title: "Full-screen vertical", text: "Made for one-handed, swipe-up watching." },
@@ -16,13 +17,16 @@ export default function AppDownloadPage() {
     <div className="mx-auto grid max-w-[1200px] items-center gap-12 px-4 pt-12 sm:px-6 lg:grid-cols-2 lg:px-8 lg:pt-20">
       <div>
         <span className="inline-flex items-center gap-2 rounded-full bg-surface-2 px-3 py-1 text-xs font-bold text-text-muted">
-          <Icon name="download" size={14} /> Afriva for Android & iOS
+          <Icon name="download" size={14} /> <T>Afriva for Android & iOS</T>
         </span>
         <h1 className="mt-4 text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-5xl">
-          Your next episode, <span className="text-primary">in your pocket.</span>
+          <T>Your next episode,</T>{" "}
+          <span className="text-primary">
+            <T>in your pocket.</T>
+          </span>
         </h1>
         <p className="mt-4 max-w-lg text-[15px] text-text-muted">
-          The Afriva app is built for vertical drama: swipe between episodes, binge the For You feed and unlock with a tap.
+          <T>The Afriva app is built for vertical drama: swipe between episodes, binge the For You feed and unlock with a tap.</T>
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           {[
@@ -36,13 +40,15 @@ export default function AppDownloadPage() {
             >
               <Icon name="phone" size={26} />
               <span className="leading-tight">
-                <span className="block text-[10px] uppercase tracking-wider text-text-dim">{s.sub}</span>
+                <span className="block text-[10px] uppercase tracking-wider text-text-dim">
+                  <T>{s.sub}</T>
+                </span>
                 <span className="block font-bold">{s.label}</span>
               </span>
             </span>
           ))}
         </div>
-        <p className="mt-3 text-xs text-text-dim">Store listings are coming soon.</p>
+        <p className="mt-3 text-xs text-text-dim"><T>Store listings are coming soon.</T></p>
         <div className="mt-10 grid gap-4 sm:grid-cols-2">
           {FEATURES.map((f) => (
             <div key={f.title} className="flex gap-3">
@@ -50,8 +56,12 @@ export default function AppDownloadPage() {
                 <Icon name={f.icon} size={19} />
               </span>
               <div>
-                <p className="font-bold">{f.title}</p>
-                <p className="text-sm text-text-muted">{f.text}</p>
+                <p className="font-bold">
+                  <T>{f.title}</T>
+                </p>
+                <p className="text-sm text-text-muted">
+                  <T>{f.text}</T>
+                </p>
               </div>
             </div>
           ))}
@@ -64,7 +74,9 @@ export default function AppDownloadPage() {
           <p className="text-2xl font-extrabold tracking-tight">
             <span className="text-primary">A</span>FRIVA
           </p>
-          <p className="text-sm text-text-muted">Short dramas. Big feelings.</p>
+          <p className="text-sm text-text-muted">
+            <T>Short dramas. Big feelings.</T>
+          </p>
         </div>
       </div>
     </div>

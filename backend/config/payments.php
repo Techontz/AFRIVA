@@ -25,6 +25,8 @@ return [
 
     'sandbox' => [
         'auto_approve' => (bool) env('PAYMENTS_SANDBOX_AUTO_APPROVE', false),
+        // Accept POST /payments/callback/sandbox. Never enable in production: it can mark any payment as paid.
+        'enabled' => (bool) env('PAYMENTS_SANDBOX_ENABLED', env('PAYMENTS_SANDBOX_AUTO_APPROVE', false)),
     ],
 
     'callback_base_url' => env('PAYMENTS_CALLBACK_URL', env('APP_URL').'/api/v1/payments/callback'),
@@ -35,9 +37,10 @@ return [
         'tigopesa' => 'tigopesa',
         'airtelmoney' => 'airtelmoney',
         'halopesa' => 'halopesa',
-        'tpesa' => 'bank',      // T-Pesa (TTCL) — routed through the generic aggregator driver until a direct API is chosen
+        'tpesa' => 'bank',      // T-Pesa (TTCL), routed through the generic aggregator driver until a direct API is chosen
         'visa' => 'card',
         'mastercard' => 'card',
+        'wallet' => 'card',     // digital wallets (Apple Pay / Google Pay...) where the card provider supports them
         'crdb' => 'bank',
         'nmb' => 'bank',
         'nbc' => 'bank',

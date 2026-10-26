@@ -1,22 +1,9 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/format";
+import { T } from "@/lib/i18n";
 import { Icon, type IconName } from "./Icon";
 
-export function Spinner({ size = 20, className }: { size?: number; className?: string }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      className={cn("animate-spin", className)}
-      role="status"
-      aria-label="Loading"
-    >
-      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeOpacity="0.2" strokeWidth="3" fill="none" />
-      <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="3" strokeLinecap="round" fill="none" />
-    </svg>
-  );
-}
+export { Spinner } from "./Spinner";
 
 export function Skeleton({ className }: { className?: string }) {
   return <div className={cn("skeleton rounded-md", className)} aria-hidden="true" />;
@@ -30,7 +17,7 @@ export function EmptyState({
   className,
 }: {
   icon?: IconName;
-  title: string;
+  title: ReactNode;
   description?: ReactNode;
   action?: ReactNode;
   className?: string;
@@ -45,8 +32,12 @@ export function EmptyState({
       <div className="grid h-14 w-14 place-items-center rounded-full bg-surface-2 text-text-muted">
         <Icon name={icon} size={26} />
       </div>
-      <h3 className="text-base font-bold">{title}</h3>
-      {description && <p className="max-w-sm text-sm text-text-muted">{description}</p>}
+      <h3 className="text-base font-bold">
+        {typeof title === "string" ? <T>{title}</T> : title}
+      </h3>
+      {description && (
+        <p className="max-w-sm text-sm text-text-muted">{typeof description === "string" ? <T>{description}</T> : description}</p>
+      )}
       {action && <div className="mt-2">{action}</div>}
     </div>
   );
@@ -110,5 +101,5 @@ export function statusTone(status: string | null | undefined): Tone {
 }
 
 export function StatusPill({ status }: { status: string | null | undefined }) {
-  return <Pill tone={statusTone(status)}>{status ?? "—"}</Pill>;
+  return <Pill tone={statusTone(status)}>{status ? <T>{status}</T> : "-"}</Pill>;
 }

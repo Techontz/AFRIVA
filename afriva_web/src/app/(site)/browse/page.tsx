@@ -5,12 +5,13 @@ import { PageNav } from "@/components/site/PageNav";
 import { PosterCard, PosterCardSkeleton, gridClass } from "@/components/site/PosterCard";
 import { ApiDownState, EmptyState } from "@/components/ui/Feedback";
 import { cn } from "@/lib/format";
+import { T } from "@/lib/i18n";
 import { serverGet, serverPage } from "@/lib/server-api";
 import type { Category, Drama } from "@/lib/types";
 
 export const metadata: Metadata = {
-  title: "Browse",
-  description: "Browse African short-drama series by category: romance, revenge, billionaire, family, comedy and more.",
+  title: "Vinjari",
+  description: "Vinjari series fupi za Kiafrika kwa kategoria: Mapenzi, Historia, Siri na Mafumbo, Vita na Mashujaa, Vichekesho, Upelelezi, Maisha na Hadithi za Afrika.",
 };
 
 type SP = { category?: string; sort?: string; page?: string };
@@ -28,8 +29,12 @@ function hrefFor(sp: SP, patch: Partial<SP>) {
 export default function BrowsePage({ searchParams }: PageProps<"/browse">) {
   return (
     <div className="site-container pt-8">
-      <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">Browse</h1>
-      <p className="mt-1 text-sm text-text-muted">Find your next obsession — one episode at a time.</p>
+      <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
+        <T>Browse</T>
+      </h1>
+      <p className="mt-1 text-sm text-text-muted">
+        <T>Find your next obsession, one episode at a time.</T>
+      </p>
       <Suspense fallback={<BrowseSkeleton />}>
         <BrowseContent searchParams={searchParams as Promise<SP>} />
       </Suspense>
@@ -58,7 +63,7 @@ async function BrowseContent({ searchParams }: { searchParams: Promise<SP> }) {
     <>
       <div className="sticky top-16 lg:top-[88px] z-30 mt-6 border-b border-border bg-bg/90 py-3 backdrop-blur-xl">
         <div className="flex items-center gap-3">
-          <div className="scrollbar-none -my-1 flex flex-1 gap-2 overflow-x-auto py-1" role="list" aria-label="Categories">
+          <div className="scrollbar-none -my-1 flex flex-1 gap-2 overflow-x-auto py-1" role="list" aria-label="Kategoria">
             {chips.map((c) => (
               <Link
                 key={c.slug}
@@ -70,11 +75,11 @@ async function BrowseContent({ searchParams }: { searchParams: Promise<SP> }) {
                   activeCat === c.slug ? "bg-primary text-white" : "bg-surface-2 text-text-muted hover:bg-surface-3 hover:text-text",
                 )}
               >
-                {c.name}
+                {c.id === 0 ? <T>{c.name}</T> : c.name}
               </Link>
             ))}
           </div>
-          <div className="flex shrink-0 rounded-full bg-surface-2 p-1" role="group" aria-label="Sort">
+          <div className="flex shrink-0 rounded-full bg-surface-2 p-1" role="group" aria-label="Panga">
             {(["popular", "newest"] as const).map((s) => (
               <Link
                 key={s}
@@ -85,7 +90,7 @@ async function BrowseContent({ searchParams }: { searchParams: Promise<SP> }) {
                   sp.sort === s ? "bg-surface text-text shadow" : "text-text-dim hover:text-text",
                 )}
               >
-                {s}
+                <T>{s === "popular" ? "Popular" : "Newest"}</T>
               </Link>
             ))}
           </div>
@@ -98,10 +103,10 @@ async function BrowseContent({ searchParams }: { searchParams: Promise<SP> }) {
         ) : result.items.length === 0 ? (
           <EmptyState
             title="No dramas here yet"
-            description="Try another category — new series land every week."
+            description={<T>Try another category. New series land every week.</T>}
             action={
               <Link href="/browse" className="text-sm font-semibold text-primary hover:underline">
-                Show all dramas
+                <T>Show all dramas</T>
               </Link>
             }
           />

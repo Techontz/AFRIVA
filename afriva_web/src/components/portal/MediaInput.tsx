@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useMemo, useState } from "react";
 import { cn } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 import { Icon } from "../ui/Icon";
 import { inputClass } from "../ui/Form";
 
@@ -30,6 +31,7 @@ export function MediaInput({
   aspect?: string;
 }) {
   const id = useId();
+  const t = useT();
   const [mode, setMode] = useState<"url" | "file">(value.file ? "file" : "url");
   const preview = useMemo(() => (value.file ? URL.createObjectURL(value.file) : null), [value.file]);
   useEffect(() => {
@@ -42,7 +44,7 @@ export function MediaInput({
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
-        <span className="text-[13px] font-semibold text-text-muted">{label}</span>
+        <span className="text-[13px] font-semibold text-text-muted">{t(label)}</span>
         <div className="flex rounded-full bg-surface-2 p-0.5 text-[11px] font-semibold">
           {(["url", "file"] as const).map((m) => (
             <button
@@ -54,7 +56,7 @@ export function MediaInput({
                 mode === m ? "bg-surface text-text shadow" : "text-text-dim hover:text-text",
               )}
             >
-              {m === "url" ? "URL" : "Upload"}
+              {m === "url" ? "URL" : t("Upload")}
             </button>
           ))}
         </div>
@@ -73,7 +75,7 @@ export function MediaInput({
           className="flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-border bg-surface px-3.5 py-3 text-sm text-text-muted transition hover:border-primary hover:text-text"
         >
           <Icon name="upload" size={18} />
-          <span className="truncate">{value.file ? value.file.name : `Choose ${kind} file…`}</span>
+          <span className="truncate">{value.file ? value.file.name : t(kind === "video" ? "Choose video file…" : "Choose image file…")}</span>
           <input
             id={id}
             type="file"

@@ -1,6 +1,7 @@
 import 'package:intl/intl.dart';
 
 import 'config.dart';
+import 'i18n.dart';
 
 class Fmt {
   Fmt._();
@@ -26,18 +27,18 @@ class Fmt {
   }
 
   static String date(DateTime? d) =>
-      d == null ? '—' : DateFormat('d MMM yyyy').format(d.toLocal());
+      d == null ? '-' : DateFormat('d MMM yyyy').format(d.toLocal());
 
   static String dateTime(DateTime? d) =>
-      d == null ? '—' : DateFormat('d MMM yyyy, HH:mm').format(d.toLocal());
+      d == null ? '-' : DateFormat('d MMM yyyy, HH:mm').format(d.toLocal());
 
   static String relative(DateTime? d) {
     if (d == null) return '';
     final diff = DateTime.now().difference(d.toLocal());
-    if (diff.inMinutes < 1) return 'Just now';
-    if (diff.inHours < 1) return '${diff.inMinutes}m ago';
-    if (diff.inDays < 1) return '${diff.inHours}h ago';
-    if (diff.inDays < 7) return '${diff.inDays}d ago';
+    if (diff.inMinutes < 1) return trNow('Just now');
+    if (diff.inHours < 1) return trNow('{n}m ago', {'n': diff.inMinutes});
+    if (diff.inDays < 1) return trNow('{n}h ago', {'n': diff.inHours});
+    if (diff.inDays < 7) return trNow('{n}d ago', {'n': diff.inDays});
     return date(d);
   }
 }

@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../core/format.dart';
 import '../core/haptics.dart';
+import '../core/i18n.dart';
 import '../core/theme.dart';
 import '../models/drama.dart';
 import 'badges.dart';
@@ -68,7 +69,7 @@ class Poster extends StatelessWidget {
               right: 6,
               bottom: 6,
               child: Text(
-                'EP ${drama.totalEpisodes}',
+                context.tr('EP {n}', {'n': drama.totalEpisodes}),
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 11,
@@ -120,7 +121,7 @@ class PosterCard extends StatelessWidget {
             ),
             const SizedBox(height: 3),
             Text(
-              episodesLabel(drama.totalEpisodes),
+              episodesLabel(context, drama.totalEpisodes),
               style: text.labelSmall!.copyWith(
                 color: AppColors.textDim,
                 fontSize: 11.5,
@@ -139,7 +140,11 @@ class PosterCard extends StatelessWidget {
 }
 
 /// "60 Episodes" / "1 Episode" / "Coming soon".
-String episodesLabel(int n) => n <= 0 ? 'Coming soon' : n == 1 ? '1 Episode' : '$n Episodes';
+String episodesLabel(BuildContext context, int n) => n <= 0
+    ? context.tr('Coming soon')
+    : n == 1
+        ? context.tr('1 Episode')
+        : context.tr('{n} Episodes', {'n': n});
 
 /// Ranking row: big outlined numeral, thumb, title, tags, views.
 class RankingTile extends StatelessWidget {
@@ -182,11 +187,11 @@ class RankingTile extends StatelessWidget {
                     children: [
                       const Icon(Icons.local_fire_department_rounded, size: 14, color: AppColors.primary),
                       const SizedBox(width: 3),
-                      Text('${Fmt.compact(drama.views)} views',
+                      Text(context.tr('{n} views', {'n': Fmt.compact(drama.views)}),
                           style: text.labelSmall!.copyWith(color: AppColors.textMuted)),
                       if (drama.totalEpisodes > 0) ...[
                         const SizedBox(width: 10),
-                        Text(episodesLabel(drama.totalEpisodes), style: text.labelSmall),
+                        Text(episodesLabel(context, drama.totalEpisodes), style: text.labelSmall),
                       ],
                     ],
                   ),

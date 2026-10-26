@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/format.dart';
 import '../../core/haptics.dart';
+import '../../core/i18n.dart';
 import '../../core/share.dart';
 import '../../core/theme.dart';
 import '../../models/drama.dart';
@@ -18,6 +19,8 @@ import '../../widgets/net_image.dart';
 import '../../widgets/poster_card.dart';
 import '../../widgets/skeletons.dart';
 import '../../widgets/states.dart';
+import 'report_sheet.dart';
+import 'trailer_player.dart';
 
 class DramaDetailScreen extends StatefulWidget {
   const DramaDetailScreen({super.key, required this.slug, this.initial, this.heroTag});
@@ -109,10 +112,18 @@ class _DramaDetailScreenState extends State<DramaDetailScreen> {
               ),
               actions: [
                 Padding(
+                  padding: const EdgeInsets.only(right: 6),
+                  child: GlassIconButton(
+                    icon: Icons.flag_outlined,
+                    tooltip: context.tr('Report'),
+                    onPressed: () => showReportSheet(context, drama),
+                  ),
+                ),
+                Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: GlassIconButton(
                     icon: Icons.ios_share_rounded,
-                    tooltip: 'Share',
+                    tooltip: context.tr('Share'),
                     onPressed: () => shareDrama(drama),
                   ),
                 ),
@@ -191,7 +202,10 @@ class _DramaDetailScreenState extends State<DramaDetailScreen> {
                                     runSpacing: 4,
                                     crossAxisAlignment: WrapCrossAlignment.center,
                                     children: [
-                                      if (drama.totalEpisodes > 0) Text('${drama.totalEpisodes} episodes'),
+                                      if (drama.totalEpisodes > 0) Text(context.tr('{n} episodes', {'n': drama.totalEpisodes})),
+                                      if (drama.totalDurationSeconds > 0)
+                                        Text(_runtime(context, drama.totalDurationSeconds)),
+                                      if (drama.ageRating != null) _AgeRating(drama.ageRating!),
                                       Row(mainAxisSize: MainAxisSize.min, children: [
                                         const Icon(Icons.local_fire_department_rounded,
                                             size: 14, color: AppColors.primary),
@@ -204,7 +218,7 @@ class _DramaDetailScreenState extends State<DramaDetailScreen> {
                                 ),
                                 if (drama.company != null) ...[
                                   const SizedBox(height: 6),
-                                  Text('by ${drama.company!.name}',
+                                  Text(context.tr('by {name}', {'name': drama.company!.name}),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: text.labelSmall!.copyWith(color: AppColors.textDim)),
@@ -236,7 +250,7 @@ class _DramaDetailScreenState extends State<DramaDetailScreen> {
                   children: [
                     Expanded(
                       child: PillButton(
-                        label: 'Play EP 1',
+                        label: context.tr('Play EP 1'),
                         icon: Icons.play_arrow_rounded,
                         expand: true,
                         onPressed: () => _play(_detail?.episodes.firstOrNull?.number ?? 1),
@@ -246,6 +260,17 @@ class _DramaDetailScreenState extends State<DramaDetailScreen> {
                     _MyListButton(drama: drama),
                   ],
                 ),
+                if ((drama.trailerUrl ?? '').isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  PillButton(
+                    label: context.tr('Watch trailer'),
+                    icon: Icons.movie_creation_outlined,
+                    secondary: true,
+                    expand: true,
+                    height: 44,
+                    onPressed: () => showTrailer(context, url: drama.trailerUrl!, title: drama.title),
+                  ),
+                ],
                 const SizedBox(height: 18),
                 if (drama.synopsis.isNotEmpty)
                   GestureDetector(
@@ -264,7 +289,7 @@ class _DramaDetailScreenState extends State<DramaDetailScreen> {
                             style: text.bodyMedium,
                           ),
                           const SizedBox(height: 4),
-                          Text(_synopsisOpen ? 'Show less' : 'Read more',
+                          Text(context.tr(_synopsisOpen ? 'Show less' : 'Read more'),
                               style: text.labelMedium!.copyWith(color: AppColors.primary)),
                         ],
                       ),
@@ -285,7 +310,7 @@ class _DramaDetailScreenState extends State<DramaDetailScreen> {
     final detail = _detail;
     final header = SliverToBoxAdapter(
       child: SectionHeader(
-        title: 'Episodes',
+        title: context.tr('Episodes'),
         padding: const EdgeInsets.fromLTRB(16, 26, 16, 12),
       ),
     );
@@ -305,22 +330,28 @@ class _DramaDetailScreenState extends State<DramaDetailScreen> {
     if (detail.episodes.isEmpty) {
       return [
         header,
-        const SliverToBoxAdapter(
+        SliverToBoxAdapter(
           child: StateMessage(
             icon: Icons.video_library_outlined,
-            title: 'Episodes coming soon',
+            title: context.tr('Episodes coming soon'),
             compact: true,
           ),
         ),
       ];
     }
     final isVip = context.select<AuthState, bool>((a) => a.isVip);
+    // Scope §02: say up front which episodes are free and what the rest cost.
+    final then = drama.isVipOnly
+        ? context.tr('then VIP only')
+        : drama.accessMode == 'coins_only'
+            ? context.tr('then {coins} coins per episode', {'coins': drama.coinsPerEpisode})
+            : context.tr('then {coins} coins per episode or VIP', {'coins': drama.coinsPerEpisode});
     final freeInfo = drama.freeEpisodes > 0
-        ? 'EP 1-${drama.freeEpisodes} free · then ${drama.coinsPerEpisode} coins/ep or VIP'
+        ? '${context.tr('Episodes 1-{free} are free', {'free': drama.freeEpisodes})} · $then'
         : null;
     return [
       header,
-      if (freeInfo != null && !isVip)
+      if (freeInfo != null)
         SliverPadding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
           sliver: SliverToBoxAdapter(
@@ -352,7 +383,7 @@ class _DramaDetailScreenState extends State<DramaDetailScreen> {
     final related = _detail?.related ?? const <Drama>[];
     if (related.isEmpty) return const [];
     return [
-      const SliverToBoxAdapter(child: SectionHeader(title: 'You may also like')),
+      SliverToBoxAdapter(child: SectionHeader(title: context.tr('You may also like'))),
       SliverPadding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         sliver: SliverGrid.builder(
@@ -363,6 +394,29 @@ class _DramaDetailScreenState extends State<DramaDetailScreen> {
       ),
     ];
   }
+}
+
+String _runtime(BuildContext context, int seconds) {
+  final minutes = (seconds / 60).round();
+  if (minutes < 60) return context.tr('{n} min', {'n': minutes});
+  return context.tr('{h} h {m} min', {'h': minutes ~/ 60, 'm': minutes % 60});
+}
+
+/// Age rating (alama ya umri), e.g. "13+" or "Wote".
+class _AgeRating extends StatelessWidget {
+  const _AgeRating(this.rating);
+  final String rating;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+        decoration: BoxDecoration(
+          border: Border.all(color: AppColors.textMuted),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Text(rating == 'all' ? context.tr('All ages') : rating,
+            style: Theme.of(context).textTheme.labelSmall!.copyWith(fontWeight: FontWeight.w800)),
+      );
 }
 
 class _MyListButton extends StatelessWidget {
@@ -399,7 +453,7 @@ class _MyListButton extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 6),
-                Text('My List',
+                Text(context.tr('Favorite'),
                     style: Theme.of(context).textTheme.labelLarge!.copyWith(fontWeight: FontWeight.w800)),
               ],
             ),

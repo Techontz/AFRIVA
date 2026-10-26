@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../core/api_client.dart';
 import '../../core/auth_guard.dart';
 import '../../core/haptics.dart';
+import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import '../../models/drama.dart';
 import '../../models/episode.dart';
@@ -20,7 +21,7 @@ enum PaywallResult {
   /// The episode was unlocked from the sheet.
   unlocked,
 
-  /// The viewer's entitlements may have changed (login / VIP / top-up) — retry playback.
+  /// The viewer's entitlements may have changed (login / VIP / top-up), retry playback.
   retry,
 }
 
@@ -66,7 +67,7 @@ class _PaywallBodyState extends State<_PaywallBody> {
     } catch (e) {
       if (mounted) {
         setState(() => _busy = null);
-        showSnack(context, errorMessage(e), error: true);
+        showSnack(context, context.tr(errorMessage(e)), error: true);
       }
     }
   }
@@ -108,30 +109,34 @@ class _PaywallBodyState extends State<_PaywallBody> {
           ),
           const SizedBox(height: 14),
           Text(
-            'Unlock Episode ${widget.episode.number}',
+            context.tr('Unlock Episode {n}', {'n': widget.episode.number}),
             textAlign: TextAlign.center,
             style: text.titleLarge,
           ),
           const SizedBox(height: 6),
           Text(
-            'Keep watching "${widget.drama.title}" — the story is just getting good.',
+            widget.info.vipOnly
+                ? context.tr('This series is for VIP members only.')
+                : context.tr('Keep watching "{title}". The story is just getting good.', {'title': widget.drama.title}),
             textAlign: TextAlign.center,
             style: text.bodyMedium,
           ),
           const SizedBox(height: 20),
 
-          // VIP CTA
-          _VipCard(onTap: _busy == null ? () => _openStore() : null),
-          const SizedBox(height: 12),
+          // VIP CTA (not offered for coins-only series, where VIP does not apply)
+          if (widget.info.canUseVip) ...[
+            _VipCard(onTap: _busy == null ? () => _openStore() : null),
+            const SizedBox(height: 12),
+          ],
 
           if (!loggedIn) ...[
             PillButton(
-              label: 'Log in to unlock',
+              label: context.tr('Log in to unlock'),
               icon: Icons.login_rounded,
               expand: true,
               onPressed: _login,
             ),
-          ] else ...[
+          ] else if (widget.info.canUseCoins) ...[
             // Coins option
             Container(
               padding: const EdgeInsets.all(14),
@@ -143,16 +148,16 @@ class _PaywallBodyState extends State<_PaywallBody> {
                 children: [
                   Row(
                     children: [
-                      Text('Unlock with coins', style: text.titleSmall),
+                      Text(context.tr('Unlock with coins'), style: text.titleSmall),
                       const Spacer(),
-                      Text('Balance ', style: text.labelSmall),
+                      Text('${context.tr('Balance')} ', style: text.labelSmall),
                       CoinAmount(balance, size: 13),
                     ],
                   ),
                   const SizedBox(height: 12),
                   if (enough)
                     PillButton(
-                      label: 'Unlock for $_coinsRequired coins',
+                      label: context.tr('Unlock for {n} coins', {'n': _coinsRequired}),
                       icon: Icons.lock_open_rounded,
                       expand: true,
                       height: 46,
@@ -161,12 +166,13 @@ class _PaywallBodyState extends State<_PaywallBody> {
                     )
                   else ...[
                     Text(
-                      'You need $_coinsRequired coins — top up ${_coinsRequired - balance} more.',
+                      context.tr('You need {n} coins. Top up {more} more.',
+                          {'n': _coinsRequired, 'more': _coinsRequired - balance}),
                       style: text.bodySmall,
                     ),
                     const SizedBox(height: 10),
                     PillButton(
-                      label: 'Get coins',
+                      label: context.tr('Get coins'),
                       icon: Icons.add_circle_outline_rounded,
                       expand: true,
                       height: 46,
@@ -180,8 +186,8 @@ class _PaywallBodyState extends State<_PaywallBody> {
               const SizedBox(height: 10),
               PillButton(
                 label: widget.info.episodesRemaining > 0
-                    ? 'Use episode pack (${widget.info.episodesRemaining} left)'
-                    : 'Use 1 episode from my pack',
+                    ? context.tr('Use episode pack ({n} left)', {'n': widget.info.episodesRemaining})
+                    : context.tr('Use 1 episode from my pack'),
                 icon: Icons.confirmation_number_outlined,
                 secondary: true,
                 expand: true,
@@ -194,7 +200,7 @@ class _PaywallBodyState extends State<_PaywallBody> {
           const SizedBox(height: 8),
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Not now'),
+            child: Text(context.tr('Not now')),
           ),
         ],
       ),
@@ -234,9 +240,9 @@ class _VipCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Join Afriva VIP', style: text.titleSmall!.copyWith(color: AppColors.primary)),
+                    Text(context.tr('Join Afriva VIP'), style: text.titleSmall!.copyWith(color: AppColors.primary)),
                     const SizedBox(height: 2),
-                    Text('Every episode unlocked. No waiting.', style: text.bodySmall),
+                    Text(context.tr('Every episode unlocked. No waiting.'), style: text.bodySmall),
                   ],
                 ),
               ),

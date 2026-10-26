@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { cn } from "@/lib/format";
+import { T } from "@/lib/i18n";
 import { Icon } from "../ui/Icon";
 
 /** Server-friendly pagination built from links. */
@@ -21,10 +22,13 @@ export function PageNav({
   const base =
     "grid h-10 min-w-10 place-items-center rounded-full px-3 text-sm font-semibold transition-colors duration-150";
   return (
-    <nav className="mt-10 flex items-center justify-center gap-1.5" aria-label="Pagination">
+    <nav className="mt-10 flex items-center justify-center gap-1.5" aria-label="Kurasa">
       {page > 1 ? (
-        <Link href={hrefFor(page - 1)} className={cn(base, "bg-surface-2 hover:bg-surface-3")} aria-label="Previous page">
+        <Link href={hrefFor(page - 1)} className={cn(base, "bg-surface-2 hover:bg-surface-3")}>
           <Icon name="chevron-left" size={18} />
+          <span className="sr-only">
+            <T>Previous page</T>
+          </span>
         </Link>
       ) : null}
       {pages.map((p, i) =>
@@ -44,8 +48,11 @@ export function PageNav({
         ),
       )}
       {page < last ? (
-        <Link href={hrefFor(page + 1)} className={cn(base, "bg-surface-2 hover:bg-surface-3")} aria-label="Next page">
+        <Link href={hrefFor(page + 1)} className={cn(base, "bg-surface-2 hover:bg-surface-3")}>
           <Icon name="chevron-right" size={18} />
+          <span className="sr-only">
+            <T>Next page</T>
+          </span>
         </Link>
       ) : null}
     </nav>

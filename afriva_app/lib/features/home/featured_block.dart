@@ -74,7 +74,7 @@ class _FeaturedCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        episodesLabel(drama.totalEpisodes),
+                        episodesLabel(context, drama.totalEpisodes),
                         style: text.labelSmall!.copyWith(
                           color: AppColors.textMuted,
                           fontSize: 12,

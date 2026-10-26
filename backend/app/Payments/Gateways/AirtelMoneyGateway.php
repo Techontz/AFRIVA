@@ -3,7 +3,7 @@
 namespace App\Payments\Gateways;
 
 /**
- * Airtel Money driver — NOT CONNECTED YET.
+ * Airtel Money driver: NOT CONNECTED YET.
  * Credentials come from config('payments.drivers.*') which reads .env.
  * When integrating: implement initiate() (push USSD / build redirect), verify() and handleCallback().
  */

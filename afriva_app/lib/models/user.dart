@@ -1,3 +1,4 @@
+import '../core/i18n.dart';
 import 'commerce.dart';
 import 'drama.dart';
 import 'json.dart';
@@ -34,10 +35,10 @@ class Subscription {
   String get label {
     if (plan != null && plan!.name.isNotEmpty) return plan!.name;
     return switch (type) {
-      'weekly' => 'Weekly VIP',
-      'monthly' => 'Monthly VIP',
-      'yearly' => 'Yearly VIP',
-      'episodes' => 'Episode pack',
+      'weekly' => trNow('Weekly VIP'),
+      'monthly' => trNow('Monthly VIP'),
+      'yearly' => trNow('Yearly VIP'),
+      'episodes' => trNow('Episode pack'),
       _ => 'VIP',
     };
   }
@@ -66,9 +67,17 @@ class User {
     this.company,
     this.activeSubscription,
     this.serverVip,
+    this.companyStatus,
+    this.agreementAccepted = false,
   });
 
   final int id;
+
+  /// Creator account state: pending | active | suspended (role company only).
+  final String? companyStatus;
+  final bool agreementAccepted;
+
+  bool get isCreator => role == 'company';
   final String name;
   /// `is_vip` flag from the API (authoritative when present).
   final bool? serverVip;
@@ -106,6 +115,8 @@ class User {
         company: company,
         activeSubscription: activeSubscription ?? this.activeSubscription,
         serverVip: serverVip,
+        companyStatus: companyStatus,
+        agreementAccepted: agreementAccepted,
       );
 
   factory User.fromJson(Json j) => User(
@@ -121,6 +132,8 @@ class User {
             ? null
             : Subscription.fromJson(asMap(j['active_subscription'])),
         serverVip: j['is_vip'] == null ? null : asBool(j['is_vip']),
+        companyStatus: asMapOrNull(j['company']) == null ? null : asStringOrNull(asMap(j['company'])['status']),
+        agreementAccepted: asMapOrNull(j['company']) != null && asBool(asMap(j['company'])['agreement_accepted']),
       );
 }
 

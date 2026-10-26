@@ -11,13 +11,15 @@ use App\Http\Resources\UserResource;
 use App\Models\Company;
 use App\Models\CompanyEarning;
 use App\Models\Payout;
+use App\Models\Setting;
+use App\Services\AnalyticsService;
 use App\Services\ContentService;
 use App\Services\StatsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-/** Company studio: dashboard, earnings, payouts, profile — always scoped to the user's company. */
+/** Company studio: dashboard, earnings, payouts, profile, always scoped to the user's company. */
 class StudioController extends Controller
 {
     protected function company(Request $request): Company
@@ -28,6 +30,44 @@ class StudioController extends Controller
     public function dashboard(Request $request, StatsService $stats): JsonResponse
     {
         return $this->ok($stats->companyStats($this->company($request)));
+    }
+
+    /** GET /studio/agreement: the creator revenue agreement and whether this company accepted the current version. */
+    public function agreement(Request $request): JsonResponse
+    {
+        $company = $this->company($request);
+
+        return $this->ok([
+            'version' => Setting::get('creator_agreement_version'),
+            'text' => Setting::get('creator_agreement_text'),
+            'accepted' => $company->hasAcceptedAgreement(),
+            'accepted_at' => $company->agreement_accepted_at?->toIso8601String(),
+            'accepted_version' => $company->agreement_version,
+            'revenue_share_percent' => (float) $company->revenue_share_percent,
+            'company_status' => $company->status,
+        ]);
+    }
+
+    /** POST /studio/agreement {accept: true} */
+    public function acceptAgreement(Request $request): JsonResponse
+    {
+        $request->validate(['accept' => ['accepted']], ['accept.accepted' => 'Lazima ukubali mkataba ili kuendelea.']);
+        $company = $this->company($request);
+        $company->forceFill(['agreement_accepted_at' => now(), 'agreement_version' => Setting::get('creator_agreement_version')])->save();
+
+        return $this->agreement($request);
+    }
+
+    /** GET /studio/analytics?days=30: revenue and audience per series for this creator. */
+    public function analytics(Request $request, AnalyticsService $analytics): JsonResponse
+    {
+        $days = in_array((int) $request->query('days'), [7, 30, 90], true) ? (int) $request->query('days') : 30;
+        $company = $this->company($request);
+
+        return $this->ok([
+            'period' => ['days' => $days, 'from' => now()->subDays($days - 1)->toDateString(), 'to' => now()->toDateString()],
+            'series' => $analytics->seriesTable(now()->subDays($days - 1)->toDateString(), now()->toDateString(), $company->id),
+        ]);
     }
 
     public function earnings(Request $request, StatsService $stats): JsonResponse

@@ -62,7 +62,7 @@ class ActivitySeeder extends Seeder
         $viewerIds = User::where('email', 'like', '%@demo.afriva.com')->pluck('id')->all();
 
         // ---------------------------------------------------------------- payments + subscriptions
-        $planWeights = ['Weekly VIP' => 28, 'Monthly VIP' => 30, 'Yearly VIP' => 4, '6 Episodes' => 10, '15 Episodes' => 5, '100 Coins' => 14, '550 Coins' => 9];
+        $planWeights = ['VIP ya Wiki' => 28, 'VIP ya Mwezi' => 30, 'VIP ya Mwaka' => 4, 'Episode 6' => 10, 'Episode 15' => 5, 'Coins 100' => 14, 'Coins 550' => 9];
         $methodWeights = ['mpesa' => 36, 'tigopesa' => 20, 'airtelmoney' => 15, 'halopesa' => 8, 'tpesa' => 3, 'visa' => 8, 'mastercard' => 5, 'crdb' => 3, 'nmb' => 1, 'nbc' => 1];
 
         /** @var array<int,array{user_id:int,starts:Carbon,ends:Carbon}> $timeSubs */
@@ -292,7 +292,7 @@ class ActivitySeeder extends Seeder
         $now = now();
         $vip = User::where('email', 'vip@afriva.com')->first();
         $viewer = User::where('email', 'viewer@afriva.com')->first();
-        $monthly = $plansByName['Monthly VIP'];
+        $monthly = $plansByName['VIP ya Mwezi'];
 
         if ($vip) {
             $paidAt = $now->copy()->subDays(4)->setTime(20, 15);
@@ -334,8 +334,10 @@ class ActivitySeeder extends Seeder
         return [
             'company_id' => $company->id,
             'drama_id' => $dramaId,
+            'episode_id' => $meta['episode_id'] ?? null,
             'source' => $source,
             'amount' => (int) round($gross * $company->shareFraction()),
+            'gross_amount' => (int) round($gross),
             'period_date' => $at->toDateString(),
             'meta' => json_encode(array_merge($meta, ['gross_value' => round($gross, 2), 'share_percent' => (float) $company->revenue_share_percent])),
             'created_at' => $at,

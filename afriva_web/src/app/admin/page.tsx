@@ -7,6 +7,7 @@ import { Card, DataTable, PageHeader, StatCard, Thumb } from "@/components/porta
 import { StatusPill } from "@/components/ui/Feedback";
 import { asArray } from "@/lib/api";
 import { formatCompact, formatDate, formatMoney, formatNumber, pickNum, toSeries } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 import { useApi } from "@/lib/hooks";
 import type { Drama, Payment } from "@/lib/types";
 
@@ -14,6 +15,7 @@ type Dash = Record<string, unknown>;
 
 export default function AdminDashboard() {
   const { data, loading, error, reload } = useApi<Dash>("/admin/dashboard");
+  const t = useT();
 
   if (error && !data) {
     return (
@@ -25,10 +27,10 @@ export default function AdminDashboard() {
   }
 
   // Totals may live under `totals` or at the top level.
-  const t = (data?.totals ?? data ?? {}) as Record<string, unknown>;
+  const totals = (data?.totals ?? data ?? {}) as Record<string, unknown>;
   const revenueSeries = toSeries(data?.revenue_chart, "revenue", "amount", "total");
   const byMethod = asArray<Record<string, unknown>>(data?.revenue_by_method).map((r) => ({
-    label: String(r.name ?? r.method ?? r.payment_method_code ?? r.code ?? "—"),
+    label: String(r.name ?? r.method ?? r.payment_method_code ?? r.code ?? "-"),
     value: pickNum(r, "value", "amount", "total", "revenue"),
   }));
   const topDramas = asArray<Drama & Record<string, unknown>>(data?.top_dramas);
@@ -39,14 +41,14 @@ export default function AdminDashboard() {
       <PageHeader title="Dashboard" description="Platform-wide performance at a glance." />
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
-        <StatCard loading={loading} label="Total revenue" icon="wallet" value={formatMoney(pickNum(t, "revenue", "total_revenue"))} />
-        <StatCard loading={loading} label="Revenue today" icon="sparkles" accent="gold" value={formatMoney(pickNum(t, "revenue_today"))} />
-        <StatCard loading={loading} label="Revenue this month" icon="chart" accent="success" value={formatMoney(pickNum(t, "revenue_month", "revenue_this_month"))} />
-        <StatCard loading={loading} label="Active subscribers" icon="crown" accent="gold" value={formatNumber(pickNum(t, "active_subscribers", "subscribers"))} />
-        <StatCard loading={loading} label="Users" icon="users" accent="info" value={formatNumber(pickNum(t, "users", "total_users"))} />
-        <StatCard loading={loading} label="Companies" icon="building" value={formatNumber(pickNum(t, "companies"))} />
-        <StatCard loading={loading} label="Dramas" icon="film" accent="info" value={formatNumber(pickNum(t, "dramas"))} />
-        <StatCard loading={loading} label="Total views" icon="eye" accent="success" value={formatCompact(pickNum(t, "views", "total_views"))} />
+        <StatCard loading={loading} label="Total revenue" icon="wallet" value={formatMoney(pickNum(totals, "revenue", "total_revenue"))} />
+        <StatCard loading={loading} label="Revenue today" icon="sparkles" accent="gold" value={formatMoney(pickNum(totals, "revenue_today"))} />
+        <StatCard loading={loading} label="Revenue this month" icon="chart" accent="success" value={formatMoney(pickNum(totals, "revenue_month", "revenue_this_month"))} />
+        <StatCard loading={loading} label="Active subscribers" icon="crown" accent="gold" value={formatNumber(pickNum(totals, "active_subscribers", "subscribers"))} />
+        <StatCard loading={loading} label="Users" icon="users" accent="info" value={formatNumber(pickNum(totals, "users", "total_users"))} />
+        <StatCard loading={loading} label="Companies" icon="building" value={formatNumber(pickNum(totals, "companies"))} />
+        <StatCard loading={loading} label="Dramas" icon="film" accent="info" value={formatNumber(pickNum(totals, "dramas"))} />
+        <StatCard loading={loading} label="Total views" icon="eye" accent="success" value={formatCompact(pickNum(totals, "views", "total_views"))} />
       </div>
 
       <div className="mt-4 grid gap-4 xl:grid-cols-3">
@@ -60,7 +62,7 @@ export default function AdminDashboard() {
 
       <div className="mt-4 grid gap-4 xl:grid-cols-2">
         <div>
-          <h2 className="mb-3 text-[15px] font-bold">Top dramas</h2>
+          <h2 className="mb-3 text-[15px] font-bold">{t("Top dramas")}</h2>
           <DataTable
             loading={loading}
             rows={topDramas}
@@ -90,9 +92,9 @@ export default function AdminDashboard() {
         </div>
         <div>
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-[15px] font-bold">Recent payments</h2>
+            <h2 className="text-[15px] font-bold">{t("Recent payments")}</h2>
             <Link href="/admin/payments" className="text-xs font-semibold text-primary hover:underline">
-              View all
+              {t("View all")}
             </Link>
           </div>
           <DataTable
@@ -105,7 +107,7 @@ export default function AdminDashboard() {
                 header: "User",
                 render: (p) => (
                   <div className="min-w-0">
-                    <p className="truncate font-semibold">{p.user?.name ?? "—"}</p>
+                    <p className="truncate font-semibold">{p.user?.name ?? "-"}</p>
                     <p className="truncate font-mono text-[11px] text-text-dim">{p.reference}</p>
                   </div>
                 ),

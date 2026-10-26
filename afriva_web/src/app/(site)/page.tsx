@@ -1,43 +1,36 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import { ContinueWatching } from "@/components/site/ContinueWatching";
 import { DramaSection } from "@/components/site/DramaRow";
 import { FeaturedList } from "@/components/site/FeaturedList";
 import { PosterCardSkeleton, gridClass } from "@/components/site/PosterCard";
 import { buttonClass } from "@/components/ui/Button";
 import { ApiDownState, EmptyState } from "@/components/ui/Feedback";
 import type { IconName } from "@/components/ui/Icon";
+import { T } from "@/lib/i18n";
 import { serverGet } from "@/lib/server-api";
 import type { Drama, HomeData, HomeSection } from "@/lib/types";
 
-/** Display order + labels for the API's section keys; unknown keys follow in API order. */
+/**
+ * Labels + "More" links for the API's section keys. Sections render in the API's order
+ * (scope §02: Zinazovuma, Mpya, then categories). Category rows use the category name as sent.
+ */
 const SECTION_META: Record<string, { title: string; icon: IconName; href: string }> = {
-  must_watch: { title: "Must-sees", icon: "star", href: "/browse?sort=popular" },
   trending: { title: "Trending", icon: "flame", href: "/rankings" },
+  new_releases: { title: "New", icon: "clock", href: "/browse?sort=newest" },
+  must_watch: { title: "Must-sees", icon: "star", href: "/browse?sort=popular" },
   hidden_gems: { title: "Hidden Gems", icon: "sparkles", href: "/browse?sort=popular" },
-  new_releases: { title: "New Releases", icon: "clock", href: "/browse?sort=newest" },
-  popular: { title: "Popular", icon: "trophy", href: "/rankings?type=popular" },
+  popular: { title: "Popular on Afriva", icon: "trophy", href: "/rankings?type=popular" },
 };
-const ORDER = ["must_watch", "trending", "hidden_gems"];
 
 function metaFor(s: HomeSection) {
   return (
     SECTION_META[s.key] ?? {
       title: s.title,
       icon: "tag" as IconName,
-      href: `/browse?category=${encodeURIComponent(s.key.replace(/_/g, "-"))}`,
+      href: s.category ? `/browse?category=${encodeURIComponent(s.category)}` : "/browse",
     }
   );
-}
-
-function orderSections(sections: HomeSection[]) {
-  const rank = (k: string) => {
-    const i = ORDER.indexOf(k);
-    return i === -1 ? ORDER.length : i;
-  };
-  return sections
-    .map((s, i) => ({ s, i }))
-    .sort((a, b) => rank(a.s.key) - rank(b.s.key) || a.i - b.i)
-    .map(({ s }) => s);
 }
 
 /** Featured = home banners in sets of 3 (topped up from sections only if fewer than 3). */
@@ -70,20 +63,22 @@ async function HomeContent() {
   if (!home) {
     return (
       <div className="pt-6">
-        <ApiDownState action={<Link href="/" className={buttonClass("secondary")}>Try again</Link>} />
+        <ApiDownState action={<Link href="/" className={buttonClass("secondary")}><T>Try again</T></Link>} />
       </div>
     );
   }
-  const sections = orderSections(home.sections?.filter((s) => s.dramas?.length) ?? []);
+  // continue_watching is personal and rendered client-side by <ContinueWatching/>.
+  const sections = home.sections?.filter((s) => s.dramas?.length && s.layout !== "continue") ?? [];
   const featured = featuredFrom(home);
 
   if (!sections.length && !featured.length) {
-    return <EmptyState title="New dramas are on the way" description="Our studios are cutting the next big series. Check back soon." />;
+    return <EmptyState title="New dramas are on the way" description={<T>Our studios are cutting the next big series. Check back soon.</T>} />;
   }
 
   return (
     <div className="space-y-12 lg:space-y-14">
       <FeaturedList dramas={featured} />
+      <ContinueWatching />
       {sections.map((s) => {
         const m = metaFor(s);
         return <DramaSection key={s.key} title={m.title} icon={m.icon} href={m.href} dramas={s.dramas} />;

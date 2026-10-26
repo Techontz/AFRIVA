@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../core/api_client.dart';
+import '../core/i18n.dart';
 import '../core/theme.dart';
 import 'buttons.dart';
 
@@ -70,9 +71,9 @@ class ErrorState extends StatelessWidget {
     final network = error is ApiException && (error as ApiException).isNetwork;
     return StateMessage(
       icon: network ? Icons.wifi_off_rounded : Icons.error_outline_rounded,
-      title: network ? "You're offline" : 'Something went wrong',
-      message: errorMessage(error),
-      actionLabel: 'Try again',
+      title: context.tr(network ? "You're offline" : 'Something went wrong'),
+      message: context.tr(errorMessage(error)),
+      actionLabel: context.tr('Try again'),
       onAction: onRetry,
       compact: compact,
     );
@@ -128,9 +129,9 @@ class SectionHeader extends StatelessWidget {
             TextButton(
               onPressed: onMore,
               style: TextButton.styleFrom(foregroundColor: text.titleLarge!.color),
-              child: const Row(
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
-                children: [Text('More'), Icon(Icons.chevron_right_rounded, size: 18)],
+                children: [Text(context.tr('More')), const Icon(Icons.chevron_right_rounded, size: 18)],
               ),
             ),
         ],

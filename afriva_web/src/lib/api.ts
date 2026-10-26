@@ -1,4 +1,11 @@
+import { tNow, type Vars } from "./i18n";
 import type { PageMeta } from "./types";
+
+/** Translate in the browser only; this module is also imported by server code. */
+function tr(text: string, vars?: Vars): string {
+  if (typeof window !== "undefined") return tNow(text, vars);
+  return vars ? text.replace(/\{(\w+)\}/g, (m, k: string) => (k in vars ? String(vars[k] ?? "") : m)) : text;
+}
 
 export const API_URL = (
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"
@@ -15,7 +22,7 @@ export class ApiError extends Error {
   constructor(status: number, body: Record<string, unknown>) {
     super(
       (typeof body.message === "string" && body.message) ||
-        (status === 0 ? "Cannot reach the Afriva server" : `Request failed (${status})`),
+        (status === 0 ? tr("Cannot reach the Afriva server") : tr("Request failed ({status})", { status })),
     );
     this.status = status;
     this.code = (typeof body.code === "string" && body.code) || "error";
@@ -75,14 +82,18 @@ export interface RequestOptions {
   query?: Query;
   token?: string | null;
   signal?: AbortSignal;
+  /** Extra headers, e.g. Idempotency-Key or X-Device-Id. */
+  headers?: Record<string, string>;
+  /** Fire-and-forget requests that should survive page unload (analytics). */
+  keepalive?: boolean;
 }
 
 /** Low-level request returning the parsed JSON envelope. */
 export async function request<T = unknown>(
   path: string,
-  { method = "GET", body, query, token, signal }: RequestOptions = {},
+  { method = "GET", body, query, token, signal, headers: extraHeaders, keepalive }: RequestOptions = {},
 ): Promise<T> {
-  const headers: Record<string, string> = { Accept: "application/json" };
+  const headers: Record<string, string> = { Accept: "application/json", ...extraHeaders };
   const auth = token === undefined ? getToken() : token;
   if (auth) headers.Authorization = `Bearer ${auth}`;
 
@@ -101,6 +112,7 @@ export async function request<T = unknown>(
       headers,
       body: payload,
       signal,
+      keepalive,
       cache: "no-store",
     });
   } catch (e) {
@@ -194,8 +206,18 @@ export function asArray<T>(data: unknown): T[] {
   return [];
 }
 
+/** Random id for Idempotency-Key / device ids (crypto.randomUUID with a fallback for old browsers). */
+export function randomId(): string {
+  try {
+    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID();
+  } catch {
+    /* fall through */
+  }
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}-${Math.random().toString(36).slice(2, 12)}`;
+}
+
 export function errorMessage(e: unknown): string {
   if (e instanceof ApiError) return e.firstError;
   if (e instanceof Error) return e.message;
-  return "Something went wrong";
+  return tr("Something went wrong");
 }

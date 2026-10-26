@@ -23,7 +23,7 @@ class UpdateCompanyRequest extends FormRequest
             'logo_url' => ['nullable', 'string', 'max:500'],
             'logo' => ['nullable', 'image', 'max:4096'],
             'revenue_share_percent' => ['sometimes', 'numeric', 'min:0', 'max:100'],
-            'status' => ['sometimes', Rule::in(['active', 'suspended'])],
+            'status' => ['sometimes', Rule::in(['pending', 'active', 'suspended'])],
             'description' => ['nullable', 'string', 'max:5000'],
             'owner_password' => ['nullable', 'string', 'min:6', 'max:190'],
         ];

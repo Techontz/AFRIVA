@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/format.dart';
 import '../../core/haptics.dart';
+import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import '../../models/home.dart';
 import '../../services/me_service.dart';
@@ -16,7 +17,7 @@ class WatchHistoryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Watch history')),
+        appBar: AppBar(title: Text(context.tr('Watch history'))),
         body: const HistoryList(),
       );
 }
@@ -67,9 +68,9 @@ class _HistoryListState extends State<HistoryList> with AutomaticKeepAliveClient
           ? ScrollableFill(
               child: StateMessage(
                 icon: Icons.history_rounded,
-                title: 'Nothing watched yet',
-                message: 'Episodes you watch will show up here so you can pick up where you left off.',
-                actionLabel: 'Discover dramas',
+                title: context.tr('Nothing watched yet'),
+                message: context.tr('Episodes you watch will show up here so you can pick up where you left off.'),
+                actionLabel: context.tr('Discover dramas'),
                 onAction: () => context.go('/home'),
               ),
             )
@@ -134,7 +135,7 @@ class _HistoryTile extends StatelessWidget {
                 Text(d.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: text.titleSmall),
                 const SizedBox(height: 4),
                 Text(
-                  'EP ${entry.episodeNumber}${d.totalEpisodes > 0 ? ' / ${d.totalEpisodes}' : ''}',
+                  '${context.tr('EP {n}', {'n': entry.episodeNumber})}${d.totalEpisodes > 0 ? ' / ${d.totalEpisodes}' : ''}',
                   style: text.labelMedium!.copyWith(color: AppColors.primary),
                 ),
                 if (entry.updatedAt != null) ...[

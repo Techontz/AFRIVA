@@ -27,7 +27,7 @@ class SandboxGateway implements PaymentGateway
             return GatewayResponse::success('Payment approved (sandbox)', 'SBX-'.Str::upper(Str::random(10)));
         }
 
-        return GatewayResponse::pending('Sandbox payment pending — confirm via the sandbox callback', 'none');
+        return GatewayResponse::pending('Sandbox payment pending. Confirm via the sandbox callback', 'none');
     }
 
     public function verify(Payment $payment): GatewayResponse

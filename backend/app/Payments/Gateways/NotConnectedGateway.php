@@ -27,7 +27,7 @@ abstract class NotConnectedGateway implements PaymentGateway
 
     public function initiate(Payment $payment, array $data): GatewayResponse
     {
-        Log::info("[payments] {$this->name()} initiate called for {$payment->reference} — provider not yet connected.");
+        Log::info("[payments] {$this->name()} initiate called for {$payment->reference}, provider not yet connected.");
 
         return GatewayResponse::pending('Provider not yet connected');
     }

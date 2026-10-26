@@ -17,10 +17,12 @@ class UpdateUserRequest extends FormRequest
         return [
             'name' => ['sometimes', 'string', 'max:120'],
             'status' => ['sometimes', Rule::in(['active', 'suspended'])],
-            'role' => ['sometimes', Rule::in(['viewer', 'company', 'super_admin'])],
+            // Staff accounts are managed on the Staff page (owner only).
+            'role' => ['sometimes', Rule::in(['viewer', 'company'])],
             'company_id' => ['nullable', 'integer', 'exists:companies,id'],
             'coins' => ['sometimes', 'integer', 'min:0'],
             'coins_adjust' => ['sometimes', 'integer'],
+            'coins_reason' => ['nullable', 'string', 'max:190'],
             'password' => ['sometimes', 'string', 'min:6'],
         ];
     }

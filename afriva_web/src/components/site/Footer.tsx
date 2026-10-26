@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { T } from "@/lib/i18n";
 import { Icon } from "../ui/Icon";
 import { Logo } from "../ui/Logo";
 
@@ -23,7 +24,10 @@ const COLUMNS: { title: string; links: FooterLink[] }[] = [
   },
   {
     title: "Join Us",
-    links: [{ href: "/info/careers", label: "Careers" }],
+    links: [
+      { href: "/info/careers", label: "Careers" },
+      { href: "/account?tab=creator", label: "Submit your work" },
+    ],
   },
   {
     title: "Community",
@@ -45,11 +49,13 @@ export function Footer() {
         <div className="grid grid-cols-2 gap-8 md:grid-cols-[1.2fr_repeat(4,1fr)]">
           <div className="col-span-2 md:col-span-1">
             <Logo size={24} />
-            <p className="mt-3 max-w-xs text-sm text-text-dim">Short African dramas. One episode at a time.</p>
+            <p className="mt-3 max-w-xs text-sm text-text-dim"><T>Short African dramas. One episode at a time.</T></p>
           </div>
           {COLUMNS.map((col) => (
             <div key={col.title}>
-              <h3 className="text-sm font-bold text-text">{col.title}</h3>
+              <h3 className="text-sm font-bold text-text">
+                <T>{col.title}</T>
+              </h3>
               <ul className="mt-4 space-y-2.5">
                 {col.links.map((l) => (
                   <li key={l.label}>
@@ -59,7 +65,7 @@ export function Footer() {
                       </a>
                     ) : (
                       <Link href={l.href} className="text-sm text-text-muted transition hover:text-white">
-                        {l.label}
+                        <T>{l.label}</T>
                       </Link>
                     )}
                   </li>
@@ -72,7 +78,9 @@ export function Footer() {
           <a href="mailto:support@afriva.com" className="inline-flex items-center gap-2 transition hover:text-text">
             <Icon name="mail" size={15} /> support@afriva.com
           </a>
-          <p>© {COPYRIGHT_YEAR} Afriva. All rights reserved.</p>
+          <p>
+            © {COPYRIGHT_YEAR} Afriva. <T>All rights reserved.</T>
+          </p>
         </div>
       </div>
     </footer>

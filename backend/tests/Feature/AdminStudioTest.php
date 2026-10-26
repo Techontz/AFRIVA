@@ -42,6 +42,7 @@ class AdminStudioTest extends ApiTestCase
     public function test_studio_dashboard_and_create_drama_with_upload(): void
     {
         Storage::fake('public');
+        Storage::fake('videos');
         $token = $this->studioToken('kilima-studios');
 
         $this->withToken($token)->getJson('/api/v1/studio/dashboard')->assertOk()
@@ -63,7 +64,13 @@ class AdminStudioTest extends ApiTestCase
             'title' => 'Pilot', 'video' => UploadedFile::fake()->create('ep1.mp4', 100, 'video/mp4'), 'duration_seconds' => 120,
         ], ['Accept' => 'application/json'])->assertCreated()->assertJsonPath('data.number', 1);
 
-        $this->withToken($token)->getJson("/api/v1/studio/dramas/{$dramaId}")->assertJsonPath('data.total_episodes', 1);
+        // Uploading does not publish: the series and its episode stay drafts until submitted and approved.
+        $this->withToken($token)->getJson("/api/v1/studio/dramas/{$dramaId}")
+            ->assertJsonPath('data.review_status', 'draft')
+            ->assertJsonPath('data.total_episodes', 0)
+            ->assertJsonCount(1, 'data.episodes')
+            ->assertJsonPath('data.episodes.0.review_status', 'draft')
+            ->assertJsonPath('data.free_episodes', 8);
     }
 
     public function test_viewer_and_company_cannot_access_admin(): void
@@ -106,9 +113,9 @@ class AdminStudioTest extends ApiTestCase
             ->assertJsonCount(30, 'data.revenue_chart');
 
         $this->withToken($token)->getJson('/api/v1/admin/users?role=company')->assertOk()->assertJsonPath('meta.total', 1);
-        $this->withToken($token)->getJson('/api/v1/admin/payment-methods')->assertOk()->assertJsonCount(10, 'data');
+        $this->withToken($token)->getJson('/api/v1/admin/payment-methods')->assertOk()->assertJsonCount(11, 'data');
         $this->withToken($token)->putJson('/api/v1/admin/payment-methods/1', ['is_enabled' => false])->assertOk()->assertJsonPath('data.is_enabled', false);
-        $this->getJson('/api/v1/payment-methods')->assertJsonCount(9, 'data');
+        $this->getJson('/api/v1/payment-methods')->assertJsonCount(5, 'data');
         $this->withToken($token)->getJson("/api/v1/admin/companies/{$this->company->id}/stats")->assertOk()->assertJsonStructure(['data' => ['views', 'earnings', 'views_chart']]);
         $this->withToken($token)->putJson('/api/v1/admin/settings', ['coin_value_tzs' => 12])->assertOk()->assertJsonPath('data.coin_value_tzs', '12');
         $this->withToken($token)->postJson('/api/v1/admin/payouts', ['company_id' => $this->company->id, 'amount' => 5000, 'status' => 'paid'])

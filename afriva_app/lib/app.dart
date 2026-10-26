@@ -4,11 +4,14 @@ import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 import 'core/api_client.dart';
+import 'core/device_id.dart';
+import 'core/i18n.dart';
 import 'core/router.dart';
 import 'core/theme.dart';
 import 'services/auth_service.dart';
 import 'services/catalog_service.dart';
 import 'services/commerce_service.dart';
+import 'services/creator_service.dart';
 import 'services/me_service.dart';
 import 'services/player_service.dart';
 import 'services/token_storage.dart';
@@ -44,6 +47,12 @@ class _AfrivaAppState extends State<AfrivaApp> {
   }();
 
   @override
+  void initState() {
+    super.initState();
+    DeviceId.load().then((id) => _api.deviceId ??= id);
+  }
+
+  @override
   void dispose() {
     _router.dispose();
     super.dispose();
@@ -59,6 +68,7 @@ class _AfrivaAppState extends State<AfrivaApp> {
         Provider(create: (_) => PlayerService(_api)),
         Provider(create: (_) => CommerceService(_api)),
         Provider(create: (_) => MeService(_api)),
+        Provider(create: (_) => CreatorService(_api)),
         ChangeNotifierProvider(
           create: (c) => AuthState(
             api: _api,
@@ -78,6 +88,10 @@ class _AfrivaAppState extends State<AfrivaApp> {
           darkTheme: _theme,
           themeMode: ThemeMode.light,
           routerConfig: _router,
+          builder: (context, child) => LanguageScope(
+            language: context.watch<SettingsState>().language,
+            child: child ?? const SizedBox.shrink(),
+          ),
         ),
       ),
     );

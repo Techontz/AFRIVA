@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/haptics.dart';
+import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import 'drama_grid.dart';
 
@@ -23,7 +24,7 @@ class _BrowseScreenState extends State<BrowseScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title),
+        title: Text(context.tr(widget.title)),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(48),
           child: Padding(
@@ -32,7 +33,7 @@ class _BrowseScreenState extends State<BrowseScreen> {
               children: [
                 for (final (key, label) in const [('popular', 'Popular'), ('newest', 'Newest')]) ...[
                   ChoiceChip(
-                    label: Text(label),
+                    label: Text(context.tr(label)),
                     selected: _sort == key,
                     showCheckmark: false,
                     onSelected: (_) {

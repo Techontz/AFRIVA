@@ -2,6 +2,14 @@ import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../features/auth/login_screen.dart';
+import '../features/creator/creator_apply_screen.dart';
+import '../features/creator/creator_agreement_screen.dart';
+import '../features/creator/creator_home_screen.dart';
+import '../features/creator/series_detail_screen.dart';
+import '../features/creator/series_form_screen.dart';
+import '../features/profile/coin_history_screen.dart';
+import '../features/profile/help_screen.dart';
+import '../features/profile/receipt_screen.dart';
 import '../features/auth/register_screen.dart';
 import '../features/drama/drama_detail_screen.dart';
 import '../features/foryou/for_you_screen.dart';
@@ -52,8 +60,9 @@ GoRouter buildRouter({String initialLocation = '/splash'}) => GoRouter(
             StatefulShellBranch(routes: [
               GoRoute(path: '/home', builder: (_, _) => const HomeScreen()),
             ]),
+            // Scope §03 navigation: Nyumbani · Tafuta · Vipendwa · Profile.
             StatefulShellBranch(routes: [
-              GoRoute(path: '/foryou', builder: (_, _) => Theme(data: AppTheme.video, child: const ForYouScreen())),
+              GoRoute(path: '/search', builder: (_, _) => const SearchScreen(embedded: true)),
             ]),
             StatefulShellBranch(routes: [
               GoRoute(path: '/mylist', builder: (_, _) => const MyListScreen()),
@@ -64,9 +73,55 @@ GoRouter buildRouter({String initialLocation = '/splash'}) => GoRouter(
           ],
         ),
         GoRoute(
-          path: '/search',
+          path: '/foryou',
           parentNavigatorKey: rootNavigatorKey,
-          pageBuilder: (_, s) => _fadePage(s, const SearchScreen()),
+          pageBuilder: (_, s) => _fadePage(s, Theme(data: AppTheme.video, child: const ForYouScreen())),
+        ),
+        GoRoute(
+          path: '/coins',
+          parentNavigatorKey: rootNavigatorKey,
+          builder: (_, _) => const CoinHistoryScreen(),
+        ),
+        GoRoute(
+          path: '/receipt/:reference',
+          parentNavigatorKey: rootNavigatorKey,
+          builder: (_, s) => ReceiptScreen(reference: s.pathParameters['reference']!),
+        ),
+        GoRoute(
+          path: '/help',
+          parentNavigatorKey: rootNavigatorKey,
+          builder: (_, _) => const HelpScreen(),
+        ),
+        // Creator Studio ("Wasilisha Kazi Yako").
+        GoRoute(
+          path: '/creator',
+          parentNavigatorKey: rootNavigatorKey,
+          builder: (_, _) => const CreatorHomeScreen(),
+        ),
+        GoRoute(
+          path: '/creator/apply',
+          parentNavigatorKey: rootNavigatorKey,
+          builder: (_, _) => const CreatorApplyScreen(),
+        ),
+        GoRoute(
+          path: '/creator/agreement',
+          parentNavigatorKey: rootNavigatorKey,
+          builder: (_, _) => const CreatorAgreementScreen(),
+        ),
+        GoRoute(
+          path: '/creator/series/new',
+          parentNavigatorKey: rootNavigatorKey,
+          builder: (_, _) => const SeriesFormScreen(),
+        ),
+        GoRoute(
+          path: '/creator/series/:id',
+          parentNavigatorKey: rootNavigatorKey,
+          builder: (_, s) => SeriesDetailScreen(id: int.parse(s.pathParameters['id']!)),
+        ),
+        GoRoute(
+          path: '/creator/series/:id/edit',
+          parentNavigatorKey: rootNavigatorKey,
+          builder: (_, s) => SeriesFormScreen(id: int.tryParse(s.pathParameters['id'] ?? '')),
         ),
         GoRoute(
           path: '/browse',

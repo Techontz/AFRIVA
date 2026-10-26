@@ -44,7 +44,8 @@ class EpisodeAccessService
         if (! $user) {
             return false;
         }
-        if ($this->hasTimeSubscription($user)) {
+        $mode = $episode->drama->access_mode ?? 'coins_or_vip';
+        if ($mode !== 'coins_only' && $this->hasTimeSubscription($user)) {
             return true;
         }
 

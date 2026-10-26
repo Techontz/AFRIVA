@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/format.dart';
 import '../../core/haptics.dart';
+import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import '../../models/user.dart';
 import '../../state/auth_state.dart';
@@ -22,10 +23,10 @@ class ProfileScreen extends StatelessWidget {
     final bottom = MediaQuery.paddingOf(context).bottom;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profile'),
+        title: Text(context.tr('Profile')),
         actions: [
           IconButton(
-            tooltip: 'Settings',
+            tooltip: context.tr('Settings'),
             icon: const Icon(Icons.settings_outlined),
             onPressed: () => context.push('/settings'),
           ),
@@ -44,16 +45,26 @@ class ProfileScreen extends StatelessWidget {
             const SizedBox(height: 14),
             _VipBanner(user: user),
             const SizedBox(height: 22),
+            // Scope §03 "Profile na urahisi": coins, VIP, history, favorites, account, language, help, transactions.
             _MenuGroup(items: [
               _MenuItem(Icons.history_rounded, 'Watch history', () => _gated(context, '/history')),
-              _MenuItem(Icons.bookmark_border_rounded, 'My List', () => context.go('/mylist')),
-              _MenuItem(Icons.receipt_long_outlined, 'Payment history', () => _gated(context, '/payments')),
+              _MenuItem(Icons.favorite_border_rounded, 'Favorites', () => context.go('/mylist')),
+              _MenuItem(Icons.toll_outlined, 'My coins', () => _gated(context, '/coins')),
+              _MenuItem(Icons.receipt_long_outlined, 'Transactions and receipts', () => _gated(context, '/payments')),
+            ]),
+            const SizedBox(height: 14),
+            _MenuGroup(items: [
+              _MenuItem(
+                Icons.video_call_outlined,
+                'Submit your work',
+                () => _gated(context, user?.isCreator == true ? '/creator' : '/creator/apply'),
+              ),
             ]),
             const SizedBox(height: 14),
             _MenuGroup(items: [
               _MenuItem(Icons.workspace_premium_outlined, 'VIP & coins store', () => context.push('/vip')),
-              _MenuItem(Icons.settings_outlined, 'Settings', () => context.push('/settings')),
-              _MenuItem(Icons.help_outline_rounded, 'Help & support', () => _support(context)),
+              _MenuItem(Icons.manage_accounts_outlined, 'Account and language', () => context.push('/settings')),
+              _MenuItem(Icons.help_outline_rounded, 'Help', () => context.push('/help')),
             ]),
             if (user != null) ...[
               const SizedBox(height: 14),
@@ -75,31 +86,17 @@ class ProfileScreen extends StatelessWidget {
     context.push(auth.isLoggedIn ? path : '/login');
   }
 
-  static void _support(BuildContext context) {
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Help & support'),
-        content: const Text(
-          'Questions about VIP, coins or payments? Email support@afriva.com and our team will help '
-          'within 24 hours. Include your payment reference if your question is about a payment.',
-        ),
-        actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Got it'))],
-      ),
-    );
-  }
-
   static Future<void> _logout(BuildContext context) async {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Log out?'),
-        content: const Text('Your list, history and VIP stay safe in your account.'),
+        title: Text(ctx.tr('Log out?')),
+        content: Text(ctx.tr('Your list, history and VIP stay safe in your account.')),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(ctx.tr('Cancel'))),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Log out', style: TextStyle(color: AppColors.danger)),
+            child: Text(ctx.tr('Log out'), style: const TextStyle(color: AppColors.danger)),
           ),
         ],
       ),
@@ -172,7 +169,7 @@ class _UserCard extends StatelessWidget {
               if (user.isVip && user.activeSubscription?.endsAt != null) ...[
                 const SizedBox(height: 4),
                 Text(
-                  'VIP until ${Fmt.date(user.activeSubscription!.endsAt)}',
+                  context.tr('VIP until {date}', {'date': Fmt.date(user.activeSubscription!.endsAt)}),
                   style: text.labelSmall!.copyWith(color: AppColors.primary),
                 ),
               ],
@@ -213,9 +210,9 @@ class _GuestCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Welcome to Afriva', style: text.titleMedium),
+                    Text(context.tr('Welcome to Afriva'), style: text.titleMedium),
                     const SizedBox(height: 2),
-                    Text('Log in to sync your list, history and VIP.', style: text.bodySmall),
+                    Text(context.tr('Log in to sync your list, history and VIP.'), style: text.bodySmall),
                   ],
                 ),
               ),
@@ -225,12 +222,12 @@ class _GuestCard extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: PillButton(label: 'Log in', height: 44, expand: true, onPressed: () => context.push('/login')),
+                child: PillButton(label: context.tr('Log in'), height: 44, expand: true, onPressed: () => context.push('/login')),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: PillButton(
-                  label: 'Sign up',
+                  label: context.tr('Sign up'),
                   height: 44,
                   expand: true,
                   secondary: true,
@@ -257,26 +254,24 @@ class _WalletRow extends StatelessWidget {
       children: [
         Expanded(
           child: _StatTile(
-            onTap: () => context.push('/vip?section=coins'),
-            title: 'Coins',
+            onTap: () => context.push(user != null ? '/coins' : '/vip?section=coins'),
+            title: context.tr('Coins'),
             value: CoinAmount(user?.coins ?? 0, size: 18),
-            caption: 'Top up',
+            caption: context.tr('Top up'),
           ),
         ),
         const SizedBox(width: 10),
         Expanded(
           child: _StatTile(
             onTap: () => context.push('/vip'),
-            title: 'Membership',
+            title: context.tr('Membership'),
             value: Text(
-              user?.isVip == true ? 'VIP' : (sub != null && sub.episodesRemaining != null ? 'Pack' : 'Free'),
+              user?.isVip == true ? 'VIP' : context.tr(sub != null && sub.episodesRemaining != null ? 'Pack' : 'Free'),
               style: text.titleMedium!.copyWith(color: user?.isVip == true ? AppColors.primary : AppColors.text),
             ),
             caption: sub != null && !sub.isTimeBased && sub.episodesRemaining != null
-                ? '${sub.episodesRemaining} unlocks left'
-                : user?.isVip == true
-                    ? 'Manage'
-                    : 'Upgrade',
+                ? context.tr('{n} unlocks left', {'n': sub.episodesRemaining})
+                : context.tr(user?.isVip == true ? 'Manage' : 'Upgrade'),
           ),
         ),
       ],
@@ -354,12 +349,12 @@ class _VipBanner extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Go VIP', style: text.titleMedium!.copyWith(color: AppColors.primary)),
-                  Text('Unlock every episode from 3,000 TZS a week', style: text.bodySmall),
+                  Text(context.tr('Go VIP'), style: text.titleMedium!.copyWith(color: AppColors.primary)),
+                  Text(context.tr('Unlock every episode from 3,000 TZS a week'), style: text.bodySmall),
                 ],
               ),
             ),
-            PillButton(label: 'Join', height: 36, onPressed: () => context.push('/vip')),
+            PillButton(label: context.tr('Join'), height: 36, onPressed: () => context.push('/vip')),
           ],
         ),
       ),
@@ -393,7 +388,7 @@ class _MenuGroup extends StatelessWidget {
             ListTile(
               leading: Icon(items[i].icon, color: items[i].danger ? AppColors.danger : AppColors.textMuted),
               title: Text(
-                items[i].label,
+                context.tr(items[i].label),
                 style: Theme.of(context).textTheme.titleSmall!.copyWith(
                       color: items[i].danger ? AppColors.danger : AppColors.text,
                       fontWeight: FontWeight.w600,

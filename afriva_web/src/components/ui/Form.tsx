@@ -1,5 +1,6 @@
 import { forwardRef, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
 import { cn } from "@/lib/format";
+import { T } from "@/lib/i18n";
 
 export const inputClass =
   "w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm text-text placeholder:text-text-dim " +
@@ -25,14 +26,16 @@ export function Field({
     <div className={cn("flex flex-col gap-1.5", className)}>
       {label && (
         <label htmlFor={htmlFor} className="text-[13px] font-semibold text-text-muted">
-          {label}
+          {typeof label === "string" ? <T>{label}</T> : label}
         </label>
       )}
       {children}
       {error ? (
-        <p className="text-xs font-medium text-danger">{error}</p>
+        <p className="text-xs font-medium text-danger">
+          <T>{error}</T>
+        </p>
       ) : hint ? (
-        <p className="text-xs text-text-dim">{hint}</p>
+        <p className="text-xs text-text-dim">{typeof hint === "string" ? <T>{hint}</T> : hint}</p>
       ) : null}
     </div>
   );
@@ -89,7 +92,6 @@ export function Toggle({
       type="button"
       role="switch"
       aria-checked={checked}
-      aria-label={label}
       disabled={disabled}
       onClick={() => onChange(!checked)}
       className={cn(
@@ -98,6 +100,11 @@ export function Toggle({
         checked ? "bg-primary" : "bg-surface-2 border border-border",
       )}
     >
+      {label && (
+        <span className="sr-only">
+          <T>{label}</T>
+        </span>
+      )}
       <span
         className={cn(
           "inline-block rounded-full bg-white shadow transition-transform duration-200",

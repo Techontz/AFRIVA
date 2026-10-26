@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../core/i18n.dart';
+
 /// Lightweight user preferences persisted with shared_preferences.
 class SettingsState extends ChangeNotifier {
   static const _kAutoplay = 'autoplay_next';
@@ -10,7 +12,7 @@ class SettingsState extends ChangeNotifier {
   SharedPreferences? _prefs;
 
   bool _autoplayNext = true;
-  String _language = 'English';
+  String _language = kDefaultLanguage;
   List<String> _recentSearches = [];
 
   bool get autoplayNext => _autoplayNext;
@@ -21,11 +23,12 @@ class SettingsState extends ChangeNotifier {
     try {
       _prefs = await SharedPreferences.getInstance();
       _autoplayNext = _prefs!.getBool(_kAutoplay) ?? true;
-      _language = _prefs!.getString(_kLanguage) ?? 'English';
+      _language = _prefs!.getString(_kLanguage) ?? kDefaultLanguage;
+      I18n.language = _language;
       _recentSearches = _prefs!.getStringList(_kRecent) ?? [];
       notifyListeners();
     } catch (_) {
-      // Preferences unavailable — defaults are fine.
+      // Preferences unavailable, defaults are fine.
     }
   }
 
@@ -37,6 +40,7 @@ class SettingsState extends ChangeNotifier {
 
   void setLanguage(String v) {
     _language = v;
+    I18n.language = v;
     _prefs?.setString(_kLanguage, v);
     notifyListeners();
   }

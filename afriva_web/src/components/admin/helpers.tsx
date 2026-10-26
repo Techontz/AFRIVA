@@ -1,14 +1,16 @@
 "use client";
 
+import { useT } from "@/lib/i18n";
 import { Button } from "../ui/Button";
 import { ApiDownState } from "../ui/Feedback";
 
 export function LoadError({ onRetry }: { onRetry: () => void }) {
+  const t = useT();
   return (
     <ApiDownState
       action={
         <Button variant="secondary" size="sm" onClick={onRetry}>
-          Try again
+          {t("Try again")}
         </Button>
       }
     />
@@ -30,5 +32,5 @@ export function methodLabel(p: { payment_method_code?: string; payment_method?: 
   const m = p.payment_method;
   if (m && typeof m === "object" && "name" in m) return String((m as { name: string }).name);
   if (typeof m === "string") return m;
-  return p.payment_method_code ?? "—";
+  return p.payment_method_code ?? "-";
 }

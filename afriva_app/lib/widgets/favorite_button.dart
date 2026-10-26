@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../core/api_client.dart';
 import '../core/auth_guard.dart';
 import '../core/haptics.dart';
+import '../core/i18n.dart';
 import '../core/theme.dart';
 import '../models/drama.dart';
 import '../state/favorites_state.dart';
@@ -18,10 +19,10 @@ Future<void> toggleFavorite(BuildContext context, Drama drama) async {
   try {
     final added = await favs.toggle(drama);
     if (context.mounted) {
-      showSnack(context, added ? 'Added to My List' : 'Removed from My List');
+      showSnack(context, context.tr(added ? 'Added to My List' : 'Removed from My List'));
     }
   } catch (e) {
-    if (context.mounted) showSnack(context, errorMessage(e), error: true);
+    if (context.mounted) showSnack(context, context.tr(errorMessage(e)), error: true);
   }
 }
 
@@ -91,7 +92,7 @@ class FavoriteRailAction extends StatelessWidget {
     final fav = context.watch<FavoritesState>().contains(drama);
     return RailAction(
       icon: fav ? Icons.bookmark_rounded : Icons.bookmark_add_outlined,
-      label: fav ? 'In My List' : 'My List',
+      label: context.tr(fav ? 'In My List' : 'My List'),
       active: fav,
       onTap: () => toggleFavorite(context, drama),
     );

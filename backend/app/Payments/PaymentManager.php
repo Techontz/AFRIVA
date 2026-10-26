@@ -2,6 +2,7 @@
 
 namespace App\Payments;
 
+use App\Models\Payment;
 use App\Models\PaymentMethod;
 use App\Payments\Contracts\PaymentGateway;
 use InvalidArgumentException;
@@ -50,7 +51,7 @@ class PaymentManager
     }
 
     /** Which driver handled a stored payment (sandbox if it was routed there). */
-    public function forPayment(\App\Models\Payment $payment): PaymentGateway
+    public function forPayment(Payment $payment): PaymentGateway
     {
         $driver = $payment->meta['driver'] ?? null;
 

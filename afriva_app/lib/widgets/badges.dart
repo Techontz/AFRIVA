@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 
+import '../core/i18n.dart';
 import '../core/theme.dart';
 
 /// Top-left poster badge: Hot / New / VIP.
@@ -40,7 +41,7 @@ class DramaBadge extends StatelessWidget {
             const SizedBox(width: 1),
           ],
           Text(
-            label,
+            context.tr(label),
             style: TextStyle(
               color: fg,
               fontSize: small ? 9 : 10.5,

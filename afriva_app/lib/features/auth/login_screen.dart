@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/api_client.dart';
 import '../../core/haptics.dart';
+import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import '../../state/auth_state.dart';
 import '../../state/favorites_state.dart';
@@ -69,8 +70,8 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     return AuthScaffold(
-      title: 'Welcome back',
-      subtitle: 'Log in to continue your stories, unlock episodes and go VIP.',
+      title: context.tr('Welcome back'),
+      subtitle: context.tr('Log in to continue your stories, unlock episodes and go VIP.'),
       children: [
         Form(
           key: _form,
@@ -85,12 +86,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   textInputAction: TextInputAction.next,
                   autofillHints: const [AutofillHints.email, AutofillHints.telephoneNumber],
                   decoration: InputDecoration(
-                    labelText: 'Email or phone',
-                    hintText: 'you@example.com or 0712 345 678',
+                    labelText: context.tr('Email or phone'),
+                    hintText: context.tr('you@example.com or 0712 345 678'),
                     prefixIcon: const Icon(Icons.alternate_email_rounded),
                     errorText: _fieldErrors['login'],
                   ),
-                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Enter your email or phone' : null,
+                  validator: (v) => (v == null || v.trim().isEmpty) ? context.tr('Enter your email or phone') : null,
                 ),
                 const SizedBox(height: 14),
                 TextFormField(
@@ -100,7 +101,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   autofillHints: const [AutofillHints.password],
                   onFieldSubmitted: (_) => _submit(),
                   decoration: InputDecoration(
-                    labelText: 'Password',
+                    labelText: context.tr('Password'),
                     prefixIcon: const Icon(Icons.lock_outline_rounded),
                     errorText: _fieldErrors['password'],
                     suffixIcon: IconButton(
@@ -108,18 +109,18 @@ class _LoginScreenState extends State<LoginScreen> {
                       onPressed: () => setState(() => _obscure = !_obscure),
                     ),
                   ),
-                  validator: (v) => (v == null || v.isEmpty) ? 'Enter your password' : null,
+                  validator: (v) => (v == null || v.isEmpty) ? context.tr('Enter your password') : null,
                 ),
                 const SizedBox(height: 24),
-                PillButton(label: 'Log in', expand: true, loading: _busy, onPressed: _submit),
+                PillButton(label: context.tr('Log in'), expand: true, loading: _busy, onPressed: _submit),
                 const SizedBox(height: 18),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text('New to Afriva?', style: text.bodyMedium),
+                    Text(context.tr('New to Afriva?'), style: text.bodyMedium),
                     TextButton(
                       onPressed: () => context.pushReplacement('/register'),
-                      child: const Text('Create account', style: TextStyle(color: AppColors.primary)),
+                      child: Text(context.tr('Create account'), style: const TextStyle(color: AppColors.primary)),
                     ),
                   ],
                 ),
@@ -144,7 +145,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Center(child: Text('Demo accounts (debug builds only)', style: text.labelSmall)),
+                  Center(child: Text(context.tr('Demo accounts (debug builds only)'), style: text.labelSmall)),
                 ],
               ],
             ),

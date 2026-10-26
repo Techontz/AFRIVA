@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Plan extends Model
 {
     public const TIME_TYPES = ['weekly', 'monthly', 'yearly'];
+
     public const TYPES = ['weekly', 'monthly', 'yearly', 'episodes', 'coins'];
 
     protected $fillable = [

@@ -3,7 +3,6 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class EpisodeRequest extends FormRequest
 {
@@ -22,7 +21,10 @@ class EpisodeRequest extends FormRequest
             'thumbnail_url' => ['nullable', 'string', 'max:1000'],
             'thumbnail' => ['nullable', 'image', 'max:8192'],
             'duration_seconds' => ['sometimes', 'integer', 'min:0'],
-            'is_free' => ['nullable', 'boolean'],
+            'subtitle_url' => ['nullable', 'string', 'max:1000'],
+            'subtitle' => ['nullable', 'file', 'extensions:vtt,srt', 'max:2048'],
+            // Free/locked overrides are a publishing rule (staff only).
+            'is_free' => $this->is('api/v1/admin/*') ? ['nullable', 'boolean'] : ['exclude'],
         ];
     }
 }

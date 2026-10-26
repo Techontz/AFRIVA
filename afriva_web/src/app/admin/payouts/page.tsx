@@ -13,6 +13,7 @@ import { api, asArray, errorMessage } from "@/lib/api";
 import { formatDate, formatMoney } from "@/lib/format";
 import { useApi, useList } from "@/lib/hooks";
 import type { Company, Payout } from "@/lib/types";
+import { useT } from "@/lib/i18n";
 
 export default function PayoutsPage() {
   const [status, setStatus] = useState("");
@@ -25,6 +26,7 @@ export default function PayoutsPage() {
   const [saving, setSaving] = useState(false);
   const [paying, setPaying] = useState<Payout | null>(null);
   const [reference, setReference] = useState("");
+  const t = useT();
 
   const openCreate = () => {
     setForm({ company_id: companies[0] ? String(companies[0].id) : "", amount: "", notes: "" });
@@ -40,7 +42,7 @@ export default function PayoutsPage() {
         amount: Number(form.amount),
         notes: form.notes || null,
       });
-      toast.success("Payout recorded");
+      toast.success(t("Payout recorded"));
       setCreating(false);
       reload();
     } catch (err) {
@@ -68,7 +70,7 @@ export default function PayoutsPage() {
             : p,
         ),
       );
-      toast.success("Payout marked as paid");
+      toast.success(t("Payout marked as paid"));
       setPaying(null);
     } catch (err) {
       toast.error(errorMessage(err));
@@ -84,7 +86,7 @@ export default function PayoutsPage() {
         description="Settlements of company earnings."
         actions={
           <Button onClick={openCreate}>
-            <Icon name="plus" size={18} /> Record payout
+            <Icon name="plus" size={18} /> {t("Record payout")}
           </Button>
         }
       />
@@ -96,11 +98,11 @@ export default function PayoutsPage() {
             setStatus(e.target.value);
             setPage(1);
           }}
-          aria-label="Filter by status"
+          aria-label={t("Filter by status")}
         >
-          <option value="">All statuses</option>
-          <option value="pending">Pending</option>
-          <option value="paid">Paid</option>
+          <option value="">{t("All statuses")}</option>
+          <option value="pending">{t("Pending")}</option>
+          <option value="paid">{t("Paid")}</option>
         </Select>
       </Toolbar>
 
@@ -116,12 +118,12 @@ export default function PayoutsPage() {
               {
                 key: "company",
                 header: "Company",
-                render: (p) => <span className="font-semibold">{p.company?.name ?? companies.find((c) => c.id === p.company_id)?.name ?? "—"}</span>,
+                render: (p) => <span className="font-semibold">{p.company?.name ?? companies.find((c) => c.id === p.company_id)?.name ?? "-"}</span>,
               },
               { key: "amount", header: "Amount", render: (p) => <span className="font-semibold">{formatMoney(p.amount)}</span> },
               { key: "status", header: "Status", render: (p) => <StatusPill status={p.status} /> },
-              { key: "ref", header: "Reference", render: (p) => <span className="font-mono text-xs">{p.reference ?? "—"}</span> },
-              { key: "notes", header: "Notes", render: (p) => <span className="line-clamp-1 max-w-[220px] text-text-muted">{p.notes ?? "—"}</span> },
+              { key: "ref", header: "Reference", render: (p) => <span className="font-mono text-xs">{p.reference ?? "-"}</span> },
+              { key: "notes", header: "Notes", render: (p) => <span className="line-clamp-1 max-w-[220px] text-text-muted">{p.notes ?? "-"}</span> },
               { key: "date", header: "Created / Paid", render: (p) => `${formatDate(p.created_at)}${p.paid_at ? ` · ${formatDate(p.paid_at)}` : ""}` },
               {
                 key: "actions",
@@ -130,7 +132,7 @@ export default function PayoutsPage() {
                 render: (p) =>
                   p.status === "pending" ? (
                     <Button size="sm" variant="secondary" onClick={() => openPay(p)}>
-                      <Icon name="check" size={15} /> Mark paid
+                      <Icon name="check" size={15} /> {t("Mark paid")}
                     </Button>
                   ) : null,
               },
@@ -145,7 +147,7 @@ export default function PayoutsPage() {
           <Field label="Company">
             <Select required value={form.company_id} onChange={(e) => setForm((f) => ({ ...f, company_id: e.target.value }))}>
               <option value="" disabled>
-                Select a company
+                {t("Select a company")}
               </option>
               {companies.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -158,14 +160,14 @@ export default function PayoutsPage() {
             <Input required type="number" min={1} value={form.amount} onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))} />
           </Field>
           <Field label="Notes">
-            <Textarea value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} placeholder="e.g. October earnings settlement" />
+            <Textarea value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} placeholder={t("e.g. October earnings settlement")} />
           </Field>
           <div className="flex justify-end gap-2">
             <Button type="button" variant="ghost" onClick={() => setCreating(false)}>
-              Cancel
+              {t("Cancel")}
             </Button>
             <Button type="submit" loading={saving}>
-              Record payout
+              {t("Record payout")}
             </Button>
           </div>
         </form>
@@ -174,17 +176,17 @@ export default function PayoutsPage() {
       <Modal open={!!paying} onClose={() => setPaying(null)} title="Mark payout as paid" size="sm">
         <form onSubmit={markPaid} className="flex flex-col gap-4">
           <p className="text-sm text-text-muted">
-            {formatMoney(paying?.amount)} to <b className="text-text">{paying?.company?.name ?? "company"}</b>
+            {formatMoney(paying?.amount)} {t("to")} <b className="text-text">{paying?.company?.name ?? t("company")}</b>
           </p>
           <Field label="Transfer reference" hint="Bank or mobile money transaction ID">
             <Input value={reference} onChange={(e) => setReference(e.target.value)} placeholder="TXN-…" />
           </Field>
           <div className="flex justify-end gap-2">
             <Button type="button" variant="ghost" onClick={() => setPaying(null)}>
-              Cancel
+              {t("Cancel")}
             </Button>
             <Button type="submit" loading={saving}>
-              Confirm paid
+              {t("Confirm paid")}
             </Button>
           </div>
         </form>

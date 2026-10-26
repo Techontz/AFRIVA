@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { T } from "@/lib/i18n";
+import { site } from "@/lib/sw/site";
 
 const PAGES: Record<string, { title: string; body: string[] }> = {
   terms: {
@@ -29,7 +31,7 @@ const PAGES: Record<string, { title: string; body: string[] }> = {
     title: "Business",
     body: [
       "Are you a studio or production house? Afriva partners with storytellers across Africa and shares revenue on every view.",
-      "Write to studios@afriva.com and our partnerships team will get you set up with a Studio account.",
+      "Open \u201cSubmit your work\u201d in your profile to apply as a creator, or write to studios@afriva.com.",
     ],
   },
   careers: {
@@ -59,7 +61,9 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: PageProps<"/info/[slug]">): Promise<Metadata> {
   const { slug } = await params;
-  return { title: PAGES[slug]?.title ?? "Afriva" };
+  const title = PAGES[slug]?.title;
+  // Metadata is rendered on the server, where the UI language is always Kiswahili.
+  return { title: title ? (site[title] ?? title) : "AFRIVA" };
 }
 
 export default async function InfoPage({ params }: PageProps<"/info/[slug]">) {
@@ -68,10 +72,14 @@ export default async function InfoPage({ params }: PageProps<"/info/[slug]">) {
   if (!page) notFound();
   return (
     <article className="mx-auto max-w-2xl px-4 pt-12 sm:px-6">
-      <h1 className="text-3xl font-extrabold tracking-tight">{page.title}</h1>
+      <h1 className="text-3xl font-extrabold tracking-tight">
+        <T>{page.title}</T>
+      </h1>
       <div className="mt-6 space-y-4 text-[15px] leading-relaxed text-text-muted">
         {page.body.map((p) => (
-          <p key={p}>{p}</p>
+          <p key={p}>
+            <T>{p}</T>
+          </p>
         ))}
       </div>
     </article>

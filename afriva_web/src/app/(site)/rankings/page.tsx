@@ -7,10 +7,11 @@ import { ApiDownState, EmptyState } from "@/components/ui/Feedback";
 import { Icon } from "@/components/ui/Icon";
 import { asArray } from "@/lib/api";
 import { cn, formatCompact } from "@/lib/format";
+import { T } from "@/lib/i18n";
 import { serverGet } from "@/lib/server-api";
 import type { Drama } from "@/lib/types";
 
-export const metadata: Metadata = { title: "Rankings", description: "The most-watched Afriva dramas right now." };
+export const metadata: Metadata = { title: "Viwango", description: "Series za AFRIVA zinazotazamwa zaidi sasa hivi." };
 
 const TABS = [
   { key: "trending", label: "Trending", blurb: "What everyone is binging this week" },
@@ -27,8 +28,12 @@ export default function RankingsPage({ searchParams }: PageProps<"/rankings">) {
           <Icon name="trophy" size={22} />
         </span>
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">Rankings</h1>
-          <p className="text-sm text-text-muted">Updated daily from real views.</p>
+          <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
+            <T>Rankings</T>
+          </h1>
+          <p className="text-sm text-text-muted">
+            <T>Updated daily from real views.</T>
+          </p>
         </div>
       </div>
       <Suspense fallback={<div className="mt-8"><RankingSkeleton rows={10} /></div>}>
@@ -59,11 +64,13 @@ async function RankingsContent({ searchParams }: { searchParams: Promise<Record<
               t.key === type ? "bg-primary text-white" : "bg-surface-2 text-text-muted hover:text-text",
             )}
           >
-            {t.label}
+            <T>{t.label}</T>
           </Link>
         ))}
       </div>
-      <p className="mt-3 text-sm text-text-dim">{tab.blurb}</p>
+      <p className="mt-3 text-sm text-text-dim">
+        <T>{tab.blurb}</T>
+      </p>
 
       <div className="mt-6">
         {dramas === null ? (
@@ -103,7 +110,9 @@ function Podium({ dramas }: { dramas: Drama[] }) {
               </span>
             </div>
             <h3 className="mt-2 line-clamp-2 text-[13px] font-bold leading-snug group-hover:text-primary sm:text-[15px]">{d.title}</h3>
-            <p className="mt-0.5 text-xs text-text-dim">{formatCompact(d.views)} views</p>
+            <p className="mt-0.5 text-xs text-text-dim">
+              <T vars={{ n: formatCompact(d.views) }}>{"{n} views"}</T>
+            </p>
           </Link>
         </li>
       ))}

@@ -5,10 +5,11 @@ import { PageNav } from "@/components/site/PageNav";
 import { PosterCard, PosterCardSkeleton, gridClass } from "@/components/site/PosterCard";
 import { SearchForm } from "@/components/site/SearchForm";
 import { ApiDownState, EmptyState } from "@/components/ui/Feedback";
+import { T } from "@/lib/i18n";
 import { serverPage } from "@/lib/server-api";
 import type { Drama } from "@/lib/types";
 
-export const metadata: Metadata = { title: "Search" };
+export const metadata: Metadata = { title: "Tafuta" };
 
 export default function SearchPage({ searchParams }: PageProps<"/search">) {
   return (
@@ -39,18 +40,18 @@ async function SearchContent({ searchParams }: { searchParams: Promise<Record<st
             description="Search by title. Or jump into the charts."
             action={
               <Link href="/rankings" className="text-sm font-semibold text-primary hover:underline">
-                See what’s trending →
+                <T>See what’s trending →</T>
               </Link>
             }
           />
         ) : !result ? (
           <ApiDownState />
         ) : result.items.length === 0 ? (
-          <EmptyState icon="search" title={`No results for “${q}”`} description="Check the spelling or try a shorter keyword." />
+          <EmptyState icon="search" title={<T vars={{ q }}>{"No results for “{q}”"}</T>} description="Check the spelling or try a shorter keyword." />
         ) : (
           <>
             <p className="mb-5 text-sm text-text-muted">
-              {result.meta.total.toLocaleString()} result{result.meta.total === 1 ? "" : "s"} for{" "}
+              <T vars={{ n: result.meta.total.toLocaleString() }}>{result.meta.total === 1 ? "{n} result for" : "{n} results for"}</T>{" "}
               <span className="font-semibold text-text">“{q}”</span>
             </p>
             <div className={gridClass}>

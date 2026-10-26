@@ -5,6 +5,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/haptics.dart';
+import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import '../../models/drama.dart';
 import '../../services/catalog_service.dart';
@@ -14,7 +15,10 @@ import '../../widgets/skeletons.dart';
 import '../home/drama_grid.dart';
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({super.key});
+  const SearchScreen({super.key, this.embedded = false});
+
+  /// True when shown as the "Tafuta" tab: no autofocus (the keyboard would pop up on every tab switch).
+  final bool embedded;
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -64,20 +68,20 @@ class _SearchScreenState extends State<SearchScreen> {
         title: Padding(
           padding: const EdgeInsets.only(right: 16),
           child: Hero(
-            tag: 'search-field',
+            tag: 'search-field-tab',
             child: Material(
               type: MaterialType.transparency,
               child: SizedBox(
                 height: 42,
                 child: TextField(
                   controller: _controller,
-                  autofocus: true,
+                  autofocus: !widget.embedded,
                   textInputAction: TextInputAction.search,
                   onChanged: _onChanged,
                   onSubmitted: _submit,
                   style: Theme.of(context).textTheme.bodyLarge!.copyWith(fontSize: 15),
                   decoration: InputDecoration(
-                    hintText: 'Search titles, tags, studios',
+                    hintText: context.tr('Search titles, tags, studios'),
                     prefixIcon: const Icon(Icons.search_rounded, size: 20),
                     contentPadding: EdgeInsets.zero,
                     border: OutlineInputBorder(
@@ -136,10 +140,10 @@ class _Suggestions extends StatelessWidget {
         if (settings.recentSearches.isNotEmpty) ...[
           Row(
             children: [
-              Expanded(child: Text('Recent searches', style: text.titleSmall)),
+              Expanded(child: Text(context.tr('Recent searches'), style: text.titleSmall)),
               TextButton(
                 onPressed: settings.clearRecentSearches,
-                child: const Text('Clear'),
+                child: Text(context.tr('Clear')),
               ),
             ],
           ),
@@ -161,7 +165,7 @@ class _Suggestions extends StatelessWidget {
           ),
           const SizedBox(height: 18),
         ],
-        Text('Trending now', style: text.titleSmall),
+        Text(context.tr('Trending now'), style: text.titleSmall),
         const SizedBox(height: 6),
         FutureBuilder<List<Drama>>(
           future: trending,
@@ -173,7 +177,7 @@ class _Suggestions extends StatelessWidget {
             if (items.isEmpty) {
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 24),
-                child: Text('Type to search the Afriva catalog.', style: text.bodyMedium),
+                child: Text(context.tr('Type to search the Afriva catalog.'), style: text.bodyMedium),
               );
             }
             return Column(
@@ -190,4 +194,4 @@ class _Suggestions extends StatelessWidget {
 }
 
 /// Convenience to open search from anywhere.
-void openSearch(BuildContext context) => context.push('/search');
+void openSearch(BuildContext context) => context.go('/search');

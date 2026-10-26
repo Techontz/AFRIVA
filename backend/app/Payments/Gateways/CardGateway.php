@@ -3,7 +3,7 @@
 namespace App\Payments\Gateways;
 
 /**
- * Card (Visa/Mastercard via DPO/Flutterwave/Selcom) driver — NOT CONNECTED YET.
+ * Card (Visa/Mastercard via DPO/Flutterwave/Selcom) driver: NOT CONNECTED YET.
  * Credentials come from config('payments.drivers.*') which reads .env.
  * When integrating: implement initiate() (push USSD / build redirect), verify() and handleCallback().
  */

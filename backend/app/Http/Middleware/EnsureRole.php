@@ -17,16 +17,16 @@ class EnsureRole
         $user = $request->user();
 
         if (! $user) {
-            throw new ApiException('Unauthenticated.', 'unauthenticated', 401);
+            throw new ApiException('Tafadhali ingia kwanza.', 'unauthenticated', 401);
         }
         if ($user->status !== 'active') {
-            throw new ApiException('Your account is suspended.', 'account_suspended', 403);
+            throw new ApiException('Akaunti yako imesimamishwa.', 'account_suspended', 403);
         }
         if (! in_array($user->role, $roles, true)) {
-            throw new ApiException('You do not have permission to access this resource.', 'forbidden', 403);
+            throw new ApiException('Huna ruhusa ya kufikia sehemu hii.', 'forbidden', 403);
         }
         if ($user->role === 'company' && ! $user->company_id) {
-            throw new ApiException('No company is linked to this account.', 'no_company', 403);
+            throw new ApiException('Akaunti hii haijaunganishwa na mtayarishaji yeyote.', 'no_company', 403);
         }
 
         return $next($request);

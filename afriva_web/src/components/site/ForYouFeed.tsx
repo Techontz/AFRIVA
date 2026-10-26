@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { api, errorMessage, normalizePage, request } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { cn, formatCompact } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 import type { FeedItem } from "@/lib/types";
 import { Button } from "../ui/Button";
 import { ApiDownState, EmptyState, Spinner } from "../ui/Feedback";
@@ -18,6 +19,7 @@ const PER_PAGE = 8;
 
 export function ForYouFeed() {
   const { user } = useAuth();
+  const t = useT();
   const router = useRouter();
   const [items, setItems] = useState<FeedItem[]>([]);
   const [page, setPage] = useState(0);
@@ -54,8 +56,8 @@ export function ForYouFeed() {
   }, []);
 
   useEffect(() => {
-    const t = setTimeout(() => load(1), 0);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => load(1), 0);
+    return () => clearTimeout(timer);
   }, [load]);
 
   // Track which item is centred.
@@ -81,8 +83,8 @@ export function ForYouFeed() {
       else v.pause();
     });
     if (active >= items.length - 3 && page < lastPage && !loading) {
-      const t = setTimeout(() => load(page + 1), 0);
-      return () => clearTimeout(t);
+      const timer = setTimeout(() => load(page + 1), 0);
+      return () => clearTimeout(timer);
     }
   }, [active, items.length, page, lastPage, loading, load]);
 
@@ -117,7 +119,7 @@ export function ForYouFeed() {
     setFavorites((f) => ({ ...f, [id]: next }));
     try {
       await api.post(`/me/favorites/${id}`);
-      toast.success(next ? "Added to My List" : "Removed from My List");
+      toast.success(next ? t("Added to My List") : t("Removed from My List"));
     } catch (e) {
       setFavorites((f) => ({ ...f, [id]: !next }));
       toast.error(errorMessage(e));
@@ -130,7 +132,7 @@ export function ForYouFeed() {
       if (navigator.share) await navigator.share({ title: item.drama.title, url });
       else {
         await navigator.clipboard.writeText(url);
-        toast.success("Link copied");
+        toast.success(t("Link copied"));
       }
     } catch {
       /* dismissed */
@@ -140,14 +142,16 @@ export function ForYouFeed() {
   if (error && !items.length) {
     return (
       <div className="mx-auto max-w-3xl px-4 pt-16">
-        <ApiDownState action={<Button variant="secondary" onClick={() => load(1)}>Retry</Button>} />
+        <ApiDownState action={<Button variant="secondary" onClick={() => load(1)}>
+              {t("Retry")}
+            </Button>} />
       </div>
     );
   }
   if (!loading && !items.length) {
     return (
       <div className="mx-auto max-w-3xl px-4 pt-16">
-        <EmptyState title="Your feed is warming up" description="Check back soon for new first episodes." />
+        <EmptyState title={t("Your feed is warming up")} description={t("Check back soon for new first episodes.")} />
       </div>
     );
   }
@@ -157,7 +161,7 @@ export function ForYouFeed() {
       <div
         ref={scroller}
         className="scrollbar-none h-[calc(100dvh-4rem)] lg:h-[calc(100dvh-88px)] snap-y snap-mandatory overflow-y-auto overscroll-contain"
-        aria-label="For You feed"
+        aria-label={t("For You feed")}
       >
         {items.map((item, idx) => {
           const near = Math.abs(idx - active) <= 1;
@@ -198,25 +202,25 @@ export function ForYouFeed() {
 
                 {/* Right-side actions */}
                 <div className="absolute bottom-28 right-3 flex flex-col items-center gap-5">
-                  <button onClick={() => toggleFavorite(item)} className="flex flex-col items-center gap-1 text-[11px] font-semibold" aria-pressed={fav} aria-label="My List">
+                  <button onClick={() => toggleFavorite(item)} className="flex flex-col items-center gap-1 text-[11px] font-semibold" aria-pressed={fav} aria-label={t("My List")}>
                     <span className={cn("grid h-11 w-11 place-items-center rounded-full bg-black/50 backdrop-blur transition", fav && "text-primary")}>
                       <Icon name={fav ? "bookmark-filled" : "bookmark"} size={22} />
                     </span>
-                    My List
+                    {t("My List")}
                   </button>
-                  <Link href={`/drama/${d.slug}#episodes`} className="flex flex-col items-center gap-1 text-[11px] font-semibold" aria-label="Episodes">
+                  <Link href={`/drama/${d.slug}#episodes`} className="flex flex-col items-center gap-1 text-[11px] font-semibold" aria-label={t("Episodes")}>
                     <span className="grid h-11 w-11 place-items-center rounded-full bg-black/50 backdrop-blur">
                       <Icon name="list" size={22} />
                     </span>
-                    Episodes
+                    {t("Episodes")}
                   </Link>
-                  <button onClick={() => share(item)} className="flex flex-col items-center gap-1 text-[11px] font-semibold" aria-label="Share">
+                  <button onClick={() => share(item)} className="flex flex-col items-center gap-1 text-[11px] font-semibold" aria-label={t("Share")}>
                     <span className="grid h-11 w-11 place-items-center rounded-full bg-black/50 backdrop-blur">
                       <Icon name="share" size={20} />
                     </span>
-                    Share
+                    {t("Share")}
                   </button>
-                  <button onClick={() => setMuted((m) => !m)} className="grid h-11 w-11 place-items-center rounded-full bg-black/50 backdrop-blur" aria-label={muted ? "Unmute" : "Mute"}>
+                  <button onClick={() => setMuted((m) => !m)} className="grid h-11 w-11 place-items-center rounded-full bg-black/50 backdrop-blur" aria-label={muted ? t("Unmute") : t("Mute")}>
                     <Icon name={muted ? "mute" : "volume"} size={20} />
                   </button>
                 </div>
@@ -224,7 +228,7 @@ export function ForYouFeed() {
                 {/* Bottom info */}
                 <div className="absolute inset-x-0 bottom-0 p-4 pr-20">
                   <p className="text-xs font-semibold text-white/70">
-                    EP 1 · {d.total_episodes} episodes · {formatCompact(d.views)} views
+                    {t("EP {n}", { n: 1 })} · {t("{n} episodes", { n: d.total_episodes })} · {t("{n} views", { n: formatCompact(d.views) })}
                   </p>
                   <h2 className="mt-1 line-clamp-2 text-lg font-extrabold leading-snug">{d.title}</h2>
                   <p className="mt-1 line-clamp-2 text-[13px] text-white/75">{d.synopsis}</p>
@@ -234,7 +238,7 @@ export function ForYouFeed() {
                     className="mt-3 flex items-center justify-between rounded-lg bg-white/10 px-3 py-2.5 text-sm font-bold backdrop-blur transition hover:bg-white/20"
                   >
                     <span className="flex items-center gap-2">
-                      <Icon name="play" size={14} className="text-primary" /> Watch full series
+                      <Icon name="play" size={14} className="text-primary" /> {t("Watch full series")}
                     </span>
                     <Icon name="chevron-right" size={18} />
                   </Link>
@@ -256,7 +260,7 @@ export function ForYouFeed() {
           onClick={() => scrollTo(Math.max(active - 1, 0))}
           disabled={active === 0}
           className="grid h-11 w-11 place-items-center rounded-full bg-surface-2 text-text transition hover:bg-[#262626] disabled:opacity-30"
-          aria-label="Previous drama"
+          aria-label={t("Previous drama")}
         >
           <Icon name="chevron-up" />
         </button>
@@ -264,7 +268,7 @@ export function ForYouFeed() {
           onClick={() => scrollTo(Math.min(active + 1, items.length - 1))}
           disabled={active >= items.length - 1}
           className="grid h-11 w-11 place-items-center rounded-full bg-surface-2 text-text transition hover:bg-[#262626] disabled:opacity-30"
-          aria-label="Next drama"
+          aria-label={t("Next drama")}
         >
           <Icon name="chevron-down" />
         </button>

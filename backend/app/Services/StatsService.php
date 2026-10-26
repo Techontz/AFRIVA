@@ -91,6 +91,8 @@ class StatsService
             'slug' => $d->slug,
             'poster_url' => $d->poster_url,
             'status' => $d->status,
+            'review_status' => $d->review_status,
+            'is_live' => $d->isLive(),
             'badge' => $d->badge,
             'episodes' => (int) $d->total_episodes,
             'views' => (int) $d->views,
@@ -101,7 +103,10 @@ class StatsService
 
         return [
             'company' => ['id' => $company->id, 'name' => $company->name, 'slug' => $company->slug,
-                'revenue_share_percent' => (float) $company->revenue_share_percent],
+                'revenue_share_percent' => (float) $company->revenue_share_percent, 'status' => $company->status,
+                'agreement_accepted' => $company->hasAcceptedAgreement()],
+            'review_counts' => Drama::where('company_id', $id)->select('review_status', DB::raw('COUNT(*) as c'))
+                ->groupBy('review_status')->pluck('c', 'review_status')->map(fn ($v) => (int) $v),
             'views' => ['total' => $viewsTotal, 'today' => $viewsToday, 'last_30d' => $views30],
             'unique_watchers' => $watchers,
             'unique_watchers_30d' => $watchers30,

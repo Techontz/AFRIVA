@@ -22,4 +22,9 @@ class DramaController extends Controller
     {
         return null;
     }
+
+    protected function asStaff(): bool
+    {
+        return true;
+    }
 }

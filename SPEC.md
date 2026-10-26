@@ -1,4 +1,4 @@
-# AFRIVA — Platform Spec (shared contract)
+# AFRIVA: Platform Spec (shared contract)
 
 Afriva is a short-drama streaming platform (vertical, episodic mini-series) for African audiences.
 Three apps share ONE API:
@@ -7,7 +7,7 @@ Three apps share ONE API:
 |---|---|---|---|
 | Backend API | `backend/` | Laravel 11+, Sanctum, MySQL | http://localhost:8000 |
 | Web (viewer site + Super Admin + Studio portal) | `afriva_web/` | Next.js (App Router, TypeScript, Tailwind) | http://localhost:3000 |
-| Mobile app | `afriva_app/` | Flutter | — |
+| Mobile app | `afriva_app/` | Flutter | - |
 
 Currency default: **TZS**. All money stored as integer minor-less amounts (TZS has no decimals) in `amount` columns (BIGINT).
 
@@ -15,14 +15,14 @@ Currency default: **TZS**. All money stored as integer minor-less amounts (TZS h
 
 ## 1. Brand & design system (use identically in web and app)
 
-Original Afriva identity — do NOT copy any third-party logo, artwork or copy.
+Original Afriva identity. Do NOT copy any third-party logo, artwork or copy.
 
 - Theme: dark, cinematic.
   - `bg` #0B0B0F, `surface` #15151C, `surface-2` #1E1E28, `border` #2A2A36
   - `text` #FFFFFF, `text-muted` #A1A1B5, `text-dim` #6B6B80
   - `primary` #FF4D2E (Afriva coral), `primary-2` #FF8A00 (amber) → brand gradient `linear-gradient(135deg,#FF4D2E,#FF8A00)`
   - `gold` #F5C044 (VIP / coins), `success` #22C55E, `danger` #EF4444
-- Font: **Plus Jakarta Sans** (Google Fonts) — 400/500/600/700/800. Headings 700–800, tight letter-spacing.
+- Font: **Plus Jakarta Sans** (Google Fonts): 400/500/600/700/800. Headings 700–800, tight letter-spacing.
 - Logo: wordmark "AFRIVA" in 800 weight with the "A" glyph in the brand gradient + a small play-triangle mark. Build as SVG/text, no images.
 - Posters: vertical **3:4**, radius 8px (web) / 10px (app), subtle bottom gradient, top-left badge ("Hot", "New", "VIP"), bottom-right "EP 60" style episode count.
 - Cards show: poster, title (2 lines max), episode count, 1–2 genre tags as small muted chips.
@@ -38,7 +38,7 @@ Web (`afriva_web`):
 - Browse: category chips (All, Romance, Revenge, Billionaire, Family, Comedy, Thriller, Historical, Village Life, Campus…), sort (Popular/Newest), infinite/paged grid.
 - Drama detail `/drama/[slug]`: backdrop, poster, title, tags, episode count, views, synopsis, "Play EP1", Add to My List, episode grid (1..N buttons; lock icon on locked eps; VIP crown), "You may also like".
 - Watch `/drama/[slug]/ep/[n]`: vertical 9:16 player centered with dark side panels, episode selector panel on the right (ranges 1-30, 31-60), prev/next. Locked episode → paywall modal (subscribe or unlock with coins).
-- VIP / Subscribe `/vip`: plan cards from `/plans` (weekly, monthly, yearly, episode packs e.g. "6 episodes – 10,000 TZS", coin packs), then payment-method picker grouped: **Mobile Money** (M-Pesa, Tigo Pesa / Mixx by Yas, Airtel Money, HaloPesa, T-Pesa), **Cards** (Visa, Mastercard), **Bank** (CRDB, NMB, NBC), showing phone input for mobile money / card form UI for cards. Submit calls checkout; shows "Pending — payment provider not yet connected" state.
+- VIP / Subscribe `/vip`: plan cards from `/plans` (weekly, monthly, yearly, episode packs e.g. "6 episodes – 10,000 TZS", coin packs), then payment-method picker grouped: **Mobile Money** (M-Pesa, Tigo Pesa / Mixx by Yas, Airtel Money, HaloPesa, T-Pesa), **Cards** (Visa, Mastercard), **Bank** (CRDB, NMB, NBC), showing phone input for mobile money / card form UI for cards. Submit calls checkout; shows "Pending: payment provider not yet connected" state.
 - Account: login/register, My List, Watch History, Subscription status, coin balance, payment history.
 - Footer: About (Terms, Privacy, Cookies), Contact (Business, Careers, Press), Community (Facebook, Instagram, TikTok, YouTube), email, © Afriva.
 
@@ -58,7 +58,7 @@ Mobile (`afriva_app`): bottom nav **Home · For You · My List · Profile**.
 ## 4. Data model (MySQL)
 
 - `users` id, name, email (unique, nullable), phone (unique, nullable), password, role, company_id nullable, coins INT default 0, avatar_url, status (active|suspended), timestamps
-- `companies` id, name, slug, logo_url, email, phone, country, revenue_share_percent (DECIMAL 5,2 default 70.00 — company's share), status (active|suspended), description, timestamps
+- `companies` id, name, slug, logo_url, email, phone, country, revenue_share_percent (DECIMAL 5,2 default 70.00, company's share), status (active|suspended), description, timestamps
 - `categories` id, name, slug, sort_order
 - `dramas` id, company_id, title, slug, synopsis, poster_url, backdrop_url, total_episodes (cached), free_episodes INT default 5, coins_per_episode INT default 30, status (draft|published), is_featured, badge nullable (hot|new|vip), language, release_date, views BIGINT default 0, timestamps
 - `category_drama` pivot
@@ -90,7 +90,7 @@ interface PaymentGateway {
   public function handleCallback(Request $request): ?Payment;
 }
 ```
-Drivers in `app/Payments/Gateways/`: `MpesaGateway`, `TigoPesaGateway`, `AirtelMoneyGateway`, `HaloPesaGateway`, `CardGateway` (Visa/Mastercard — e.g. via DPO/Flutterwave/Selcom), `BankGateway`, plus `SandboxGateway`. Non-integrated drivers return `GatewayResponse::pending('Provider not yet connected')`. `PaymentManager` resolves driver by method code from `config/payments.php` (keys read from `.env`, e.g. `MPESA_API_KEY`…). Setting `PAYMENTS_SANDBOX_AUTO_APPROVE=true` makes the sandbox mark payments successful immediately so the flow can be demoed end-to-end. On success → `PaymentService::fulfill()` creates subscription / adds coins / episode quota.
+Drivers in `app/Payments/Gateways/`: `MpesaGateway`, `TigoPesaGateway`, `AirtelMoneyGateway`, `HaloPesaGateway`, `CardGateway` (Visa/Mastercard, e.g. via DPO/Flutterwave/Selcom), `BankGateway`, plus `SandboxGateway`. Non-integrated drivers return `GatewayResponse::pending('Provider not yet connected')`. `PaymentManager` resolves driver by method code from `config/payments.php` (keys read from `.env`, e.g. `MPESA_API_KEY`…). Setting `PAYMENTS_SANDBOX_AUTO_APPROVE=true` makes the sandbox mark payments successful immediately so the flow can be demoed end-to-end. On success → `PaymentService::fulfill()` creates subscription / adds coins / episode quota.
 
 ## 6. REST API (`/api/v1`, JSON, Sanctum bearer tokens)
 
@@ -151,5 +151,74 @@ Company studio (`role:company`) prefix `/studio`:
   - https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4
   - https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4
 - Plans: Weekly VIP 3,000 TZS (7d) · Monthly VIP 10,000 TZS (30d, popular) · Yearly VIP 90,000 TZS (365d) · 6 Episodes 10,000 TZS · 15 Episodes 20,000 TZS · 100 Coins 1,000 TZS · 550 Coins (+50 bonus) 5,000 TZS.
-- Payment methods: M-Pesa, Mixx by Yas (Tigo Pesa), Airtel Money, HaloPesa, T-Pesa, Visa, Mastercard, CRDB, NMB, NBC — all enabled, none integrated.
+- Payment methods: M-Pesa, Mixx by Yas (Tigo Pesa), Airtel Money, HaloPesa, T-Pesa, Visa, Mastercard, CRDB, NMB, NBC: all enabled, none integrated.
 - ~60 days of synthetic episode_views, payments, subscriptions and company_earnings so dashboards have charts.
+
+---
+
+## 8. Project Scope 2026 (AFRIVA_Project_Scope.pdf), what changed
+
+These rules override anything above that conflicts with them.
+
+### 8.1 Language
+The whole user interface is **Kiswahili** (web site, Studio, Admin, mobile app). Series titles may be in any language. Kiswahili is the default; English remains only as an optional fallback in the language setting. API messages (`message`, validation `errors`) are Kiswahili (`APP_LOCALE=sw`, `backend/lang/sw/validation.php`).
+
+### 8.2 Catalogue
+- Categories: **Mapenzi, Historia, Siri na Mafumbo, Vita na Mashujaa, Vichekesho, Upelelezi, Maisha, Hadithi za Afrika**.
+- Free preview: **episodes 1-8 free by default** (`settings.default_free_episodes`), changeable per series by staff.
+- Drama JSON adds: `trailer_url` (signed if uploaded), `age_rating` (`all|7+|13+|16+|18+`), `access_mode` (`coins_or_vip` default | `vip_only` | `coins_only`), `total_duration_seconds` (detail), `resume` (continue watching). Admin/studio responses also include `review_status, review_notes, publish_at, is_scheduled, is_live, submitted_at, reviewed_at, rights_declared_at, episodes_count`.
+- Episode JSON adds: `access` (`free|unlocked|locked`), `price_coins`, `vip_only`, `subtitle_url`; with video: `sources`.
+- `GET /home` sections: `continue_watching` (layout `continue`, signed-in only; each drama has `resume: {episode_id|null, episode_number, progress_seconds, duration_seconds}`), `trending` ("Zinazovuma", ranking), `new_releases` ("Mpya"), `must_watch`, one row per category, `popular` (grid).
+- Viewers only see series that are `status=published` + `review_status=approved` + `publish_at` null or past, and only `approved` episodes.
+
+### 8.3 Player
+`GET /episodes/{id}/play` → `{video_url, sources: [{quality:"auto"|"480p"|"720p"|"1080p", label, url, type:"hls"|"mp4"}], subtitle_url, resume_seconds, session_id, episode, drama, next_episode_id, prev_episode_id}`. `video_url` = `sources[0].url` (HLS master when transcoded; web uses hls.js unless the browser plays HLS natively). Quality selection = switch to another source and seek to the current position. Locked → 402 `episode_locked` with `unlock: {coins_required, user_coins, can_use_coins, can_use_pack, can_use_vip, vip_only, episodes_remaining, requires_login}`; unlocking a `vip_only` series with coins → 402 `vip_required`.
+
+Player must: play/pause/seek/retry/resume (`resume_seconds`)/auto-next/quality selection/save progress (`POST /episodes/{id}/progress` every ~10 s and on pause/exit, signed-in only).
+
+Analytics events: `POST /events` (auth optional, header `X-Device-Id: <stable random id ≥8 chars>`) body `{events:[{session_id, episode_id, type: start|heartbeat|pause|complete|error|quality, position_seconds, watched_seconds (since last event, ≤120), duration_seconds, quality?, error_code?}]}`. Send `start` on first frame, `heartbeat` every ~15 s while playing, `pause`, `complete` at the end, `error` on playback failure, `quality` on manual quality change.
+
+### 8.4 Payments
+- Launch methods: M-Pesa, Mixx by Yas (Tigo Pesa), Airtel Money, HaloPesa (Tanzania); Visa, Mastercard (international); `wallet` (off). Banks/T-Pesa exist but are disabled.
+- `payment-methods` items add `is_available`. **Only `is_available` methods may be offered**; others are shown as "Inakuja hivi karibuni" and checkout returns 422 `method_unavailable`. A method becomes available only when staff mark it integrated after a live test (or while the demo sandbox auto-approves).
+- `POST /checkout` accepts `Idempotency-Key` header (8-80 chars `[A-Za-z0-9_-]`); a retry returns the same payment (200).
+- Coins only change through the ledger: `GET /me/coins` → `[ {amount, balance_after, type: purchase|bonus|unlock|admin_adjust|refund, description, episode, created_at} ]`, `meta.balance`.
+- Receipts: `GET /me/payments/{reference}/receipt` → `{receipt_number, reference, provider_reference, status, issued_at, customer, item:{name,type,description,delivered}, payment_method:{code,name}, amount, refunded_amount, currency, seller}`.
+- Payment JSON adds `receipt_number, fee_amount, refunded_amount, refunded_at`; status may be `refunded`.
+- `POST /payments/callback/sandbox` only works while `PAYMENTS_SANDBOX_ENABLED` (defaults to the auto-approve flag).
+
+### 8.5 Creators ("Wasilisha Kazi Yako")
+- `POST /creator/apply {name, phone?, email?, country?, description?}` (signed-in viewer) → user becomes `role=company` with company `status=pending`. Pending creators can prepare drafts but not submit.
+- `GET /studio/agreement` → `{version, text, accepted, accepted_at, revenue_share_percent, company_status}`; `POST /studio/agreement {accept:true}`.
+- Review statuses (Kiswahili labels): `draft` Rasimu · `submitted` Imetumwa · `in_review` Inakaguliwa · `changes_requested` Marekebisho · `approved` Imeidhinishwa · `rejected` Imekataliwa.
+- Creators cannot set publishing rules (status, publish_at, free_episodes, coins_per_episode, access_mode, badge, featured, release_date, is_free); they are ignored. Creators can edit a series/episode only in `draft` or `changes_requested` (else 409 `locked_for_review`); new episodes may be added to an approved series and go through review on their own.
+- Studio drama form fields: `title, synopsis, category_ids[], tags, poster (file), backdrop (file), trailer (video file) | trailer_url, age_rating, language`. Episode: `number?, title, video (file) | video_url, thumbnail (file), subtitle (.vtt/.srt file), duration_seconds`.
+- `POST /studio/dramas/{id}/submit {rights_declaration: true}` (requires active creator + accepted agreement + synopsis, poster, genre, ≥1 pending episode with video). `GET /studio/dramas/{id}` includes `episodes` (with `review_status, review_notes, video_status, sources`) and `reviews` (history with reviewer notes).
+- `POST /studio/dramas/{id}/episodes/reorder {episode_ids:[...]}` (editable series only), `GET /studio/analytics?days=`, `GET /studio/dramas/{id}/analytics?days=`. Studio dashboard adds `company.status`, `company.agreement_accepted`, `review_counts`, and per drama `review_status`, `is_live`.
+- Viewers report a series: `POST /dramas/{id}/report {reason: copyright|inappropriate|misleading|other, details (required for copyright), episode_id?, contact?}`.
+
+### 8.6 Staff roles and admin API
+`users.staff_role` for `role=super_admin`: **owner** (everything), **editor** (dashboard, content, publish, creators, reports, analytics), **reviewer** (dashboard, review, reports), **finance** (dashboard, finance, analytics). `GET /auth/me` returns `staff_role` and `permissions`; hide what the role cannot use (the API returns 403 anyway).
+
+| Area (permission) | Endpoints |
+|---|---|
+| content | categories CRUD; `POST/PUT/DELETE /admin/dramas…`; `POST /admin/dramas/{id}/episodes/reorder`; `GET /admin/videos?video_status=&review_status=&unverified=1&q=` (Video Library, meta `counts`, `transcoding_enabled`); `POST /admin/videos/{episode}/reprocess` |
+| content, review or publish | `GET /admin/dramas`, `/admin/dramas/{id}` (+ `reviews`), episodes (`?review_status=` filter on list) |
+| publish | `POST /admin/dramas/{id}/publish {publish_at?, free_episodes?, coins_per_episode?, access_mode?, is_featured?, badge?}` (approved only; future `publish_at` = scheduled), `POST /admin/dramas/{id}/unpublish` |
+| review | `GET /admin/reviews?status=pending|changes_requested|rejected|approved|all` (meta `counts`), `GET /admin/reviews/{drama}`, `POST /admin/reviews/{drama}/start`, `POST /admin/reviews/{drama}/decide {decision: approve|request_changes|reject, notes (required unless approve), episode_ids?}`, `POST /admin/episodes/{id}/verify-playback` (required for every episode before approval) |
+| reports | `GET /admin/reports?status=open|resolved|dismissed|all`, `PUT /admin/reports/{id} {status, resolution_notes}` |
+| creators | companies CRUD (status `pending|active|suspended`; list meta `pending`; approve = `PUT {status:"active"}`), stats |
+| finance | plans, payment methods (`fee_percent`; set `is_integrated` only after a live test; `tested_at`), `GET /admin/payments`, `GET /admin/payments/{id}` (refunds, receipt, net), `POST /admin/payments/{id}/refund {amount?, reason}`, `GET /admin/coin-transactions?user_id=&type=`, payouts, `GET/POST /admin/costs {period: YYYY-MM, category: streaming|storage|hosting|payments|other, amount, notes}`, `DELETE /admin/costs/{id}` |
+| analytics | `GET /admin/analytics?days=7|30|90|365` → `revenue{gross, refunds, fees, net, streaming_cost, streaming_cost_is_estimate, operating_costs, net_after_costs, by_type, chart[{date,gross,net}]}`, `audience{views, unique_viewers, watch_seconds, avg_watch_seconds_per_viewer, sessions, completion_rate, returning_viewers, retention_rate, playback_errors, views_chart, watch_time_chart}`, `active_users{dau, dau_avg, mau, chart}`, `coins{purchased, bonus, spent, refunded, admin_adjusted, outstanding_balance, chart[{date,bought,spent}]}`, `payments{attempts, success, failed, pending, cancelled, success_rate, by_method[]}`, `series[{drama_id,title,poster_url,revenue_gross,creator_earnings,views,unique_viewers,watch_seconds,completion_rate}]`, `alerts[]`; `GET /admin/analytics/dramas/{id}?days=` → per-episode `{views, unique_viewers, reach_rate, watch_seconds, completion_rate, avg_percent_watched, revenue_gross, is_free}` + `drop_off[10 buckets]` |
+| users | users list/update (`coins_adjust` + `coins_reason` go through the ledger; role only viewer/company) |
+| settings | settings (adds `default_free_episodes, default_coins_per_episode, streaming_avg_kbps, streaming_cost_per_gb_tzs, cost_alert_monthly_tzs, creator_agreement_version, creator_agreement_text`) |
+| staff | `GET /admin/staff` (meta `roles` with permissions), `POST /admin/staff {name,email,password,staff_role}`, `PUT /admin/staff/{id} {staff_role?, status?, name?, password?}` (the last active owner cannot be removed) |
+| audit | `GET /admin/audit-logs?action=&user_id=&subject_type=` |
+
+Admin navigation (Kiswahili): **Muhtasari · Ukaguzi · Series na Episodes · Video Library · Creators · Miamala · Analytics · Ripoti · Watumiaji · Mipangilio** (+ Mipango, Njia za malipo, Malipo kwa creators, Wafanyakazi, Kumbukumbu/Audit log), each shown only with the matching permission.
+
+### 8.7 Video pipeline
+Uploads go to the private `videos` disk. With `MEDIA_TRANSCODE=true` (needs ffmpeg/ffprobe), a queued job encodes HLS 480p/720p/1080p (never above the source), writes `hls/<episode>/master.m3u8`, sets duration and a thumbnail; episode `video_status`: `processing → ready | failed` (`video_error`). Without transcoding the file is served as-is (`ready`). Playlists are rewritten so every segment URL is signed and expiring. Replacing a creator's video resets `playback_verified_at`. Trimming/cropping is not done on the server.
+
+### 8.8 Seed data (local only)
+Staff demo logins: `admin@afriva.com` (owner), `editor@afriva.com`, `reviewer@afriva.com`, `finance@afriva.com`, all `password`. Plans are named in Kiswahili (VIP ya Wiki/Mwezi/Mwaka, Episode 6/15, Coins 100/550). `ActivitySeeder` creates synthetic history for local demos only; production seeds only `CoreSeeder`, so every dashboard number there comes from real activity.

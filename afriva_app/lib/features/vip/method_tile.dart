@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 
+import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import '../../models/commerce.dart';
 import '../../widgets/net_image.dart';
@@ -53,9 +54,13 @@ class MethodTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final brand = methodBrand(method);
     final text = Theme.of(context).textTheme;
+    // Not connected to a tested provider yet: visible but not selectable (scope §07).
+    final available = method.isAvailable;
     return GestureDetector(
       onTap: onTap,
-      child: AnimatedContainer(
+      child: Opacity(
+        opacity: available ? 1 : 0.45,
+        child: AnimatedContainer(
         duration: AppMotion.normal,
         curve: AppMotion.curve,
         padding: const EdgeInsets.all(8),
@@ -108,7 +113,7 @@ class MethodTile extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  method.name,
+                  available ? method.name : context.tr('Coming soon'),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
@@ -127,6 +132,7 @@ class MethodTile extends StatelessWidget {
               ),
           ],
         ),
+      ),
       ),
     );
   }

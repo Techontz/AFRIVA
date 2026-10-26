@@ -2,6 +2,7 @@
 
 use App\Exceptions\ApiException;
 use App\Http\Middleware\EnsureRole;
+use App\Http\Middleware\EnsureStaffPermission;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -23,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'role' => EnsureRole::class,
+            'staff' => EnsureStaffPermission::class,
         ]);
         // API is token based: never redirect unauthenticated API calls to a login page.
         $middleware->redirectGuestsTo(fn (Request $request) => $request->is('api/*') ? null : '/');
@@ -49,13 +51,13 @@ return Application::configure(basePath: dirname(__DIR__))
                 ], $e->status);
             }
             if ($e instanceof AuthenticationException) {
-                return response()->json(['message' => 'Unauthenticated.', 'code' => 'unauthenticated'], 401);
+                return response()->json(['message' => 'Tafadhali ingia kwanza.', 'code' => 'unauthenticated'], 401);
             }
             if ($e instanceof AuthorizationException) {
                 return response()->json(['message' => $e->getMessage() ?: 'Forbidden.', 'code' => 'forbidden'], 403);
             }
             if ($e instanceof ModelNotFoundException || $e instanceof NotFoundHttpException) {
-                return response()->json(['message' => 'Resource not found.', 'code' => 'not_found'], 404);
+                return response()->json(['message' => 'Hakipatikani.', 'code' => 'not_found'], 404);
             }
             if ($e instanceof HttpExceptionInterface) {
                 $status = $e->getStatusCode();
@@ -69,7 +71,7 @@ return Application::configure(basePath: dirname(__DIR__))
             }
 
             return response()->json([
-                'message' => config('app.debug') ? $e->getMessage() : 'Server error.',
+                'message' => config('app.debug') ? $e->getMessage() : 'Hitilafu ya seva.',
                 'code' => 'server_error',
             ], 500);
         });

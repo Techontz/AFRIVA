@@ -9,8 +9,16 @@ import { PosterBadge } from "@/components/site/PosterCard";
 import { ApiDownState } from "@/components/ui/Feedback";
 import { Icon } from "@/components/ui/Icon";
 import { formatCompact } from "@/lib/format";
+import { T } from "@/lib/i18n";
 import { serverGetWithStatus } from "@/lib/server-api";
 import type { DramaDetail } from "@/lib/types";
+
+/** Total runtime of all episodes, e.g. "Saa 2 dk 15" / "Dk 48". */
+function Runtime({ seconds }: { seconds: number }) {
+  const total = Math.max(1, Math.round(seconds / 60));
+  const h = Math.floor(total / 60);
+  return h ? <T vars={{ h, m: total % 60 }}>{"{h}h {m}m"}</T> : <T vars={{ m: total }}>{"{m} min"}</T>;
+}
 
 async function loadDrama(slug: string) {
   return serverGetWithStatus<DramaDetail>(`/dramas/${encodeURIComponent(slug)}`);
@@ -19,7 +27,7 @@ async function loadDrama(slug: string) {
 export async function generateMetadata({ params }: PageProps<"/drama/[slug]">): Promise<Metadata> {
   const { slug } = await params;
   const { data } = await loadDrama(slug);
-  if (!data) return { title: "Drama" };
+  if (!data) return { title: "Series" };
   return {
     title: data.title,
     description: data.synopsis?.slice(0, 160),
@@ -52,10 +60,14 @@ async function DramaContent({ params }: { params: Promise<{ slug: string }> }) {
   return (
     <DramaPersonalProvider drama={drama}>
       <div className="site-container pt-6">
-        <nav className="mb-6 flex items-center gap-1 text-xs text-text-dim" aria-label="Breadcrumb">
-          <Link href="/" className="hover:text-text">Home</Link>
+        <nav className="mb-6 flex items-center gap-1 text-xs text-text-dim" aria-label="Njia">
+          <Link href="/" className="hover:text-text">
+            <T>Home</T>
+          </Link>
           <Icon name="chevron-right" size={14} />
-          <Link href="/browse" className="hover:text-text">Browse</Link>
+          <Link href="/browse" className="hover:text-text">
+            <T>Browse</T>
+          </Link>
           <Icon name="chevron-right" size={14} />
           <span className="truncate text-text-muted">{drama.title}</span>
         </nav>
@@ -69,9 +81,21 @@ async function DramaContent({ params }: { params: Promise<{ slug: string }> }) {
           <div className="min-w-0 flex-1">
             <h1 className="text-xl font-extrabold leading-tight tracking-tight sm:text-4xl">{drama.title}</h1>
             <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-text-muted sm:mt-3 sm:text-sm">
-              <span>{drama.total_episodes} Episodes</span>
+              {drama.age_rating && (
+                <span className="rounded border border-text-dim/60 px-1.5 py-px text-xs font-bold text-text" title={drama.age_rating}>
+                  {drama.age_rating === "all" ? <T>All ages</T> : drama.age_rating}
+                </span>
+              )}
+              <span>
+                <T vars={{ n: drama.total_episodes }}>{"{n} Episodes"}</T>
+              </span>
+              {!!drama.total_duration_seconds && (
+                <span className="flex items-center gap-1">
+                  <Icon name="clock" size={15} /> <Runtime seconds={drama.total_duration_seconds} />
+                </span>
+              )}
               <span className="flex items-center gap-1">
-                <Icon name="eye" size={15} /> {formatCompact(drama.views)} views
+                <Icon name="eye" size={15} /> <T vars={{ n: formatCompact(drama.views) }}>{"{n} views"}</T>
               </span>
               {drama.company && <span className="hidden sm:inline">{drama.company.name}</span>}
             </div>

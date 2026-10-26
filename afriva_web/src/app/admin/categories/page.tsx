@@ -11,6 +11,7 @@ import { ConfirmModal, Modal } from "@/components/ui/Modal";
 import { api, errorMessage } from "@/lib/api";
 import { useList } from "@/lib/hooks";
 import type { Category } from "@/lib/types";
+import { useT } from "@/lib/i18n";
 
 const slugify = (s: string) =>
   s
@@ -29,6 +30,7 @@ export default function CategoriesPage() {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<Category | null>(null);
   const [busy, setBusy] = useState(false);
+  const t = useT();
 
   const openCreate = () => {
     setEditing(null);
@@ -51,10 +53,10 @@ export default function CategoriesPage() {
       if (editing) {
         await api.put(`/admin/categories/${editing.id}`, body);
         setItems((list) => list.map((c) => (c.id === editing.id ? { ...c, ...body } : c)));
-        toast.success("Category updated");
+        toast.success(t("Category updated"));
       } else {
         await api.post("/admin/categories", body);
-        toast.success("Category created");
+        toast.success(t("Category created"));
         reload();
       }
       setOpen(false);
@@ -71,7 +73,7 @@ export default function CategoriesPage() {
     try {
       await api.del(`/admin/categories/${deleting.id}`);
       setItems((list) => list.filter((x) => x.id !== deleting.id));
-      toast.success("Category deleted");
+      toast.success(t("Category deleted"));
       setDeleting(null);
     } catch (err) {
       toast.error(errorMessage(err));
@@ -87,7 +89,7 @@ export default function CategoriesPage() {
         description="Genres shown as chips on Browse and as rows on Home."
         actions={
           <Button onClick={openCreate}>
-            <Icon name="plus" size={18} /> New category
+            <Icon name="plus" size={18} /> {t("New category")}
           </Button>
         }
       />
@@ -101,7 +103,7 @@ export default function CategoriesPage() {
           columns={[
             { key: "name", header: "Name", render: (c) => <span className="font-semibold">{c.name}</span> },
             { key: "slug", header: "Slug", render: (c) => <span className="font-mono text-xs text-text-muted">{c.slug}</span> },
-            { key: "count", header: "Dramas", render: (c) => c.dramas_count ?? "—" },
+            { key: "count", header: "Dramas", render: (c) => c.dramas_count ?? "-" },
             { key: "order", header: "Order", render: (c) => c.sort_order ?? 0 },
             {
               key: "actions",
@@ -110,12 +112,12 @@ export default function CategoriesPage() {
               render: (c) => (
                 <div className="flex justify-end gap-1">
                   <Button size="sm" variant="ghost" onClick={() => openEdit(c)}>
-                    Edit
+                    {t("Edit")}
                   </Button>
                   <button
                     onClick={() => setDeleting(c)}
                     className="grid h-8 w-8 place-items-center rounded-full text-text-dim hover:bg-danger/15 hover:text-danger"
-                    aria-label={`Delete ${c.name}`}
+                    aria-label={t("Delete {name}", { name: c.name })}
                   >
                     <Icon name="trash" size={16} />
                   </button>
@@ -136,7 +138,7 @@ export default function CategoriesPage() {
                 const name = e.target.value;
                 setForm((f) => ({ ...f, name, slug: slugTouched ? f.slug : slugify(name) }));
               }}
-              placeholder="Village Life"
+              placeholder={t("Village Life")}
             />
           </Field>
           <Field label="Slug">
@@ -153,10 +155,10 @@ export default function CategoriesPage() {
           </Field>
           <div className="flex justify-end gap-2">
             <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
-              Cancel
+              {t("Cancel")}
             </Button>
             <Button type="submit" loading={saving}>
-              Save
+              {t("Save")}
             </Button>
           </div>
         </form>
@@ -171,7 +173,7 @@ export default function CategoriesPage() {
         title="Delete category?"
         message={
           <>
-            Dramas tagged <b className="text-text">{deleting?.name}</b> stay published but lose this category.
+            {t("Dramas tagged")} <b className="text-text">{deleting?.name}</b> {t("stay published but lose this category.")}
           </>
         }
         confirmLabel="Delete"

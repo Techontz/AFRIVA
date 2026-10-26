@@ -72,6 +72,7 @@ class PaymentMethod {
     this.color,
     this.isEnabled = true,
     this.isIntegrated = false,
+    this.isAvailable = true,
   });
 
   final int id;
@@ -84,6 +85,10 @@ class PaymentMethod {
   final String? color;
   final bool isEnabled;
   final bool isIntegrated;
+
+  /// Connected to a tested provider (or demo sandbox). Others are shown as
+  /// "Inakuja hivi karibuni" and cannot be chosen (SPEC §8.4).
+  final bool isAvailable;
 
   bool get isMobileMoney => type == 'mobile_money';
   bool get isCard => type == 'card';
@@ -98,6 +103,7 @@ class PaymentMethod {
         color: asStringOrNull(j['color']),
         isEnabled: asBool(j['is_enabled'], true),
         isIntegrated: asBool(j['is_integrated']),
+        isAvailable: asBool(j['is_available'], true),
       );
 }
 
@@ -111,9 +117,13 @@ class Payment {
     this.planName,
     this.createdAt,
     this.paidAt,
+    this.receiptNumber,
+    this.refundedAmount = 0,
   });
 
   final String reference;
+  final String? receiptNumber;
+  final int refundedAmount;
 
   /// pending | success | failed | cancelled
   final String status;
@@ -126,6 +136,10 @@ class Payment {
 
   bool get isPending => status == 'pending';
   bool get isSuccess => status == 'success';
+  bool get isRefunded => status == 'refunded';
+
+  /// A receipt exists once the server confirmed the payment.
+  bool get hasReceipt => isSuccess || isRefunded;
   bool get isFailed => status == 'failed' || status == 'cancelled';
 
   factory Payment.fromJson(Json j) {
@@ -141,6 +155,111 @@ class Payment {
       planName: plan != null ? asStringOrNull(plan['name']) : asStringOrNull(j['plan_name']),
       createdAt: asDate(j['created_at']),
       paidAt: asDate(j['paid_at']),
+      receiptNumber: asStringOrNull(j['receipt_number']),
+      refundedAmount: asInt(j['refunded_amount']),
+    );
+  }
+}
+
+/// `GET /me/payments/{reference}/receipt`
+class Receipt {
+  const Receipt({
+    required this.reference,
+    required this.amount,
+    this.receiptNumber,
+    this.providerReference,
+    this.status = 'success',
+    this.issuedAt,
+    this.customerName,
+    this.customerContact,
+    this.itemName,
+    this.itemDelivered,
+    this.methodName = '',
+    this.refundedAmount = 0,
+    this.currency = 'TZS',
+    this.sellerName = 'Afriva',
+    this.sellerEmail,
+  });
+
+  final String? receiptNumber;
+  final String reference;
+  final String? providerReference;
+  final String status;
+  final DateTime? issuedAt;
+  final String? customerName;
+  final String? customerContact;
+  final String? itemName;
+  final String? itemDelivered;
+  final String methodName;
+  final int amount;
+  final int refundedAmount;
+  final String currency;
+  final String sellerName;
+  final String? sellerEmail;
+
+  factory Receipt.fromJson(Json j) {
+    final customer = asMap(j['customer']);
+    final item = asMap(j['item']);
+    final method = asMap(j['payment_method']);
+    final seller = asMap(j['seller']);
+    return Receipt(
+      receiptNumber: asStringOrNull(j['receipt_number']),
+      reference: asString(j['reference']),
+      providerReference: asStringOrNull(j['provider_reference']),
+      status: asString(j['status'], 'success'),
+      issuedAt: asDate(j['issued_at']),
+      customerName: asStringOrNull(customer['name']),
+      customerContact: asStringOrNull(customer['phone']) ?? asStringOrNull(customer['email']),
+      itemName: asStringOrNull(item['name']),
+      itemDelivered: asStringOrNull(item['delivered']),
+      methodName: asString(method['name'], asString(method['code'])),
+      amount: asInt(j['amount']),
+      refundedAmount: asInt(j['refunded_amount']),
+      currency: asString(j['currency'], 'TZS'),
+      sellerName: asString(seller['name'], 'Afriva'),
+      sellerEmail: asStringOrNull(seller['email']),
+    );
+  }
+}
+
+/// `GET /me/coins` ledger entry.
+class CoinTransaction {
+  const CoinTransaction({
+    required this.id,
+    required this.amount,
+    required this.balanceAfter,
+    required this.type,
+    this.description,
+    this.dramaTitle,
+    this.episodeNumber,
+    this.createdAt,
+  });
+
+  final int id;
+
+  /// Positive = credit, negative = debit.
+  final int amount;
+  final int balanceAfter;
+
+  /// purchase | bonus | unlock | admin_adjust | refund
+  final String type;
+  final String? description;
+  final String? dramaTitle;
+  final int? episodeNumber;
+  final DateTime? createdAt;
+
+  factory CoinTransaction.fromJson(Json j) {
+    final ep = asMapOrNull(j['episode']);
+    final drama = ep == null ? null : asMapOrNull(ep['drama']);
+    return CoinTransaction(
+      id: asInt(j['id']),
+      amount: asInt(j['amount']),
+      balanceAfter: asInt(j['balance_after']),
+      type: asString(j['type']),
+      description: asStringOrNull(j['description']),
+      dramaTitle: drama == null ? null : asStringOrNull(drama['title']),
+      episodeNumber: ep == null ? null : asIntOrNull(ep['number']),
+      createdAt: asDate(j['created_at']),
     );
   }
 }

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { AuthForm } from "@/components/site/AuthForm";
 
-export const metadata: Metadata = { title: "Sign up" };
+export const metadata: Metadata = { title: "Jisajili" };
 
 export default function Page() {
   return (

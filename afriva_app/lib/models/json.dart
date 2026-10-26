@@ -1,4 +1,4 @@
-/// Lenient JSON readers — the API may send numbers as strings, nulls, etc.
+/// Lenient JSON readers, the API may send numbers as strings, nulls, etc.
 typedef Json = Map<String, dynamic>;
 
 int asInt(Object? v, [int fallback = 0]) {

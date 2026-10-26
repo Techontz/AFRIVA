@@ -4,10 +4,11 @@ import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { appendMedia, MediaInput, type MediaValue } from "@/components/portal/MediaInput";
 import { Button } from "@/components/ui/Button";
-import { Checkbox, Field, Input, Textarea } from "@/components/ui/Form";
+import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/Form";
 import { Modal } from "@/components/ui/Modal";
 import { api, ApiError, errorMessage } from "@/lib/api";
 import { cn } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 import type { Episode } from "@/lib/types";
 
 export const SAMPLE_VIDEOS = [
@@ -20,73 +21,82 @@ interface EpisodeFormState {
   number: string;
   title: string;
   video: MediaValue;
-  thumbnail_url: string;
+  thumbnail: MediaValue;
+  subtitle: File | null;
   duration_seconds: string;
-  is_free: boolean;
+  /** Staff only: null = follow the series' free-episode count. */
+  is_free: "" | "1" | "0";
 }
 
+/**
+ * Episode form shared by the Studio (creators) and Admin (staff, `staff` = true).
+ * `basePath` is the episodes collection, e.g. /studio/dramas/12/episodes.
+ */
 function EpisodeForm({
-  dramaId,
+  basePath,
   episode,
   defaultNumber,
-  freeEpisodes,
+  staff,
   onSaved,
   onCancel,
 }: {
-  dramaId: string | number;
+  basePath: string;
   episode?: Episode | null;
   defaultNumber: number;
-  freeEpisodes: number;
+  staff?: boolean;
   onSaved: (e: Episode | null) => void;
   onCancel: () => void;
 }) {
+  const t = useT();
   const [f, setF] = useState<EpisodeFormState>(() => ({
     number: String(episode?.number ?? defaultNumber),
     title: episode?.title ?? "",
-    video: { url: episode?.video_url ?? "", file: null },
-    thumbnail_url: episode?.thumbnail_url ?? "",
+    video: { url: episode?.video_url && !episode.video_url.includes("/media/videos/") ? episode.video_url : "", file: null },
+    thumbnail: { url: episode?.thumbnail_url ?? "", file: null },
+    subtitle: null,
     duration_seconds: episode?.duration_seconds ? String(episode.duration_seconds) : "",
-    is_free: episode?.is_free ?? defaultNumber <= freeEpisodes,
+    is_free: episode?.is_free_override === true ? "1" : episode?.is_free_override === false ? "0" : "",
   }));
   const [saving, setSaving] = useState(false);
   const [progress, setProgress] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const set = <K extends keyof EpisodeFormState>(k: K, v: EpisodeFormState[K]) => setF((s) => ({ ...s, [k]: v }));
   const err = (k: string) => errors[k]?.[0] ?? null;
+  const hasUploadedVideo = !!episode?.video_url?.includes("/media/videos/");
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (!episode && !f.video.url && !f.video.file) {
-      setErrors({ video: ["Add a video URL or upload a file"] });
+      setErrors({ video: [t("Add a video URL or upload a file")] });
       return;
     }
     setSaving(true);
     setErrors({});
-    const scalar = {
+    const scalar: Record<string, string | number | boolean | null> = {
       number: Number(f.number),
       title: f.title || null,
-      thumbnail_url: f.thumbnail_url || null,
       duration_seconds: f.duration_seconds ? Number(f.duration_seconds) : null,
-      is_free: f.is_free,
     };
-    let body: FormData | Record<string, unknown>;
-    if (f.video.file) {
-      const fd = new FormData();
-      for (const [k, v] of Object.entries(scalar)) {
-        if (v === null) continue;
-        fd.append(k, typeof v === "boolean" ? (v ? "1" : "0") : String(v));
+    if (staff) scalar.is_free = f.is_free === "" ? null : f.is_free === "1";
+    const fd = new FormData();
+    for (const [k, v] of Object.entries(scalar)) {
+      if (v === null) {
+        if (k === "is_free") fd.append(k, "");
+        continue;
       }
-      appendMedia(fd, "video", f.video);
-      body = fd;
-      setProgress(`Uploading ${(f.video.file.size / 1024 / 1024).toFixed(1)} MB…`);
-    } else {
-      body = { ...scalar, video_url: f.video.url || null };
+      fd.append(k, typeof v === "boolean" ? (v ? "1" : "0") : String(v));
     }
+    if (f.video.file) {
+      fd.append("video", f.video.file);
+      setProgress(t("Uploading {size} MB…", { size: (f.video.file.size / 1024 / 1024).toFixed(1) }));
+    } else if (f.video.url) {
+      fd.append("video_url", f.video.url);
+    }
+    appendMedia(fd, "thumbnail", f.thumbnail);
+    if (f.subtitle) fd.append("subtitle", f.subtitle);
     try {
-      const saved = episode
-        ? await api.put<Episode>(`/studio/dramas/${dramaId}/episodes/${episode.id}`, body)
-        : await api.post<Episode>(`/studio/dramas/${dramaId}/episodes`, body);
-      toast.success(episode ? "Episode updated" : `Episode ${scalar.number} added`);
+      const saved = episode ? await api.put<Episode>(`${basePath}/${episode.id}`, fd) : await api.post<Episode>(basePath, fd);
+      toast.success(episode ? t("Episode updated") : t("Episode {n} added", { n: scalar.number as number }));
       onSaved(saved ?? null);
     } catch (e) {
       if (e instanceof ApiError && e.errors) setErrors(e.errors);
@@ -100,31 +110,58 @@ function EpisodeForm({
   return (
     <form onSubmit={submit} className="grid gap-4">
       <div className="grid grid-cols-[110px_1fr] gap-3">
-        <Field label="Number" htmlFor="ep-number" error={err("number")}>
+        <Field label={t("Number")} htmlFor="ep-number" error={err("number")}>
           <Input id="ep-number" type="number" min={1} required value={f.number} onChange={(e) => set("number", e.target.value)} />
         </Field>
-        <Field label="Title (optional)" htmlFor="ep-title" error={err("title")}>
-          <Input id="ep-title" value={f.title} onChange={(e) => set("title", e.target.value)} placeholder={`Episode ${f.number}`} />
+        <Field label={t("Title (optional)")} htmlFor="ep-title" error={err("title")}>
+          <Input id="ep-title" value={f.title} onChange={(e) => set("title", e.target.value)} placeholder={t("Episode {n}", { n: f.number })} />
         </Field>
       </div>
-      <MediaInput label="Video" kind="video" accept="video/*" value={f.video} onChange={(v) => set("video", v)} />
+      <MediaInput
+        label={hasUploadedVideo ? t("Replace video (optional)") : t("Video")}
+        kind="video"
+        accept="video/*"
+        value={f.video}
+        onChange={(v) => set("video", v)}
+      />
       {(err("video") || err("video_url")) && <p className="-mt-2 text-xs text-danger">{err("video") || err("video_url")}</p>}
-      <div className="grid gap-3 sm:grid-cols-[1fr_140px]">
-        <Field label="Thumbnail URL" htmlFor="ep-thumb">
-          <Input id="ep-thumb" type="url" value={f.thumbnail_url} onChange={(e) => set("thumbnail_url", e.target.value)} placeholder="https://…" />
-        </Field>
-        <Field label="Duration (sec)" htmlFor="ep-dur" error={err("duration_seconds")}>
+      {episode && f.video.file && (
+        <p className="-mt-2 text-xs text-text-muted">{t("A new video must be checked again before it can be approved.")}</p>
+      )}
+      <MediaInput label={t("Thumbnail (optional)")} value={f.thumbnail} onChange={(v) => set("thumbnail", v)} aspect="aspect-[9/16]" />
+      <Field
+        label={t("Subtitles (.vtt or .srt, optional)")}
+        hint={episode?.subtitle_url ? t("Current file is kept unless you choose a new one.") : undefined}
+        error={err("subtitle")}
+      >
+        <input
+          type="file"
+          accept=".vtt,.srt,text/vtt"
+          onChange={(e) => set("subtitle", e.target.files?.[0] ?? null)}
+          className="text-sm text-text-muted file:mr-3 file:rounded-full file:border-0 file:bg-surface-2 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-text"
+        />
+      </Field>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field label={t("Duration (sec)")} htmlFor="ep-dur" hint={t("Filled in automatically after processing")} error={err("duration_seconds")}>
           <Input id="ep-dur" type="number" min={0} value={f.duration_seconds} onChange={(e) => set("duration_seconds", e.target.value)} placeholder="90" />
         </Field>
+        {staff && (
+          <Field label={t("Free / locked")} htmlFor="ep-free" hint={t("Overrides the series' free-episode count")}>
+            <Select id="ep-free" value={f.is_free} onChange={(e) => set("is_free", e.target.value as EpisodeFormState["is_free"])}>
+              <option value="">{t("Follow the series rule")}</option>
+              <option value="1">{t("Always free")}</option>
+              <option value="0">{t("Always locked")}</option>
+            </Select>
+          </Field>
+        )}
       </div>
-      <Checkbox checked={f.is_free} onChange={(v) => set("is_free", v)} label="Free to watch (no unlock needed)" />
       {progress && <p className="text-xs text-text-muted">{progress}</p>}
       <div className="flex justify-end gap-2 pt-1">
         <Button type="button" variant="ghost" onClick={onCancel}>
-          Cancel
+          {t("Cancel")}
         </Button>
         <Button type="submit" loading={saving}>
-          {episode ? "Save episode" : "Add episode"}
+          {episode ? t("Save episode") : t("Add episode")}
         </Button>
       </div>
     </form>
@@ -138,14 +175,15 @@ export function EpisodeModal({
 }: {
   open: boolean;
   onClose: () => void;
-  dramaId: string | number;
+  basePath: string;
   episode?: Episode | null;
   defaultNumber: number;
-  freeEpisodes: number;
+  staff?: boolean;
   onSaved: (e: Episode | null) => void;
 }) {
+  const t = useT();
   return (
-    <Modal open={open} onClose={onClose} title={props.episode ? `Edit episode ${props.episode.number}` : "Add episode"}>
+    <Modal open={open} onClose={onClose} title={props.episode ? t("Edit episode {n}", { n: props.episode.number }) : t("Add episode")}>
       {open && <EpisodeForm key={props.episode?.id ?? "new"} {...props} onCancel={onClose} />}
     </Modal>
   );
@@ -156,18 +194,17 @@ type BulkMode = "range" | "list";
 export function BulkAddModal({
   open,
   onClose,
-  dramaId,
+  basePath,
   startNumber,
-  freeEpisodes,
   onDone,
 }: {
   open: boolean;
   onClose: () => void;
-  dramaId: string | number;
+  basePath: string;
   startNumber: number;
-  freeEpisodes: number;
   onDone: () => void;
 }) {
+  const t = useT();
   const [mode, setMode] = useState<BulkMode>("range");
   const [start, setStart] = useState(String(startNumber));
   const [count, setCount] = useState("10");
@@ -201,7 +238,7 @@ export function BulkAddModal({
   const run = async () => {
     if (!planned.length) return;
     if (planned.some((p) => !p.video_url)) {
-      toast.error("Every episode needs a video URL");
+      toast.error(t("Every episode needs a video URL"));
       return;
     }
     setRunning(true);
@@ -210,12 +247,11 @@ export function BulkAddModal({
     const fails: string[] = [];
     for (const [i, p] of planned.entries()) {
       try {
-        await api.post(`/studio/dramas/${dramaId}/episodes`, {
+        await api.post(basePath, {
           number: p.number,
           title: `Episode ${p.number}`,
           video_url: p.video_url,
           duration_seconds: duration ? Number(duration) : null,
-          is_free: p.number <= freeEpisodes,
         });
       } catch (e) {
         fails.push(`EP ${p.number}: ${errorMessage(e)}`);
@@ -225,8 +261,8 @@ export function BulkAddModal({
     setFailed(fails);
     setRunning(false);
     const ok = planned.length - fails.length;
-    if (ok) toast.success(`Added ${ok} episode${ok === 1 ? "" : "s"}`);
-    if (fails.length) toast.error(`${fails.length} episode${fails.length === 1 ? "" : "s"} failed`);
+    if (ok) toast.success(t(ok === 1 ? "Added {n} episode" : "Added {n} episodes", { n: ok }));
+    if (fails.length) toast.error(t(fails.length === 1 ? "{n} episode failed" : "{n} episodes failed", { n: fails.length }));
     onDone();
     if (!fails.length) onClose();
   };
@@ -234,7 +270,7 @@ export function BulkAddModal({
   const pct = planned.length ? Math.round((done / planned.length) * 100) : 0;
 
   return (
-    <Modal open={open} onClose={running ? () => {} : onClose} title="Bulk add episodes" size="lg">
+    <Modal open={open} onClose={running ? () => {} : onClose} title={t("Bulk add episodes")} size="lg">
       <div className="grid gap-4">
         <div className="grid grid-cols-2 gap-1 rounded-xl bg-surface-2 p-1 text-sm font-semibold">
           {(
@@ -250,43 +286,47 @@ export function BulkAddModal({
               disabled={running}
               className={cn("rounded-lg py-2 transition", mode === m ? "bg-surface text-text shadow" : "text-text-dim hover:text-text")}
             >
-              {label}
+              {t(label)}
             </button>
           ))}
         </div>
 
         <div className="grid gap-3 sm:grid-cols-3">
-          <Field label="Start at episode" htmlFor="bulk-start">
+          <Field label={t("Start at episode")} htmlFor="bulk-start">
             <Input id="bulk-start" type="number" min={1} value={start} onChange={(e) => setStart(e.target.value)} disabled={running} />
           </Field>
           {mode === "range" && (
-            <Field label="How many" htmlFor="bulk-count">
+            <Field label={t("How many")} htmlFor="bulk-count">
               <Input id="bulk-count" type="number" min={1} max={500} value={count} onChange={(e) => setCount(e.target.value)} disabled={running} />
             </Field>
           )}
-          <Field label="Duration (sec)" htmlFor="bulk-dur">
-            <Input id="bulk-dur" type="number" min={0} value={duration} onChange={(e) => setDuration(e.target.value)} placeholder="optional" disabled={running} />
+          <Field label={t("Duration (sec)")} htmlFor="bulk-dur">
+            <Input id="bulk-dur" type="number" min={0} value={duration} onChange={(e) => setDuration(e.target.value)} placeholder={t("optional")} disabled={running} />
           </Field>
         </div>
 
         {mode === "range" ? (
           <>
             <Field
-              label="Video URL or pattern"
+              label={t("Video URL or pattern")}
               htmlFor="bulk-pattern"
               hint={
                 <>
-                  Use <code className="rounded bg-surface-2 px-1">{"{n}"}</code> for the episode number, e.g.
-                  https://cdn.example.com/kilima/ep{"{n}"}.mp4. Leave empty to use sample videos.
+                  {t("Use")} <code className="rounded bg-surface-2 px-1">{"{n}"}</code> {t("for the episode number, e.g.")}{" "}
+                  https://cdn.example.com/kilima/ep{"{n}"}.mp4. {t("Leave empty to use sample videos.")}
                 </>
               }
             >
               <Input id="bulk-pattern" value={pattern} onChange={(e) => setPattern(e.target.value)} placeholder="https://…/ep{n}.mp4" disabled={running} />
             </Field>
-            {!pattern && <Checkbox checked={rotate} onChange={setRotate} label="Rotate through Afriva sample videos" />}
+            {!pattern && <Checkbox checked={rotate} onChange={setRotate} label={t("Rotate through Afriva sample videos")} />}
           </>
         ) : (
-          <Field label="One video URL per line" htmlFor="bulk-urls" hint={`${planned.length} episode${planned.length === 1 ? "" : "s"} will be created`}>
+          <Field
+            label={t("One video URL per line")}
+            htmlFor="bulk-urls"
+            hint={t(planned.length === 1 ? "{n} episode will be created" : "{n} episodes will be created", { n: planned.length })}
+          >
             <Textarea
               id="bulk-urls"
               rows={8}
@@ -301,14 +341,17 @@ export function BulkAddModal({
 
         {planned.length > 0 && !running && done === 0 && (
           <p className="text-xs text-text-muted">
-            Will create episodes {planned[0]!.number}–{planned[planned.length - 1]!.number}. Episodes ≤ {freeEpisodes} are marked free.
+            {t("Will create episodes {from}–{to}.", {
+              from: planned[0]!.number,
+              to: planned[planned.length - 1]!.number,
+            })}
           </p>
         )}
 
         {(running || done > 0) && (
           <div>
             <div className="mb-1.5 flex justify-between text-xs text-text-muted">
-              <span>{running ? "Creating episodes…" : "Finished"}</span>
+              <span>{running ? t("Creating episodes…") : t("Finished")}</span>
               <span>
                 {done}/{planned.length}
               </span>
@@ -328,10 +371,14 @@ export function BulkAddModal({
 
         <div className="flex justify-end gap-2">
           <Button type="button" variant="ghost" onClick={onClose} disabled={running}>
-            {done > 0 && !running ? "Close" : "Cancel"}
+            {done > 0 && !running ? t("Close") : t("Cancel")}
           </Button>
           <Button type="button" onClick={run} loading={running} disabled={!planned.length}>
-            Add {planned.length || ""} episode{planned.length === 1 ? "" : "s"}
+            {planned.length === 1
+              ? t("Add {n} episode", { n: 1 })
+              : planned.length
+                ? t("Add {n} episodes", { n: planned.length })
+                : t("Add episodes")}
           </Button>
         </div>
       </div>

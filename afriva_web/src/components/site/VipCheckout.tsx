@@ -4,20 +4,27 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { ApiError, api, errorMessage } from "@/lib/api";
+import { ApiError, api, errorMessage, randomId, request } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { cn, formatDate, formatMoney, formatNumber, planSummary } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 import type { CheckoutResult, Payment, PaymentMethod, PaymentMethodType, Plan } from "@/lib/types";
 import { Button } from "../ui/Button";
 import { Spinner } from "../ui/Feedback";
 import { Field, Input, Select } from "../ui/Form";
 import { Icon, type IconName } from "../ui/Icon";
 
+/** Scope §07: Tanzania pays by mobile money; outside Tanzania by card / wallet. */
 const GROUPS: { type: PaymentMethodType; label: string; icon: IconName }[] = [
-  { type: "mobile_money", label: "Mobile Money", icon: "phone" },
-  { type: "card", label: "Cards", icon: "card" },
+  { type: "mobile_money", label: "Tanzania: mobile money", icon: "phone" },
+  { type: "card", label: "Worldwide: cards and wallets", icon: "card" },
   { type: "bank", label: "Bank", icon: "bank" },
 ];
+
+const FLOW = ["Choose a package", "Pay with a secure provider", "Server confirms the payment", "Coins / VIP added", "Receipt saved"];
+
+/** A method may only be used once it is connected and tested (`is_available`); older APIs omit the flag. */
+const isAvailable = (m: PaymentMethod) => m.is_available ?? m.is_integrated ?? true;
 
 const PLAN_SECTIONS: { key: string; title: string; types: Plan["type"][]; icon: IconName }[] = [
   { key: "vip", title: "VIP membership", types: ["weekly", "monthly", "yearly"], icon: "crown" },
@@ -61,11 +68,13 @@ export function VipCheckout({
   next?: string;
 }) {
   const { user, loading: authLoading, refresh } = useAuth();
+  const t = useT();
   const router = useRouter();
   const defaultPlan = plans.find((p) => p.is_popular) ?? plans[0];
   const [planId, setPlanId] = useState<number | null>(defaultPlan?.id ?? null);
   const enabled = methods.filter((m) => m.is_enabled !== false);
-  const [methodCode, setMethodCode] = useState<string | null>(enabled[0]?.code ?? null);
+  const available = enabled.filter(isAvailable);
+  const [methodCode, setMethodCode] = useState<string | null>(available[0]?.code ?? null);
   const [phone, setPhone] = useState("");
   const [card, setCard] = useState({ number: "", name: "", expiry: "", cvc: "" });
   const [bank, setBank] = useState({ account_name: "", account_number: "" });
@@ -75,7 +84,9 @@ export function VipCheckout({
   const checkoutRef = useRef<HTMLDivElement>(null);
 
   const plan = plans.find((p) => p.id === planId) ?? null;
-  const method = enabled.find((m) => m.code === methodCode) ?? null;
+  const method = available.find((m) => m.code === methodCode) ?? null;
+  // One key per checkout attempt: a double click or network retry can't charge twice.
+  const idempotencyKey = useRef<string | null>(null);
   const userPhone = user?.phone ?? "";
 
   // Poll payment status while pending.
@@ -92,11 +103,15 @@ export function VipCheckout({
         if (!alive) return;
         if (p.status === "success") {
           setPhase({ kind: "success", payment: p, message: "Payment confirmed. Welcome to Afriva VIP!" });
+          idempotencyKey.current = null;
           refresh();
           return;
         }
         if (p.status === "failed" || p.status === "cancelled") {
-          setPhase({ kind: "failed", message: `Payment ${p.status}. No money was taken.` });
+          setPhase({
+            kind: "failed",
+            message: p.status === "failed" ? "Payment failed. No money was taken." : "Payment cancelled. No money was taken.",
+          });
           return;
         }
       } catch {
@@ -113,6 +128,7 @@ export function VipCheckout({
 
   const pickPlan = (id: number) => {
     setPlanId(id);
+    idempotencyKey.current = null;
     if (window.matchMedia("(max-width: 1023px)").matches) {
       checkoutRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
@@ -126,7 +142,7 @@ export function VipCheckout({
     if (!plan || !method) return;
     const phoneValue = (phone || userPhone).trim();
     if (method.type === "mobile_money" && !/^\+?\d{9,15}$/.test(phoneValue.replace(/\s/g, ""))) {
-      setPhoneError("Enter the mobile money number to charge, e.g. +255 7XX XXX XXX");
+      setPhoneError(t("Enter the mobile money number to charge, e.g. +255 7XX XXX XXX"));
       return;
     }
     setPhoneError(null);
@@ -136,8 +152,14 @@ export function VipCheckout({
       if (method.type === "mobile_money") body.phone = phoneValue.replace(/\s/g, "");
       if (method.type === "card") body.card = { name: card.name, last4: card.number.replace(/\D/g, "").slice(-4) };
       if (method.type === "bank") body.bank = { account_name: bank.account_name };
-      const res = await api.post<CheckoutResult>("/checkout", body);
+      idempotencyKey.current ??= randomId();
+      const { data: res } = await request<{ data: CheckoutResult }>("/checkout", {
+        method: "POST",
+        body,
+        headers: { "Idempotency-Key": idempotencyKey.current },
+      });
       const pay = res.payment;
+      if (pay.status !== "pending") idempotencyKey.current = null;
       if (res.next_action === "redirect" && res.redirect_url) {
         window.location.assign(res.redirect_url);
         return;
@@ -151,7 +173,7 @@ export function VipCheckout({
         setPhase({
           kind: "pending",
           reference: pay.reference,
-          message: res.message || "Pending — payment provider not yet connected",
+          message: res.message || "Waiting for the payment provider to confirm.",
           amount: pay.amount,
           currency: pay.currency,
           nextAction: res.next_action,
@@ -175,8 +197,9 @@ export function VipCheckout({
           <div className="flex items-center gap-3 rounded-2xl border border-primary/40 bg-primary/10 p-4 text-sm">
             <Icon name="crown" className="shrink-0 text-primary" />
             <p>
-              You&apos;re VIP{vip.plan?.name ? ` (${vip.plan.name})` : ""}
-              {vip.ends_at ? ` until ${formatDate(vip.ends_at)}` : ""}. Buying again extends your access.
+              {t("You're VIP")}
+              {vip.plan?.name ? ` (${vip.plan.name})` : ""}
+              {vip.ends_at ? ` ${t("until {date}", { date: formatDate(vip.ends_at) })}` : ""}. {t("Buying again extends your access.")}
             </p>
           </div>
         )}
@@ -187,7 +210,7 @@ export function VipCheckout({
             <section key={section.key} id={section.key} className="scroll-mt-24">
               <h2 className="mb-4 flex items-center gap-2 text-lg font-extrabold">
                 <Icon name={section.icon} className={section.key === "episodes" ? "text-primary" : "text-primary"} />
-                {section.title}
+                {t(section.title)}
               </h2>
               <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 xl:grid-cols-3">
                 {list.map((p) => {
@@ -206,7 +229,7 @@ export function VipCheckout({
                     >
                       {p.is_popular && (
                         <span className="absolute -top-2.5 right-4 rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-white">
-                          Most popular
+                          {t("Most popular")}
                         </span>
                       )}
                       <span className="flex items-center justify-between">
@@ -224,7 +247,7 @@ export function VipCheckout({
                         {formatNumber(p.price)}
                         <span className="ml-1 text-sm font-semibold text-text-muted">{p.currency}</span>
                       </span>
-                      <span className="mt-1 text-xs font-semibold text-text-muted">{planSummary(p)}</span>
+                      <span className="mt-1 text-xs font-semibold text-text-muted">{planSummary(p, t)}</span>
                       {p.features && p.features.length > 0 && (
                         <ul className="mt-4 space-y-1.5 border-t border-border/70 pt-4">
                           {p.features.slice(0, 4).map((f) => (
@@ -248,27 +271,28 @@ export function VipCheckout({
         <div className="rounded-3xl border border-border bg-surface p-5 sm:p-6">
           {phase.kind === "form" ? (
             <>
-              <h2 className="text-lg font-extrabold">Checkout</h2>
+              <h2 className="text-lg font-extrabold">{t("Checkout")}</h2>
               {plan ? (
                 <div className="mt-4 flex items-center justify-between rounded-2xl bg-surface-2 p-4">
                   <div className="min-w-0">
                     <p className="truncate font-bold">{plan.name}</p>
-                    <p className="text-xs text-text-muted">{planSummary(plan)}</p>
+                    <p className="text-xs text-text-muted">{planSummary(plan, t)}</p>
                   </div>
                   <p className="shrink-0 text-lg font-extrabold">{formatMoney(plan.price, plan.currency)}</p>
                 </div>
               ) : (
-                <p className="mt-4 text-sm text-text-muted">Choose a plan to continue.</p>
+                <p className="mt-4 text-sm text-text-muted">{t("Choose a plan to continue.")}</p>
               )}
 
               <div className="mt-6 space-y-5">
                 {GROUPS.map((g) => {
-                  const list = enabled.filter((m) => m.type === g.type);
-                  if (!list.length) return null;
+                  const list = available.filter((m) => m.type === g.type);
+                  const soon = enabled.filter((m) => m.type === g.type && !isAvailable(m));
+                  if (!list.length && !soon.length) return null;
                   return (
                     <fieldset key={g.type}>
                       <legend className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.12em] text-text-dim">
-                        <Icon name={g.icon} size={14} /> {g.label}
+                        <Icon name={g.icon} size={14} /> {t(g.label)}
                       </legend>
                       <div className={cn("grid gap-2", g.type === "mobile_money" ? "grid-cols-1 min-[400px]:grid-cols-2" : "grid-cols-1 min-[400px]:grid-cols-2")}>
                         {list.map((m) => {
@@ -286,7 +310,10 @@ export function VipCheckout({
                                 name="payment_method"
                                 value={m.code}
                                 checked={active}
-                                onChange={() => setMethodCode(m.code)}
+                                onChange={() => {
+                                  setMethodCode(m.code);
+                                  idempotencyKey.current = null;
+                                }}
                                 className="sr-only"
                               />
                               <MethodLogo m={m} />
@@ -295,22 +322,44 @@ export function VipCheckout({
                             </label>
                           );
                         })}
+                        {soon.map((m) => (
+                          <div
+                            key={m.code}
+                            aria-disabled="true"
+                            className="flex cursor-not-allowed items-center gap-2.5 rounded-xl border border-dashed border-border p-2.5 opacity-55"
+                          >
+                            <MethodLogo m={m} />
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-[13px] font-semibold">{m.name}</span>
+                              <span className="block text-[11px] text-text-dim">{t("Coming soon")}</span>
+                            </span>
+                          </div>
+                        ))}
                       </div>
                     </fieldset>
                   );
                 })}
-                {!enabled.length && <p className="text-sm text-text-muted">No payment methods are available right now.</p>}
+                {!available.length && <p className="text-sm text-text-muted">{t("No payment methods are available right now.")}</p>}
               </div>
+
+              <ol className="mt-5 space-y-1.5 rounded-2xl bg-surface-2/60 p-4 text-xs text-text-muted">
+                {FLOW.map((step, i) => (
+                  <li key={step} className="flex items-center gap-2">
+                    <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-surface text-[10px] font-bold text-text">{i + 1}</span>
+                    {t(step)}
+                  </li>
+                ))}
+              </ol>
 
               {/* Method-specific details */}
               {method && (
                 <div className="mt-5 space-y-3 rounded-2xl border border-border/70 bg-bg/40 p-4 animate-fade-in">
                   {method.type === "mobile_money" && (
                     <Field
-                      label={`${method.name} number`}
+                      label={t("{method} number", { method: method.name })}
                       htmlFor="mm-phone"
                       error={phoneError}
-                      hint="You'll get a prompt on your phone to enter your PIN."
+                      hint={t("You'll get a prompt on your phone to enter your PIN.")}
                     >
                       <Input
                         id="mm-phone"
@@ -325,7 +374,7 @@ export function VipCheckout({
                   )}
                   {method.type === "card" && (
                     <>
-                      <Field label="Card number" htmlFor="cc-number">
+                      <Field label={t("Card number")} htmlFor="cc-number">
                         <Input
                           id="cc-number"
                           inputMode="numeric"
@@ -340,15 +389,15 @@ export function VipCheckout({
                           }
                         />
                       </Field>
-                      <Field label="Name on card" htmlFor="cc-name">
+                      <Field label={t("Name on card")} htmlFor="cc-name">
                         <Input id="cc-name" autoComplete="cc-name" value={card.name} onChange={(e) => setCard({ ...card, name: e.target.value })} />
                       </Field>
                       <div className="grid grid-cols-2 gap-3">
-                        <Field label="Expiry" htmlFor="cc-exp">
+                        <Field label={t("Expiry")} htmlFor="cc-exp">
                           <Input
                             id="cc-exp"
                             autoComplete="cc-exp"
-                            placeholder="MM/YY"
+                            placeholder={t("MM/YY")}
                             value={card.expiry}
                             onChange={(e) => {
                               const d = e.target.value.replace(/\D/g, "").slice(0, 4);
@@ -368,20 +417,24 @@ export function VipCheckout({
                         </Field>
                       </div>
                       <p className="flex items-center gap-1.5 text-xs text-text-dim">
-                        <Icon name="shield" size={14} /> Card details go straight to the card processor, never stored by Afriva.
+                        <Icon name="shield" size={14} /> {t("Card details go straight to the card processor, never stored by Afriva.")}
                       </p>
                     </>
                   )}
                   {method.type === "bank" && (
                     <>
-                      <Field label="Account holder name" htmlFor="bank-name">
+                      <Field label={t("Account holder name")} htmlFor="bank-name">
                         <Input id="bank-name" value={bank.account_name} onChange={(e) => setBank({ ...bank, account_name: e.target.value })} />
                       </Field>
-                      <Field label="Pay from" htmlFor="bank-channel" hint={`You'll receive ${method.name} payment instructions and a control number.`}>
+                      <Field
+                        label={t("Pay from")}
+                        htmlFor="bank-channel"
+                        hint={t("You'll receive {method} payment instructions and a control number.", { method: method.name })}
+                      >
                         <Select id="bank-channel" defaultValue="internet">
-                          <option value="internet">Internet / mobile banking</option>
-                          <option value="branch">Branch deposit</option>
-                          <option value="agent">Bank agent</option>
+                          <option value="internet">{t("Internet / mobile banking")}</option>
+                          <option value="branch">{t("Branch deposit")}</option>
+                          <option value="agent">{t("Bank agent")}</option>
                         </Select>
                       </Field>
                     </>
@@ -393,19 +446,19 @@ export function VipCheckout({
                 <div className="skeleton mt-6 h-12 rounded-full" />
               ) : user ? (
                 <Button onClick={submit} loading={submitting} disabled={!plan || !method} size="lg" className="mt-6 w-full">
-                  {plan ? `Pay ${formatMoney(plan.price, plan.currency)}` : "Pay"}
+                  {plan ? t("Pay {amount}", { amount: formatMoney(plan.price, plan.currency) }) : t("Pay")}
                 </Button>
               ) : (
                 <Button href={`/login?next=${encodeURIComponent("/vip")}`} size="lg" className="mt-6 w-full">
-                  Log in to subscribe
+                  {t("Log in to subscribe")}
                 </Button>
               )}
               <p className="mt-3 text-center text-[11px] leading-relaxed text-text-dim">
-                By paying you agree to our{" "}
+                {t("By paying you agree to our")}{" "}
                 <Link href="/info/terms" className="underline hover:text-text">
-                  Terms
+                  {t("Terms")}
                 </Link>
-                . VIP plans don&apos;t auto-renew.
+                {t(". VIP plans don't auto-renew.")} {t("Afriva only confirms a payment after the provider confirms it to our server.")}
               </p>
             </>
           ) : phase.kind === "pending" ? (
@@ -413,19 +466,20 @@ export function VipCheckout({
               <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-primary/15 text-primary">
                 <Spinner size={30} />
               </div>
-              <h2 className="mt-4 text-lg font-extrabold">Payment pending</h2>
-              <p className="mt-1 text-sm text-text-muted">{phase.message}</p>
+              <h2 className="mt-4 text-lg font-extrabold">{t("Payment pending")}</h2>
+              <p className="mt-1 text-sm text-text-muted">{t(phase.message)}</p>
               {phase.nextAction === "await_ussd" && (
                 <p className="mt-3 rounded-xl bg-surface-2 p-3 text-sm text-text-muted">
-                  Check your phone and enter your mobile money PIN to approve{" "}
+                  {t("Check your phone and enter your mobile money PIN to approve")}{" "}
                   <span className="font-bold text-text">{formatMoney(phase.amount, phase.currency)}</span>.
                 </p>
               )}
               <p className="mt-4 text-xs text-text-dim">
-                Reference <span className="font-mono text-text-muted">{phase.reference}</span> · we&apos;ll update this page automatically.
+                {t("Reference")} <span className="font-mono text-text-muted">{phase.reference}</span>{" "}
+                {t("· we'll update this page automatically.")}
               </p>
               <Button variant="secondary" className="mt-6" onClick={() => setPhase({ kind: "form" })}>
-                Choose another method
+                {t("Choose another method")}
               </Button>
             </div>
           ) : phase.kind === "success" ? (
@@ -433,18 +487,18 @@ export function VipCheckout({
               <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-success/15 text-success">
                 <Icon name="check" size={32} strokeWidth={2.6} />
               </div>
-              <h2 className="mt-4 text-lg font-extrabold">You&apos;re all set!</h2>
-              <p className="mt-1 text-sm text-text-muted">{phase.message}</p>
+              <h2 className="mt-4 text-lg font-extrabold">{t("You're all set!")}</h2>
+              <p className="mt-1 text-sm text-text-muted">{t(phase.message)}</p>
               <p className="mt-3 text-xs text-text-dim">
-                {formatMoney(phase.payment.amount, phase.payment.currency)} · Ref{" "}
+                {formatMoney(phase.payment.amount, phase.payment.currency)} · {t("Ref")}{" "}
                 <span className="font-mono">{phase.payment.reference}</span>
               </p>
               <div className="mt-6 flex flex-col gap-2">
                 <Button href={next || "/"} size="lg">
-                  <Icon name="play" size={15} /> {next ? "Continue watching" : "Start watching"}
+                  <Icon name="play" size={15} /> {next ? t("Continue watching") : t("Start watching")}
                 </Button>
-                <Button href="/account?tab=payments" variant="ghost">
-                  View receipt
+                <Button href={`/account?tab=payments&receipt=${encodeURIComponent(phase.payment.reference)}`} variant="ghost">
+                  <Icon name="list" size={15} /> {t("View receipt")}
                 </Button>
               </div>
             </div>
@@ -453,10 +507,10 @@ export function VipCheckout({
               <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-danger/15 text-danger">
                 <Icon name="x" size={30} />
               </div>
-              <h2 className="mt-4 text-lg font-extrabold">Payment didn&apos;t go through</h2>
-              <p className="mt-1 text-sm text-text-muted">{phase.message}</p>
+              <h2 className="mt-4 text-lg font-extrabold">{t("Payment didn't go through")}</h2>
+              <p className="mt-1 text-sm text-text-muted">{t(phase.message)}</p>
               <Button className="mt-6" onClick={() => setPhase({ kind: "form" })}>
-                Try again
+                {t("Try again")}
               </Button>
             </div>
           )}

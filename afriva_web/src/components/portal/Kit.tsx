@@ -2,9 +2,16 @@
 
 import type { ReactNode } from "react";
 import { cn } from "@/lib/format";
+import { useT, type Vars } from "@/lib/i18n";
 import type { PageMeta } from "@/lib/types";
 import { EmptyState, Skeleton } from "../ui/Feedback";
 import { Icon, type IconName } from "../ui/Icon";
+
+/** Translates plain-English string props; other nodes pass through unchanged. */
+function useTr() {
+  const t = useT();
+  return (node: ReactNode, vars?: Vars): ReactNode => (typeof node === "string" ? t(node, vars) : node);
+}
 
 export function PageHeader({
   title,
@@ -17,12 +24,13 @@ export function PageHeader({
   actions?: ReactNode;
   back?: ReactNode;
 }) {
+  const tr = useTr();
   return (
     <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div className="min-w-0">
         {back && <div className="mb-2">{back}</div>}
-        <h1 className="text-2xl font-extrabold tracking-tight sm:text-[28px]">{title}</h1>
-        {description && <p className="mt-1 text-sm text-text-muted">{description}</p>}
+        <h1 className="text-2xl font-extrabold tracking-tight sm:text-[28px]">{tr(title)}</h1>
+        {description && <p className="mt-1 text-sm text-text-muted">{tr(description)}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </div>
@@ -30,11 +38,12 @@ export function PageHeader({
 }
 
 export function Card({ children, className, title, actions }: { children: ReactNode; className?: string; title?: ReactNode; actions?: ReactNode }) {
+  const tr = useTr();
   return (
     <section className={cn("rounded-2xl border border-border bg-surface p-5", className)}>
       {(title || actions) && (
         <div className="mb-4 flex items-center justify-between gap-3">
-          {title && <h2 className="text-[15px] font-bold">{title}</h2>}
+          {title && <h2 className="text-[15px] font-bold">{tr(title)}</h2>}
           {actions}
         </div>
       )}
@@ -58,6 +67,7 @@ export function StatCard({
   accent?: "brand" | "gold" | "success" | "info";
   loading?: boolean;
 }) {
+  const tr = useTr();
   const accents = {
     brand: "bg-primary/15 text-primary",
     gold: "bg-primary/15 text-primary",
@@ -67,7 +77,7 @@ export function StatCard({
   return (
     <div className="rounded-2xl border border-border bg-surface p-4 sm:p-5 transition-colors hover:border-[#3A3A3A]">
       <div className="flex items-start justify-between gap-2">
-        <p className="text-xs font-semibold uppercase tracking-wider text-text-dim">{label}</p>
+        <p className="text-xs font-semibold uppercase tracking-wider text-text-dim">{tr(label)}</p>
         <span className={cn("grid h-9 w-9 place-items-center rounded-xl", accents[accent])}>
           <Icon name={icon} size={18} />
         </span>
@@ -77,7 +87,7 @@ export function StatCard({
       ) : (
         <p className="mt-1 text-xl font-extrabold tracking-tight sm:text-2xl">{value}</p>
       )}
-      {hint && <p className="mt-1 text-xs text-text-muted">{hint}</p>}
+      {hint && <p className="mt-1 text-xs text-text-muted">{tr(hint)}</p>}
     </div>
   );
 }
@@ -104,6 +114,7 @@ export function DataTable<T>({
   empty?: ReactNode;
   onRowClick?: (row: T) => void;
 }) {
+  const tr = useTr();
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-surface">
       <div className="overflow-x-auto">
@@ -112,7 +123,7 @@ export function DataTable<T>({
             <tr className="border-b border-border text-[11px] uppercase tracking-wider text-text-dim">
               {columns.map((c) => (
                 <th key={c.key} className={cn("px-4 py-3 font-semibold", c.className)}>
-                  {c.header}
+                  {tr(c.header)}
                 </th>
               ))}
             </tr>
@@ -155,19 +166,20 @@ export function DataTable<T>({
 }
 
 export function Pagination({ meta, onPage }: { meta: PageMeta | null; onPage: (p: number) => void }) {
+  const t = useT();
   if (!meta || meta.last_page <= 1) return null;
   const { current_page: page, last_page: last } = meta;
   return (
     <div className="mt-4 flex items-center justify-between gap-3 text-sm">
       <p className="text-text-dim">
-        Page {page} of {last} · {meta.total.toLocaleString()} total
+        {t("Page {page} of {last} · {total} total", { page, last, total: meta.total.toLocaleString() })}
       </p>
       <div className="flex gap-2">
         <button
           disabled={page <= 1}
           onClick={() => onPage(page - 1)}
           className="grid h-9 w-9 place-items-center rounded-full border border-border text-text-muted transition hover:bg-surface-2 disabled:opacity-40"
-          aria-label="Previous page"
+          aria-label={t("Previous page")}
         >
           <Icon name="chevron-left" size={18} />
         </button>
@@ -175,7 +187,7 @@ export function Pagination({ meta, onPage }: { meta: PageMeta | null; onPage: (p
           disabled={page >= last}
           onClick={() => onPage(page + 1)}
           className="grid h-9 w-9 place-items-center rounded-full border border-border text-text-muted transition hover:bg-surface-2 disabled:opacity-40"
-          aria-label="Next page"
+          aria-label={t("Next page")}
         >
           <Icon name="chevron-right" size={18} />
         </button>
@@ -189,6 +201,7 @@ export function Toolbar({ children }: { children: ReactNode }) {
 }
 
 export function SearchBox({ value, onChange, placeholder = "Search…" }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
+  const t = useT();
   return (
     <div className="relative w-full sm:w-72">
       <Icon name="search" size={17} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-text-dim" />
@@ -196,7 +209,7 @@ export function SearchBox({ value, onChange, placeholder = "Search…" }: { valu
         type="search"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
+        placeholder={t(placeholder)}
         className="h-10 w-full rounded-full border border-border bg-surface pl-10 pr-4 text-sm placeholder:text-text-dim focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25"
       />
     </div>

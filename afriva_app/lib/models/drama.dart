@@ -46,6 +46,16 @@ class Drama {
     this.tags = const [],
     this.company,
     this.isFavorite = false,
+    this.trailerUrl,
+    this.ageRating,
+    this.accessMode = 'coins_or_vip',
+    this.totalDurationSeconds = 0,
+    this.resume,
+    this.status,
+    this.reviewStatus,
+    this.reviewNotes,
+    this.isLive = false,
+    this.language,
   });
 
   final int id;
@@ -66,6 +76,30 @@ class Drama {
   final Company? company;
   final bool isFavorite;
 
+  /// Playable trailer (signed URL when uploaded).
+  final String? trailerUrl;
+
+  /// all | 7+ | 13+ | 16+ | 18+
+  final String? ageRating;
+
+  /// coins_or_vip | vip_only | coins_only
+  final String accessMode;
+
+  /// Sum of episode durations (detail endpoint only).
+  final int totalDurationSeconds;
+
+  /// "Endelea kutazama" position (home `continue_watching` section only).
+  final ResumeInfo? resume;
+
+  // Creator Studio only.
+  final String? status;
+  final String? reviewStatus;
+  final String? reviewNotes;
+  final bool isLive;
+  final String? language;
+
+  bool get isVipOnly => accessMode == 'vip_only';
+
   /// Up to two short genre labels for cards.
   List<String> get chips {
     final out = <String>[...categories.map((c) => c.name), ...tags];
@@ -75,6 +109,16 @@ class Drama {
   String get backdropOrPoster => backdropUrl.isNotEmpty ? backdropUrl : posterUrl;
 
   Drama copyWith({bool? isFavorite}) => Drama(
+        trailerUrl: trailerUrl,
+        ageRating: ageRating,
+        accessMode: accessMode,
+        totalDurationSeconds: totalDurationSeconds,
+        resume: resume,
+        status: status,
+        reviewStatus: reviewStatus,
+        reviewNotes: reviewNotes,
+        isLive: isLive,
+        language: language,
         id: id,
         slug: slug,
         title: title,
@@ -108,6 +152,36 @@ class Drama {
         tags: asStringList(j['tags']),
         company: asMapOrNull(j['company']) == null ? null : Company.fromJson(asMap(j['company'])),
         isFavorite: asBool(j['is_favorite']),
+        trailerUrl: asStringOrNull(j['trailer_url']),
+        ageRating: asStringOrNull(j['age_rating']),
+        accessMode: asString(j['access_mode'], 'coins_or_vip'),
+        totalDurationSeconds: asInt(j['total_duration_seconds']),
+        resume: asMapOrNull(j['resume']) == null ? null : ResumeInfo.fromJson(asMap(j['resume'])),
+        status: asStringOrNull(j['status']),
+        reviewStatus: asStringOrNull(j['review_status']),
+        reviewNotes: asStringOrNull(j['review_notes']),
+        isLive: asBool(j['is_live']),
+        language: asStringOrNull(j['language']),
+      );
+}
+
+/// Where to continue a series: episode number + position in that episode.
+class ResumeInfo {
+  const ResumeInfo({required this.episodeNumber, this.episodeId, this.progressSeconds = 0, this.durationSeconds = 0});
+
+  final int? episodeId;
+  final int episodeNumber;
+  final int progressSeconds;
+  final int durationSeconds;
+
+  double get progress =>
+      durationSeconds > 0 ? (progressSeconds / durationSeconds).clamp(0, 1).toDouble() : 0;
+
+  factory ResumeInfo.fromJson(Json j) => ResumeInfo(
+        episodeId: asIntOrNull(j['episode_id']),
+        episodeNumber: asInt(j['episode_number'], 1),
+        progressSeconds: asInt(j['progress_seconds']),
+        durationSeconds: asInt(j['duration_seconds']),
       );
 }
 

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { cn } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 import type { Episode } from "@/lib/types";
 import { Icon } from "../ui/Icon";
 
@@ -15,7 +16,16 @@ export function episodeRanges(total: number) {
 }
 
 export function isLocked(ep: Episode) {
+  if (ep.access) return ep.access === "locked";
   return !ep.is_free && !ep.is_unlocked;
+}
+
+/** Short label shown on every episode before it is tapped (scope §02): free, coin price or VIP. */
+export function episodeAccessLabel(ep: Episode, t: (s: string, v?: Record<string, string | number>) => string): string | null {
+  if (ep.is_free) return t("Free");
+  if (!isLocked(ep)) return null;
+  if (ep.vip_only || !ep.price_coins) return "VIP";
+  return t("{n} coins", { n: ep.price_coins });
 }
 
 /** Range tabs (1-30, 31-60…) + numbered episode buttons. */
@@ -32,6 +42,7 @@ export function EpisodeGrid({
   onSelect?: (ep: Episode) => void;
   compact?: boolean;
 }) {
+  const t = useT();
   const sorted = [...episodes].sort((a, b) => a.number - b.number);
   const maxNumber = sorted.length ? sorted[sorted.length - 1]!.number : 0;
   const ranges = episodeRanges(maxNumber);
@@ -41,13 +52,13 @@ export function EpisodeGrid({
   const visible = sorted.filter((e) => e.number >= range.from && e.number <= range.to);
 
   if (!sorted.length) {
-    return <p className="py-6 text-center text-sm text-text-dim">Episodes are coming soon.</p>;
+    return <p className="py-6 text-center text-sm text-text-dim">{t("Episodes are coming soon.")}</p>;
   }
 
   return (
     <div>
       {ranges.length > 1 && (
-        <div className="scrollbar-none mb-4 flex gap-1 overflow-x-auto border-b border-border" role="tablist" aria-label="Episode ranges">
+        <div className="scrollbar-none mb-4 flex gap-1 overflow-x-auto border-b border-border" role="tablist" aria-label={t("Episode ranges")}>
           {ranges.map((r, i) => (
             <button
               key={r.from}
@@ -69,8 +80,9 @@ export function EpisodeGrid({
         {visible.map((ep) => {
           const locked = isLocked(ep);
           const active = ep.number === current;
+          const label = episodeAccessLabel(ep, t);
           const cls = cn(
-            "relative grid aspect-square place-items-center rounded-lg text-sm font-bold transition-all duration-150",
+            "relative flex aspect-square flex-col items-center justify-center rounded-lg text-sm font-bold transition-all duration-150",
             active
               ? "bg-primary text-white"
               : "bg-surface text-text hover:bg-surface-2",
@@ -78,13 +90,23 @@ export function EpisodeGrid({
           const inner = (
             <>
               {ep.number}
+              {label && !active && (
+                <span
+                  className={cn(
+                    "mt-0.5 max-w-full truncate px-0.5 text-[9px] font-bold leading-none",
+                    ep.is_free ? "text-success" : "text-text-dim",
+                  )}
+                >
+                  {label}
+                </span>
+              )}
               {!ep.is_free && (
                 <span
                   className={cn(
                     "absolute right-0.5 top-0.5 grid h-4 w-4 place-items-center rounded",
                     locked ? "text-text-dim" : "text-primary",
                   )}
-                  aria-label={locked ? "Locked" : "VIP unlocked"}
+                  aria-label={locked ? t("Locked") : t("VIP unlocked")}
                 >
                   <Icon name={locked ? "lock" : "crown"} size={11} strokeWidth={2.2} />
                 </span>
@@ -103,7 +125,7 @@ export function EpisodeGrid({
               key={ep.id}
               onClick={() => onSelect(ep)}
               aria-current={active ? "true" : undefined}
-              aria-label={`Episode ${ep.number}${locked ? " (locked)" : ""}`}
+              aria-label={label ? t("Episode {n} ({label})", { n: ep.number, label }) : t("Episode {n}", { n: ep.number })}
               className={cls}
             >
               {inner}
@@ -112,7 +134,7 @@ export function EpisodeGrid({
             <Link
               key={ep.id}
               href={`/drama/${slug}/ep/${ep.number}`}
-              aria-label={`Episode ${ep.number}${locked ? " (locked)" : ""}`}
+              aria-label={label ? t("Episode {n} ({label})", { n: ep.number, label }) : t("Episode {n}", { n: ep.number })}
               className={cls}
             >
               {inner}

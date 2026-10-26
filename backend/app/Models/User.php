@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Permissions;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -17,11 +18,13 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable;
 
     public const ROLE_VIEWER = 'viewer';
+
     public const ROLE_COMPANY = 'company';
+
     public const ROLE_SUPER_ADMIN = 'super_admin';
 
     protected $fillable = [
-        'name', 'email', 'phone', 'password', 'role', 'company_id', 'coins', 'avatar_url', 'status',
+        'name', 'email', 'phone', 'password', 'role', 'staff_role', 'company_id', 'coins', 'avatar_url', 'status',
     ];
 
     protected $hidden = ['password', 'remember_token'];
@@ -68,6 +71,28 @@ class User extends Authenticatable
     public function isSuperAdmin(): bool
     {
         return $this->role === self::ROLE_SUPER_ADMIN;
+    }
+
+    /** Staff role for admins (owner|editor|reviewer|finance); admins created before roles existed are owners. */
+    public function staffRole(): ?string
+    {
+        return $this->isSuperAdmin() ? ($this->staff_role ?: 'owner') : null;
+    }
+
+    public function hasPermission(string $permission): bool
+    {
+        return Permissions::allows($this->staffRole(), $permission);
+    }
+
+    /** @return list<string> */
+    public function permissions(): array
+    {
+        return Permissions::for($this->staffRole());
+    }
+
+    public function coinTransactions(): HasMany
+    {
+        return $this->hasMany(CoinTransaction::class);
     }
 
     public function isCompany(): bool

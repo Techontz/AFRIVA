@@ -9,11 +9,12 @@ class Company extends Model
 {
     protected $fillable = [
         'name', 'slug', 'logo_url', 'email', 'phone', 'country', 'revenue_share_percent', 'status', 'description',
+        'agreement_accepted_at', 'agreement_version',
     ];
 
     protected function casts(): array
     {
-        return ['revenue_share_percent' => 'float'];
+        return ['revenue_share_percent' => 'float', 'agreement_accepted_at' => 'datetime'];
     }
 
     public function dramas(): HasMany
@@ -34,6 +35,16 @@ class Company extends Model
     public function payouts(): HasMany
     {
         return $this->hasMany(Payout::class);
+    }
+
+    public function isActive(): bool
+    {
+        return $this->status === 'active';
+    }
+
+    public function hasAcceptedAgreement(): bool
+    {
+        return $this->agreement_accepted_at !== null && $this->agreement_version === Setting::get('creator_agreement_version');
     }
 
     public function shareFraction(): float

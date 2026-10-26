@@ -2,10 +2,11 @@
 
 namespace App\Http\Resources;
 
+use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-/** @mixin \App\Models\Payment */
+/** @mixin Payment */
 class PaymentResource extends JsonResource
 {
     public function toArray(Request $request): array
@@ -20,6 +21,10 @@ class PaymentResource extends JsonResource
             'payment_method_code' => $this->payment_method_code,
             'phone' => $this->phone,
             'provider_reference' => $this->provider_reference,
+            'receipt_number' => $this->receipt_number,
+            'fee_amount' => (int) $this->fee_amount,
+            'refunded_amount' => (int) $this->refunded_amount,
+            'refunded_at' => $this->refunded_at?->toIso8601String(),
             'plan' => $this->whenLoaded('plan', fn () => $this->plan ? new PlanResource($this->plan) : null),
             'user' => $this->whenLoaded('user', fn () => $this->user ? [
                 'id' => $this->user->id, 'name' => $this->user->name,

@@ -6,12 +6,14 @@ import 'package:video_player/video_player.dart';
 
 import '../../core/config.dart';
 import '../../core/haptics.dart';
+import '../../core/i18n.dart';
 import '../../core/share.dart';
 import '../../core/theme.dart';
 import '../../models/episode.dart';
 import '../../models/home.dart';
 import '../../services/catalog_service.dart';
 import '../../widgets/badges.dart';
+import '../../widgets/buttons.dart';
 import '../../widgets/favorite_button.dart';
 import '../../widgets/states.dart';
 import '../player/episodes_sheet.dart';
@@ -79,9 +81,9 @@ class _ForYouScreenState extends State<ForYouScreen> {
     } else if (items.isEmpty) {
       body = StateMessage(
         icon: Icons.play_circle_outline_rounded,
-        title: 'Your feed is warming up',
-        message: 'New stories are on the way.',
-        actionLabel: 'Refresh',
+        title: context.tr('Your feed is warming up'),
+        message: context.tr('New stories are on the way.'),
+        actionLabel: context.tr('Refresh'),
         onAction: _load,
       );
     } else {
@@ -112,6 +114,15 @@ class _ForYouScreenState extends State<ForYouScreen> {
       child: Stack(
         children: [
           Positioned.fill(child: body),
+          // Opened from Home as a full-screen page (not a tab any more).
+          Positioned(
+            top: MediaQuery.paddingOf(context).top + 4,
+            left: 8,
+            child: GlassIconButton(
+              icon: Icons.arrow_back_rounded,
+              onPressed: () => context.canPop() ? context.pop() : context.go('/home'),
+            ),
+          ),
           Positioned(
             top: MediaQuery.paddingOf(context).top + 10,
             left: 0,
@@ -119,7 +130,7 @@ class _ForYouScreenState extends State<ForYouScreen> {
             child: IgnorePointer(
               child: Center(
                 child: Text(
-                  'For You',
+                  context.tr('For You'),
                   style: Theme.of(context).textTheme.titleMedium!.copyWith(
                     shadows: const [Shadow(color: Colors.black54, blurRadius: 8)],
                   ),
@@ -225,7 +236,7 @@ class _FeedPageState extends State<_FeedPage> {
       );
       if (ep != null && mounted) _watchFull(ep: ep.number);
     } catch (e) {
-      if (mounted) showSnack(context, "Couldn't load episodes. Try again.", error: true);
+      if (mounted) showSnack(context, context.tr("Couldn't load episodes. Try again."), error: true);
     }
   }
 
@@ -250,7 +261,7 @@ class _FeedPageState extends State<_FeedPage> {
             child: TextButton.icon(
               onPressed: _start,
               icon: const Icon(Icons.refresh_rounded, color: Colors.white),
-              label: const Text('Tap to retry', style: TextStyle(color: Colors.white)),
+              label: Text(context.tr('Tap to retry'), style: const TextStyle(color: Colors.white)),
             ),
           ),
         Positioned(
@@ -259,8 +270,8 @@ class _FeedPageState extends State<_FeedPage> {
           child: Column(
             children: [
               FavoriteRailAction(drama: d),
-              RailAction(icon: Icons.video_library_rounded, label: 'Episodes', onTap: _episodes),
-              RailAction(icon: Icons.reply_rounded, label: 'Share', onTap: () => shareDrama(d)),
+              RailAction(icon: Icons.video_library_rounded, label: context.tr('Episodes'), onTap: _episodes),
+              RailAction(icon: Icons.reply_rounded, label: context.tr('Share'), onTap: () => shareDrama(d)),
             ],
           ),
         ),
@@ -324,7 +335,7 @@ class _FeedPageState extends State<_FeedPage> {
                       const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 20),
                       const SizedBox(width: 4),
                       Text(
-                        'Watch full series · ${d.totalEpisodes} EP',
+                        context.tr('Watch full series · {n} EP', {'n': d.totalEpisodes}),
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w800,

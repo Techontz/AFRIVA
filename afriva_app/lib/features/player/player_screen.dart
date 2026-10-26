@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
 
 import '../../core/haptics.dart';
+import '../../core/i18n.dart';
 import '../../core/share.dart';
 import '../../core/theme.dart';
 import '../../models/drama.dart';
@@ -82,7 +83,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
     if (_index < d.episodes.length - 1) {
       _goTo(_index + 1);
     } else {
-      showSnack(context, "That's the finale — thanks for watching!");
+      showSnack(context, context.tr("That's the finale. Thanks for watching!"));
     }
   }
 
@@ -117,9 +118,9 @@ class _PlayerScreenState extends State<PlayerScreen> {
                   ])
             : d.episodes.isEmpty
                 ? Stack(children: [
-                    const StateMessage(
+                    StateMessage(
                       icon: Icons.video_library_outlined,
-                      title: 'Episodes coming soon',
+                      title: context.tr('Episodes coming soon'),
                     ),
                     _TopBar(title: d.drama.title, subtitle: ''),
                   ])
@@ -175,17 +176,17 @@ class _Overlay extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     return Stack(
       children: [
-        _TopBar(title: drama.title, subtitle: 'EP ${episode.number} / $total'),
+        _TopBar(title: drama.title, subtitle: context.tr('EP {n} / {total}', {'n': episode.number, 'total': total})),
         Positioned(
           right: 10,
           bottom: bottom + 110,
           child: Column(
             children: [
               FavoriteRailAction(drama: drama),
-              RailAction(icon: Icons.video_library_rounded, label: 'Episodes', onTap: onEpisodes),
+              RailAction(icon: Icons.video_library_rounded, label: context.tr('Episodes'), onTap: onEpisodes),
               RailAction(
                 icon: Icons.reply_rounded,
-                label: 'Share',
+                label: context.tr('Share'),
                 onTap: () => shareDrama(drama, episode: episode.number),
               ),
             ],
@@ -237,7 +238,7 @@ class _Overlay extends StatelessWidget {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'EP ${episode.number} · All $total episodes',
+                          context.tr('EP {n} · All {total} episodes', {'n': episode.number, 'total': total}),
                           style: text.labelMedium!.copyWith(color: Colors.white),
                         ),
                       ),

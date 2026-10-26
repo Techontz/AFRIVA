@@ -3,7 +3,6 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class UpdatePaymentMethodRequest extends FormRequest
 {
@@ -19,7 +18,9 @@ class UpdatePaymentMethodRequest extends FormRequest
             'logo_url' => ['nullable', 'string', 'max:500'],
             'color' => ['nullable', 'string', 'max:20'],
             'is_enabled' => ['sometimes', 'boolean'],
+            // Only switch on after a successful live test with the provider (scope §07).
             'is_integrated' => ['sometimes', 'boolean'],
+            'fee_percent' => ['sometimes', 'numeric', 'min:0', 'max:50'],
             'sort_order' => ['sometimes', 'integer'],
             'config' => ['nullable', 'array'],
         ];

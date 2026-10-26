@@ -8,20 +8,27 @@ class HomeSection {
     required this.title,
     required this.layout,
     required this.dramas,
+    this.category,
   });
 
   final String key;
   final String title;
 
-  /// row | ranking | grid
+  /// row | ranking | grid | continue
   final String layout;
   final List<Drama> dramas;
+
+  /// Category slug for category rows.
+  final String? category;
+
+  bool get isContinue => layout == 'continue' || key == 'continue_watching';
 
   factory HomeSection.fromJson(Json j) => HomeSection(
         key: asString(j['key'], asString(j['title'])),
         title: asString(j['title']),
         layout: asString(j['layout'], 'row'),
         dramas: asList(j['dramas'], Drama.fromJson),
+        category: asStringOrNull(j['category']),
       );
 }
 

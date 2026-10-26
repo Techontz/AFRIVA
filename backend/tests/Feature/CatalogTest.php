@@ -39,7 +39,7 @@ class CatalogTest extends ApiTestCase
 
     public function test_dramas_list_paginated(): void
     {
-        $this->getJson('/api/v1/dramas?category=romance&sort=newest&per_page=5')
+        $this->getJson('/api/v1/dramas?category=mapenzi&sort=newest&per_page=5')
             ->assertOk()
             ->assertJsonStructure(['data', 'meta' => ['current_page', 'last_page', 'total']])
             ->assertJsonPath('meta.total', 1);
@@ -49,7 +49,8 @@ class CatalogTest extends ApiTestCase
     {
         $this->getJson('/api/v1/plans')->assertOk()->assertJsonCount(7, 'data')
             ->assertJsonStructure(['data' => [['id', 'name', 'type', 'price', 'currency', 'duration_days', 'episode_quota', 'coins', 'bonus_coins', 'features', 'is_popular']]]);
-        $this->getJson('/api/v1/payment-methods')->assertOk()->assertJsonCount(10, 'data')
+        // Launch methods only: 4 Tanzanian mobile money + Visa + Mastercard.
+        $this->getJson('/api/v1/payment-methods')->assertOk()->assertJsonCount(6, 'data')
             ->assertJsonPath('data.0.code', 'mpesa')
             ->assertJsonPath('data.0.is_integrated', false);
     }

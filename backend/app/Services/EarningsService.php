@@ -54,8 +54,10 @@ class EarningsService
         return CompanyEarning::create([
             'company_id' => $company->id,
             'drama_id' => $drama->id,
+            'episode_id' => $episode->id,
             'source' => $source,
             'amount' => $amount,
+            'gross_amount' => (int) round($grossValue),
             'period_date' => ($at ?? now())->toDateString(),
             'meta' => array_merge($meta, ['gross_value' => round($grossValue, 2), 'share_percent' => (float) $company->revenue_share_percent]),
         ]);
@@ -138,8 +140,10 @@ class EarningsService
                 $insert[] = [
                     'company_id' => $company->id,
                     'drama_id' => $row['drama_id'],
+                    'episode_id' => null,
                     'source' => 'subscription_pool',
                     'amount' => $amount,
+                    'gross_amount' => (int) round($gross),
                     'period_date' => $dayStr,
                     'meta' => json_encode([
                         'views' => $row['views'], 'total_subscriber_views' => $totalViews,

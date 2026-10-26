@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { WatchPlayer } from "@/components/site/WatchPlayer";
 
-export const metadata: Metadata = { title: "Watch" };
+export const metadata: Metadata = { title: "Tazama" };
 
 export default function WatchPage({ params }: PageProps<"/drama/[slug]/ep/[n]">) {
   return (

@@ -12,11 +12,11 @@ const jakarta = Plus_Jakarta_Sans({
 
 export const metadata: Metadata = {
   title: {
-    default: "Afriva — African short dramas, one episode at a time",
+    default: "AFRIVA: Hadithi fupi za Kiafrika, episode moja baada ya nyingine",
     template: "%s · Afriva",
   },
   description:
-    "Binge bite-sized African drama series. Romance, revenge, billionaires and village secrets — new episodes every day on Afriva.",
+    "Tazama series fupi za drama za Kiafrika: mapenzi, historia, siri na mafumbo, vichekesho na zaidi. Hadithi za Afrika, zinazotazamwa popote.",
   applicationName: "Afriva",
 };
 
@@ -30,7 +30,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${jakarta.variable} h-full antialiased`}>
+    <html lang="sw" className={`${jakarta.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-bg text-text">
         <Providers>{children}</Providers>
       </body>

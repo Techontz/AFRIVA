@@ -4,11 +4,11 @@ Short-drama streaming platform.
 
 | Folder | Stack | What it is |
 |---|---|---|
-| [`afriva_web/`](afriva_web/) | Next.js | Viewer website, Super Admin (`/admin`), company Studio (`/studio`) |
+| [`afriva_web/`](afriva_web/) | Next.js | Viewer website, Admin dashboard (`/admin`, staff roles), Creator Studio (`/studio`) |
 | [`backend/`](backend/) | Laravel + MySQL | REST API (`/api/v1`), payments, earnings |
-| [`afriva_app/`](afriva_app/) | Flutter | Android / iOS app |
+| [`afriva_app/`](afriva_app/) | Flutter | Android / iOS app (viewer + "Wasilisha Kazi Yako" creator studio) |
 
-See [`SPEC.md`](SPEC.md) for the API contract and data model, and each folder's README for local setup.
+See [`SPEC.md`](SPEC.md) for the API contract and data model (§8 covers the 2026 project scope: Kiswahili UI, 8 free episodes, creator review workflow, staff roles, HLS video, payments and analytics), and each folder's README for local setup.
 
 ## Deploying the website to Vercel
 

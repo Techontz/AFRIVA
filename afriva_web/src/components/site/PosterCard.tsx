@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/format";
+import { T } from "@/lib/i18n";
 import type { Drama } from "@/lib/types";
 import { Icon } from "../ui/Icon";
 
@@ -19,7 +20,7 @@ export function PosterBadge({ badge }: { badge: Drama["badge"] }) {
         badgeStyles[badge],
       )}
     >
-      {badge === "vip" ? "VIP" : badge === "hot" ? "Hot" : "New"}
+      {badge === "vip" ? "VIP" : <T>{badge === "hot" ? "Hot" : "New"}</T>}
     </span>
   );
 }
@@ -87,7 +88,9 @@ export function PosterCard({
       <h3 className="mt-2.5 line-clamp-2 text-sm font-medium leading-snug text-text transition-colors group-hover:text-primary sm:text-[17px]">
         {drama.title}
       </h3>
-      <p className="mt-1 text-xs text-text-dim sm:text-[13px]">{drama.total_episodes} Episodes</p>
+      <p className="mt-1 text-xs text-text-dim sm:text-[13px]">
+        <T vars={{ n: drama.total_episodes }}>{"{n} Episodes"}</T>
+      </p>
       <GenreChips names={dramaGenres(drama, 1)} className="mt-2" />
     </Link>
   );

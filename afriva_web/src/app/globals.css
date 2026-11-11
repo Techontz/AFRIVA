@@ -1,0 +1,299 @@
+@import "tailwindcss";
+
+/* Afriva design tokens: white, red & black. Dark is the default theme; [data-theme="light"] on <html> switches to the light look. */
+@theme {
+  --color-bg: #000000;
+  --color-surface: #111111;
+  --color-surface-2: #1a1a1a;
+  --color-surface-3: #222222;
+  --color-border: #262626;
+  --color-text: #ffffff;
+  --color-text-muted: #b3b3b3;
+  --color-text-dim: #737373;
+  /* Raised panels (modals). */
+  --color-card: #111111;
+  --color-primary: #e90204;
+  --color-primary-hover: #bf0003;
+  --color-primary-2: #8f0002;
+  --color-success: #22c55e;
+  --color-danger: #ef4444;
+
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+
+  --radius-poster: 8px;
+
+  --ease-brand: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --animate-shimmer: shimmer 1.6s linear infinite;
+  --animate-fade-in: fade-in 200ms ease-out both;
+  --animate-pop-in: pop-in 220ms var(--ease-brand) both;
+  /* Checkout: waiting rings, success tick and confetti. */
+  --animate-ripple: ripple 2.4s cubic-bezier(0.2, 0.6, 0.4, 1) infinite;
+  --animate-draw: draw 520ms 180ms var(--ease-brand) both;
+  --animate-burst: burst 900ms var(--ease-brand) both;
+  --animate-scale-in: scale-in 420ms var(--ease-brand) both;
+
+  @keyframes ripple {
+    0% {
+      transform: scale(0.75);
+      opacity: 0.7;
+    }
+    100% {
+      transform: scale(1.6);
+      opacity: 0;
+    }
+  }
+  @keyframes draw {
+    from {
+      stroke-dashoffset: 30;
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+  @keyframes burst {
+    0% {
+      transform: translate(0, 0) scale(0.4);
+      opacity: 0;
+    }
+    25% {
+      opacity: 1;
+    }
+    100% {
+      transform: translate(var(--dx), var(--dy)) scale(1);
+      opacity: 0;
+    }
+  }
+  @keyframes scale-in {
+    from {
+      transform: scale(0.6);
+      opacity: 0;
+    }
+    to {
+      transform: none;
+      opacity: 1;
+    }
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: -400px 0;
+    }
+    100% {
+      background-position: 400px 0;
+    }
+  }
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes pop-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+
+@utility bg-brand {
+  background-image: linear-gradient(135deg, #e90204, #8f0002);
+}
+
+@utility text-brand {
+  background-image: linear-gradient(135deg, #e90204, #8f0002);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@utility skeleton {
+  background-color: var(--color-surface);
+  background-image: linear-gradient(
+    90deg,
+    var(--color-surface) 0px,
+    var(--color-surface-2) 120px,
+    var(--color-surface) 240px
+  );
+  background-size: 800px 100%;
+  animation: var(--animate-shimmer);
+}
+
+@utility rank-outline {
+  color: transparent;
+  -webkit-text-stroke: 2px var(--color-text-dim);
+}
+
+@utility rank-outline-brand {
+  background-image: linear-gradient(135deg, #e90204, #8f0002);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-stroke: 0;
+}
+
+@utility site-container {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 1680px;
+  padding-inline: 1rem;
+  @media (width >= 40rem) {
+    padding-inline: 1.5rem;
+  }
+  @media (width >= 64rem) {
+    padding-inline: 2.5rem;
+  }
+  @media (width >= 96rem) {
+    padding-inline: 5rem;
+  }
+  @media (width >= 112rem) {
+    padding-inline: 10rem;
+  }
+}
+
+@utility pb-safe {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+:root {
+  color-scheme: dark;
+}
+
+/* Light theme (chosen with the theme toggle, saved in the afriva_theme cookie). */
+:root[data-theme="light"] {
+  --color-bg: #ffffff;
+  --color-surface: #f2f2f2;
+  --color-surface-2: #e4e4e4;
+  --color-surface-3: #d6d6d6;
+  --color-border: #e5e5e5;
+  --color-text: #1a1a1a;
+  --color-text-muted: #555555;
+  --color-text-dim: #888888;
+  --color-card: #ffffff;
+  color-scheme: light;
+}
+
+/* Dark chrome (header, footer, immersive feed), the same in both themes. */
+.chrome-dark {
+  --color-bg: #2b2b2b;
+  --color-surface: #3a3a3a;
+  --color-surface-2: #3a3a3a;
+  --color-surface-3: #474747;
+  --color-border: #3a3a3a;
+  --color-text: #ffffff;
+  --color-text-muted: #d0d0d0;
+  --color-text-dim: #9a9a9a;
+  --color-card: #3a3a3a;
+  color-scheme: dark;
+  color: var(--color-text);
+}
+
+html,
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  letter-spacing: -0.02em;
+}
+
+::selection {
+  background: rgb(225 18 43 / 0.4);
+}
+
+:focus-visible:not([tabindex="-1"]) {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+input[type="number"]::-webkit-inner-spin-button {
+  opacity: 0.4;
+}
+
+/* Checkout polling window (duration set inline). */
+@keyframes pay-drain {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* Viewer site layout metrics and shelf edge fades. */
+:root {
+  --header-h: 4rem;
+  --tabbar-h: calc(3.5rem + env(safe-area-inset-bottom, 0px));
+}
+@media (width >= 64rem) {
+  :root {
+    --header-h: 4.5rem;
+    --tabbar-h: 0px;
+  }
+}
+
+@media (width >= 64rem) {
+  .edge-fade {
+    --fade-start: 40px;
+    --fade-end: 40px;
+    mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      #000 var(--fade-start),
+      #000 calc(100% - var(--fade-end)),
+      transparent 100%
+    );
+  }
+  .edge-fade[data-start] {
+    --fade-start: 0px;
+  }
+  .edge-fade[data-end] {
+    --fade-end: 0px;
+  }
+}
+
+/* These fields show their own soft focus ring instead of the red outline. */
+.site-shell input[type="search"]:focus-visible,
+.pay-input:focus-visible {
+  outline: none;
+}
+
+/* Consistent keyboard focus on the viewer site's rounded artwork. */
+.site-shell a:focus-visible,
+.site-shell button:focus-visible {
+  outline-offset: 3px;
+  border-radius: 0.75rem;
+}

@@ -1,0 +1,890 @@
+{
+  "@@locale": "en",
+  "appName": "Afriva",
+  "errorTimeout": "Afriva is taking too long to respond. Please try again.",
+  "errorNetwork": "Can't reach Afriva right now. Check your connection and try again.",
+  "errorCancelled": "Request cancelled",
+  "errorUnauthenticated": "Please log in to continue.",
+  "errorEpisodeLocked": "This episode is locked.",
+  "errorForbidden": "You don't have access to this.",
+  "errorNotFound": "We couldn't find that.",
+  "errorValidation": "Please check the highlighted fields.",
+  "errorTooManyRequests": "Too many attempts. Please wait a moment.",
+  "errorGeneric": "Something went wrong. Please try again.",
+  "timeJustNow": "Just now",
+  "timeMinutesAgo": "{count, plural, =1{1 min ago} other{{count} mins ago}}",
+  "@timeMinutesAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timeHoursAgo": "{count, plural, =1{1 hour ago} other{{count} hours ago}}",
+  "@timeHoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timeDaysAgo": "{count, plural, =1{Yesterday} other{{count} days ago}}",
+  "@timeDaysAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "shareWatch": "Watch \"{title}\" on Afriva",
+  "@shareWatch": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "shareWatchEpisode": "Watch \"{title}\", Episode {episode} on Afriva",
+  "@shareWatchEpisode": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "episode": {
+        "type": "int"
+      }
+    }
+  },
+  "planWeeklyVip": "Weekly VIP",
+  "planMonthlyVip": "Monthly VIP",
+  "planYearlyVip": "Yearly VIP",
+  "planEpisodePack": "Episode pack",
+  "defaultViewerName": "Afriva viewer",
+  "stateOffline": "You're offline",
+  "stateSomethingWrong": "Something went wrong",
+  "actionTryAgain": "Try again",
+  "actionMore": "More",
+  "badgeNew": "New",
+  "badgeHot": "Hot",
+  "browseTitle": "Browse",
+  "sortPopular": "Popular",
+  "sortNewest": "Newest",
+  "rankingsTitle": "Rankings",
+  "rankTrending": "Trending",
+  "rankNew": "New",
+  "rankMostPopular": "Most Popular",
+  "rankingsEmpty": "No rankings yet",
+  "tagline": "Short dramas. Big African stories.",
+  "navHome": "Home",
+  "navForYou": "For You",
+  "navMyList": "My List",
+  "navProfile": "Profile",
+  "loginTitle": "Welcome back",
+  "loginSubtitle": "Log in to continue your stories, unlock episodes and go VIP.",
+  "fieldEmailOrPhone": "Email or phone",
+  "fieldEmailOrPhoneHint": "you@example.com or 0712 345 678",
+  "validateEmailOrPhone": "Enter your email or phone",
+  "fieldPassword": "Password",
+  "validatePassword": "Enter your password",
+  "actionLogIn": "Log in",
+  "loginNewTo": "New to Afriva?",
+  "actionCreateAccount": "Create account",
+  "loginDemoAccounts": "Demo accounts (debug builds only)",
+  "registerTitle": "Create your account",
+  "registerSubtitle": "Free episodes every day. Save your list and pick up where you left off.",
+  "fieldEmail": "Email",
+  "fieldPhone": "Phone",
+  "fieldFullName": "Full name",
+  "validateName": "Enter your name",
+  "fieldPhoneNumber": "Phone number",
+  "validatePhoneRequired": "Enter your phone number",
+  "validateEmailRequired": "Enter your email",
+  "validateEmailInvalid": "Enter a valid email",
+  "validatePhoneInvalid": "Enter a valid phone number",
+  "passwordHelper": "At least 8 characters",
+  "validatePasswordLength": "Use at least 8 characters",
+  "registerAgree": "By continuing you agree to the Afriva Terms and Privacy Policy.",
+  "registerHaveAccount": "Already have an account?",
+  "posterEpisodeCount": "EP {count}",
+  "@posterEpisodeCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "comingSoon": "Coming soon",
+  "episodesCount": "{count, plural, =1{1 Episode} other{{count} Episodes}}",
+  "@episodesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "viewsCount": "{views} views",
+  "@viewsCount": {
+    "placeholders": {
+      "views": {
+        "type": "String"
+      }
+    }
+  },
+  "gridEmptyTitle": "No dramas here yet",
+  "gridEmptyMessage": "New stories land every week. Check back soon.",
+  "gridLoadMore": "Tap to load more",
+  "gridEnd": "You've reached the end",
+  "searchHint": "Search",
+  "helpSupport": "Help & support",
+  "homeEmptyTitle": "Nothing to watch yet",
+  "homeEmptyMessage": "Our studios are busy filming. Pull down to refresh.",
+  "homeMustSees": "Must-sees",
+  "myListFavorites": "Favorites",
+  "myListHistory": "History",
+  "myListSignedOutTitle": "Your list lives here",
+  "myListSignedOutMessage": "Log in to save dramas and keep track of what you watch across devices.",
+  "favoritesEmptyTitle": "No favorites yet",
+  "favoritesEmptyMessage": "Tap \"My List\" on any drama to save it here.",
+  "browseDramas": "Browse dramas",
+  "searchFieldHint": "Search titles, tags, studios",
+  "searchRecent": "Recent searches",
+  "actionClear": "Clear",
+  "searchTrendingNow": "Trending now",
+  "searchTypeToSearch": "Type to search the Afriva catalog.",
+  "addedToMyList": "Added to My List",
+  "removedFromMyList": "Removed from My List",
+  "inMyList": "In My List",
+  "actionShare": "Share",
+  "byStudio": "by {studio}",
+  "@byStudio": {
+    "placeholders": {
+      "studio": {
+        "type": "String"
+      }
+    }
+  },
+  "playEpisode": "Play EP {number}",
+  "@playEpisode": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "showLess": "Show less",
+  "readMore": "Read more",
+  "episodesTitle": "Episodes",
+  "episodesComingSoon": "Episodes coming soon",
+  "freeEpisodesInfo": "{free, plural, =1{EP 1 free} other{EP 1-{free} free}} · then {coins} coins/ep or VIP",
+  "@freeEpisodesInfo": {
+    "placeholders": {
+      "free": {
+        "type": "int"
+      },
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "youMayAlsoLike": "You may also like",
+  "playerFinale": "That's the finale. Thanks for watching!",
+  "playerEpisodeOf": "EP {number} / {total}",
+  "@playerEpisodeOf": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "playerAllEpisodes": "EP {number} · All {total} episodes",
+  "@playerAllEpisodes": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "freeEpisodesShort": "{free, plural, =1{EP 1 free} other{EP 1-{free} free}}",
+  "@freeEpisodesShort": {
+    "placeholders": {
+      "free": {
+        "type": "int"
+      }
+    }
+  },
+  "actionRetry": "Retry",
+  "lockedTitle": "Episode {number} is locked",
+  "@lockedTitle": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "lockedMessage": "{coins, plural, =1{Unlock it for 1 coin or join VIP to watch everything.} other{Unlock it for {coins} coins or join VIP to watch everything.}}",
+  "@lockedMessage": {
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "unlockEpisode": "Unlock episode",
+  "paywallTitle": "Unlock Episode {number}",
+  "@paywallTitle": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "paywallSubtitle": "Keep watching \"{title}\". The story is just getting good.",
+  "@paywallSubtitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "paywallLoginToUnlock": "Log in to unlock",
+  "paywallUnlockWithCoins": "Unlock with coins",
+  "paywallBalance": "Balance",
+  "paywallUnlockFor": "{coins, plural, =1{Unlock for 1 coin} other{Unlock for {coins} coins}}",
+  "@paywallUnlockFor": {
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "paywallNeedCoins": "You need {required} coins. Top up {missing} more.",
+  "@paywallNeedCoins": {
+    "placeholders": {
+      "required": {
+        "type": "int"
+      },
+      "missing": {
+        "type": "int"
+      }
+    }
+  },
+  "paywallGetCoins": "Get coins",
+  "paywallUsePack": "Use episode pack ({count} left)",
+  "@paywallUsePack": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "paywallUseOneFromPack": "Use 1 episode from my pack",
+  "actionNotNow": "Not now",
+  "paywallJoinVip": "Join Afriva VIP",
+  "paywallVipPitch": "Every episode unlocked. No waiting.",
+  "feedEmptyTitle": "Your feed is warming up",
+  "feedEmptyMessage": "New stories are on the way.",
+  "actionRefresh": "Refresh",
+  "navForYouTitle": "For You",
+  "feedEpisodesError": "Couldn't load episodes. Try again.",
+  "tapToRetry": "Tap to retry",
+  "feedWatchFullSeries": "Watch full series · {count} EP",
+  "@feedWatchFullSeries": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsTitle": "Settings",
+  "watchHistoryTitle": "Watch history",
+  "paymentHistoryTitle": "Payment history",
+  "vipStoreMenu": "VIP & coins store",
+  "actionLogOut": "Log out",
+  "profileVersion": "Afriva · v{version}",
+  "@profileVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "supportBody": "Questions about VIP, coins or payments? Email support@afriva.co.tz and our team will help within 24 hours. Include your payment reference if your question is about a payment.",
+  "actionGotIt": "Got it",
+  "logoutTitle": "Log out?",
+  "logoutBody": "Your list, history and VIP stay safe in your account.",
+  "actionCancel": "Cancel",
+  "vipUntil": "VIP until {date}",
+  "@vipUntil": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "guestTitle": "Welcome to Afriva",
+  "guestMessage": "Log in to sync your list, history and VIP.",
+  "actionSignUp": "Sign up",
+  "coinsTitle": "Coins",
+  "actionTopUp": "Top up",
+  "membershipTitle": "Membership",
+  "membershipPack": "Pack",
+  "membershipFree": "Free",
+  "unlocksLeft": "{count, plural, =1{1 unlock left} other{{count} unlocks left}}",
+  "@unlocksLeft": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "actionManage": "Manage",
+  "actionUpgrade": "Upgrade",
+  "goVip": "Go VIP",
+  "goVipPitch": "Unlock every episode from {price} a week",
+  "@goVipPitch": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "actionJoin": "Join",
+  "paymentStatusPending": "Pending",
+  "paymentStatusSuccess": "Success",
+  "paymentStatusFailed": "Failed",
+  "paymentStatusCancelled": "Cancelled",
+  "historyEmptyTitle": "Nothing watched yet",
+  "historyEmptyMessage": "Episodes you watch will show up here so you can pick up where you left off.",
+  "discoverDramas": "Discover dramas",
+  "paymentsEmptyTitle": "No payments yet",
+  "paymentsEmptyMessage": "Your VIP, episode pack and coin purchases will appear here.",
+  "paymentDefaultName": "Afriva purchase",
+  "referenceCopied": "Reference copied",
+  "settingsPlayback": "Playback",
+  "settingsAutoplay": "Autoplay next episode",
+  "settingsAutoplaySubtitle": "Continue to the next episode when one ends",
+  "settingsLanguage": "Language",
+  "settingsStorage": "Storage",
+  "settingsClearImageCache": "Clear image cache",
+  "settingsClearImageCacheSubtitle": "Free up space used by posters",
+  "settingsImageCacheCleared": "Image cache cleared",
+  "settingsClearSearchHistory": "Clear search history",
+  "settingsSearchHistoryCleared": "Search history cleared",
+  "settingsAbout": "About",
+  "termsTitle": "Terms of Service",
+  "termsBody": "Afriva content is licensed for personal, non-commercial viewing. Subscriptions and coins are non-transferable.",
+  "privacyTitle": "Privacy Policy",
+  "privacyBody": "We store only what we need to run your account: your profile, watch history, list and payments. We never sell your data.",
+  "settingsServer": "Server",
+  "settingsFooter": "Version {version} · Made for African storytellers",
+  "@settingsFooter": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "actionClose": "Close",
+  "perWeek": "/ week",
+  "perMonth": "/ month",
+  "perYear": "/ year",
+  "paywallJoinVipTitle": "Afriva VIP",
+  "vipSubscriptions": "VIP subscriptions",
+  "vipSubscriptionsSubtitle": "Unlimited access to every episode",
+  "vipEpisodePacks": "Episode packs",
+  "vipEpisodePacksSubtitle": "Unlock any episodes you choose",
+  "vipCoinsSubtitle": "Unlock single episodes with coins",
+  "vipNoPlans": "No plans available right now",
+  "vipPaymentsNote": "Payments are processed securely by your chosen provider. VIP renews only when you pay again, with no automatic charges.",
+  "actionContinue": "Continue",
+  "vipYoureVip": "You're VIP",
+  "vipWatchEverything": "Watch everything with VIP",
+  "vipActiveUntil": "{plan} · active until {date}",
+  "@vipActiveUntil": {
+    "placeholders": {
+      "plan": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "vipPerks": "Unlimited episodes · New dramas every week · HD streaming",
+  "vipPackRemaining": "{count, plural, =1{1 pack episode remaining} other{{count} pack episodes remaining}}",
+  "@vipPackRemaining": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "vipMostPopular": "Most popular",
+  "vipPackDescription": "{count, plural, =1{Unlock 1 episode of any drama} other{Unlock {count} episodes of any drama}}",
+  "@vipPackDescription": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "vipSubscriptionDescription": "{days, plural, =1{All episodes unlocked for 1 day} other{All episodes unlocked for {days} days}}",
+  "@vipSubscriptionDescription": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "vipPerDay": "≈ {price}/day",
+  "@vipPerDay": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "vipBonus": "+{count} bonus",
+  "@vipBonus": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "checkoutStillWaiting": "Still waiting for confirmation from {provider}.",
+  "@checkoutStillWaiting": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "checkoutTheProvider": "the provider",
+  "checkoutTitleSuccess": "Payment complete",
+  "checkoutTitlePending": "Confirm payment",
+  "checkoutTitleFailed": "Payment failed",
+  "checkoutTitle": "Checkout",
+  "checkoutCoins": "{coins} coins",
+  "@checkoutCoins": {
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "checkoutCoinsWithBonus": "{coins} coins + {bonus} bonus",
+  "@checkoutCoinsWithBonus": {
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      },
+      "bonus": {
+        "type": "int"
+      }
+    }
+  },
+  "checkoutEpisodeUnlocks": "{count, plural, =1{1 episode unlock} other{{count} episode unlocks}}",
+  "@checkoutEpisodeUnlocks": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "checkoutVipDays": "{days, plural, =1{1 day of VIP} other{{days} days of VIP}}",
+  "@checkoutVipDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "checkoutNoMethods": "No payment methods available",
+  "checkoutTryLater": "Please try again later.",
+  "checkoutMobileMoney": "Mobile Money",
+  "checkoutCards": "Cards",
+  "checkoutBank": "Bank",
+  "checkoutPay": "Pay {amount}",
+  "@checkoutPay": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "checkoutSecure": "Secure checkout · Afriva never stores card details",
+  "checkoutMethodNumber": "{method} number",
+  "@checkoutMethodNumber": {
+    "placeholders": {
+      "method": {
+        "type": "String"
+      }
+    }
+  },
+  "checkoutInvalidMobile": "Enter a valid mobile number",
+  "checkoutMobilePrompt": "You'll receive a prompt on your phone from {method}. Enter your PIN to approve.",
+  "@checkoutMobilePrompt": {
+    "placeholders": {
+      "method": {
+        "type": "String"
+      }
+    }
+  },
+  "checkoutBankInfo": "After you continue we'll show {method} payment instructions and your reference number. Your plan activates as soon as the bank confirms.",
+  "@checkoutBankInfo": {
+    "placeholders": {
+      "method": {
+        "type": "String"
+      }
+    }
+  },
+  "checkoutWaiting": "Waiting for confirmation from {provider}.",
+  "@checkoutWaiting": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "checkoutYourProvider": "your provider",
+  "checkoutPending": "Payment pending",
+  "checkoutUssdHint": "Check your phone for the {method} prompt and enter your PIN.",
+  "@checkoutUssdHint": {
+    "placeholders": {
+      "method": {
+        "type": "String"
+      }
+    }
+  },
+  "checkoutRedirect": "Complete payment at: {url}",
+  "@checkoutRedirect": {
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "receiptPlan": "Plan",
+  "receiptAmount": "Amount",
+  "receiptMethod": "Method",
+  "receiptReference": "Reference",
+  "receiptStatus": "Status",
+  "checkoutCheckStatus": "Check status",
+  "checkoutIHavePaid": "I have paid, check now",
+  "checkoutFinishLater": "Close, I'll finish later",
+  "checkoutTrackHint": "You can track this payment anytime in Profile › Payment history.",
+  "successCoinsTitle": "Coins added!",
+  "successPackTitle": "Episode pack ready!",
+  "successVipTitle": "Welcome to VIP!",
+  "successCoinsMessage": "{coins, plural, =1{1 coin is now in your wallet.} other{{coins} coins are now in your wallet.}}",
+  "@successCoinsMessage": {
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "successPackMessage": "Use your {count} unlocks on any locked episode.",
+  "@successPackMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "successVipMessage": "Every episode is unlocked. Enjoy the binge.",
+  "successRef": "Ref {reference}",
+  "@successRef": {
+    "placeholders": {
+      "reference": {
+        "type": "String"
+      }
+    }
+  },
+  "successStartWatching": "Start watching",
+  "failedCancelledTitle": "Payment cancelled",
+  "failedMessage": "No money was taken. You can try again or choose another method.",
+  "cardDetails": "Card details",
+  "cardNumber": "Card number",
+  "cardNumberInvalid": "Enter a valid card number",
+  "cardExpiry": "Expiry",
+  "cardExpiryHint": "MM/YY",
+  "cardInvalidMonth": "Invalid month",
+  "cardExpired": "Card expired",
+  "cardInvalidCvc": "Invalid CVC",
+  "cardName": "Name on card",
+  "cardNameRequired": "Enter the name on the card",
+  "cardHolderPlaceholder": "CARDHOLDER NAME",
+  "videoComingSoonTitle": "Coming soon",
+  "videoComingSoonMessage": "This episode is still being prepared. Check back shortly.",
+  "videoComingSoonBadge": "Coming soon",
+  "settingsAppearance": "Appearance",
+  "themeDark": "Dark",
+  "themeLight": "Light",
+  "themeSystem": "Use device setting",
+  "playerQuality": "Quality",
+  "qualityAuto": "Auto",
+  "qualityAutoSubtitle": "Adjusts to your connection",
+  "settingsVideoQuality": "Video quality",
+  "playerFullScreen": "Full screen",
+  "playerExitFullScreen": "Exit full screen",
+  "requestToPost": "Request to post",
+  "studioStatusPending": "Pending review",
+  "studioStatusReady": "Ready for review",
+  "studioStatusApproved": "Approved",
+  "studioStatusRejected": "Not approved",
+  "studioSamplesCount": "Samples {count}/{required}",
+  "@studioSamplesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "required": {
+        "type": "int"
+      }
+    }
+  },
+  "studioApplyIntro": "Tell us who you are and where to send your earnings. Afriva reviews every request before you can post.",
+  "studioSectionDetails": "Your details",
+  "studioFullName": "Full names as on your ID",
+  "studioSectionIdentity": "Identity",
+  "studioIdNida": "NIDA",
+  "studioIdPassport": "Passport",
+  "studioIdNumberNida": "NIDA number",
+  "studioIdNumberPassport": "Passport number",
+  "studioIdPhotoNote": "Want to add a photo of your ID? You can upload it on the Afriva Studio website after you apply.",
+  "studioSectionPayout": "Payout",
+  "studioPayoutMobile": "Mobile money",
+  "studioPayoutBank": "Bank",
+  "studioPayoutProvider": "Mobile money provider",
+  "studioBankName": "Bank name",
+  "studioAccountName": "Account name",
+  "studioAccountNumber": "Account number",
+  "studioWalletNumber": "Wallet phone number",
+  "studioSectionStudio": "Studio or channel name",
+  "studioNameHint": "Defaults to your name",
+  "studioOptional": "Optional",
+  "studioSectionLogin": "Login",
+  "studioLoginHelp": "Choose a password for your new account. If this email already has an Afriva account, enter that account's password.",
+  "studioAcceptPrefix": "I have read and accept the ",
+  "studioAcceptLink": "Afriva creator guidelines",
+  "studioSubmit": "Submit request",
+  "studioValidateRequired": "This field is required",
+  "studioValidateIdNumber": "Use 4 to 40 letters, digits, dashes or spaces",
+  "studioValidatePhone": "Enter 9 to 32 digits (you may use + and spaces)",
+  "studioValidateProvider": "Choose a provider",
+  "studioSuccessTitle": "Request received",
+  "studioSuccessBody": "Thank you. Afriva will review your request.",
+  "studioSuccessGuest": "You can log in with the email and password you chose to follow your request.",
+  "studioSuccessExisting": "Log in with your existing Afriva account to follow your request.",
+  "studioViewStatus": "View request status",
+  "studioSamplesTitle": "Upload 10 sample videos",
+  "studioSamplesBody": "Before Afriva can approve you, upload 10 sample videos of about 2 minutes each (1 to 3 minutes) on the Afriva Studio website. Large uploads are not available in the app. Open this link in your browser and log in with the same account.",
+  "studioWebsiteTitle": "Afriva Studio website",
+  "studioWebsiteBody": "Open this link in your browser and log in with the same account.",
+  "studioCopyLink": "Copy link",
+  "studioLinkCopied": "Link copied",
+  "studioStatusTitle": "Request status",
+  "studioRejectionReason": "Reason: {reason}",
+  "@studioRejectionReason": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "studioRevenueSplit": "Revenue split: you {creator}%, Afriva {platform}%",
+  "@studioRevenueSplit": {
+    "placeholders": {
+      "creator": {
+        "type": "String"
+      },
+      "platform": {
+        "type": "String"
+      }
+    }
+  },
+  "studioSamplesValid": "{valid} of {required} valid samples",
+  "@studioSamplesValid": {
+    "placeholders": {
+      "valid": {
+        "type": "int"
+      },
+      "required": {
+        "type": "int"
+      }
+    }
+  },
+  "studioSamplesUploaded": "{count} uploaded",
+  "@studioSamplesUploaded": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "studioSampleTooShort": "Too short",
+  "studioSampleTooLong": "Too long",
+  "studioSampleUploading": "Uploading",
+  "studioSampleProcessing": "Processing",
+  "studioSampleReady": "Ready",
+  "studioSampleFailed": "Failed",
+  "studioNoSamples": "No samples uploaded yet",
+  "studioNoApplicationTitle": "No request yet",
+  "studioNoApplicationMessage": "Send a request to start posting on Afriva.",
+  "studioSubmittedOn": "Submitted {date}",
+  "@studioSubmittedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "studioApprovedBody": "Your account is approved. Log in to Afriva Studio on the website to post.",
+  "studioReadyBody": "All samples are in. Afriva is reviewing your request.",
+  "guidelinesTitle": "Afriva creator guidelines",
+  "guidelinesIntro": "These rules keep Afriva safe and fair for creators and viewers. By posting on Afriva you agree to them.",
+  "guidelinesPoint1": "Only upload content you own or have the rights to publish.",
+  "guidelinesPoint2": "No illegal, hateful, sexually exploitative or violent extremist content.",
+  "guidelinesPoint3": "Never post content that shows or involves minors in an inappropriate way.",
+  "guidelinesPoint4": "Use accurate titles, descriptions and posters. No misleading content.",
+  "guidelinesPoint5": "To apply you upload 10 sample videos of about 2 minutes each. Afriva reviews them and approves your account before you can post.",
+  "guidelinesPoint6": "Revenue split: you receive {creator}% of the revenue your content earns (subscription share, coin unlocks, episode packs or any other payment for your content). Afriva keeps {platform}%.",
+  "@guidelinesPoint6": {
+    "placeholders": {
+      "creator": {
+        "type": "String"
+      },
+      "platform": {
+        "type": "String"
+      }
+    }
+  },
+  "guidelinesPoint7": "Payouts go to the payout account you give us, after review.",
+  "guidelinesPoint8": "Keep your ID and payout details accurate and up to date.",
+  "guidelinesPoint9": "Afriva may remove content and suspend accounts that break these rules.",
+  "heroPlay": "Play",
+  "@heroPlay": {
+    "description": "Home featured slider: play episode 1"
+  },
+  "heroMoreInfo": "More info",
+  "@heroMoreInfo": {
+    "description": "Home featured slider: open drama details"
+  },
+  "heroSlide": "{n} of {total}",
+  "@heroSlide": {
+    "description": "Featured slider slide position",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "actionSeeAll": "See all",
+  "episodeFree": "Free",
+  "episodeLocked": "Locked",
+  "episodeVipUnlocked": "VIP unlocked",
+  "rankingsSubtitle": "Updated daily from real views.",
+  "rankTabNewHot": "New & Hot",
+  "rankTabAllTime": "All-time Popular",
+  "rankBlurbTrending": "What everyone is binging this week",
+  "rankBlurbNew": "Fresh series climbing fast",
+  "rankBlurbPopular": "The biggest Afriva hits ever",
+  "payPayWith": "Pay with",
+  "payAddNew": "Add new number or card",
+  "payAddNewSub": "Mobile money or Visa / Mastercard",
+  "payMobileMoney": "Mobile money",
+  "payCard": "Card",
+  "payComingSoon": "Coming soon",
+  "payPhoneLabel": "Mobile money number",
+  "payPhoneHelper": "Any network. We send the payment prompt to this phone.",
+  "payNetworkUnknown": "We don't recognise this network yet",
+  "payNetworkUnavailable": "{network} is not available right now",
+  "@payNetworkUnavailable": {
+    "placeholders": {
+      "network": {
+        "type": "String"
+      }
+    }
+  },
+  "payPhoneInvalid": "Enter a valid mobile number",
+  "payCardMonth": "Month",
+  "payCardYear": "Year",
+  "payCardCvc": "CVC",
+  "payCardBrandUnsupported": "Only Visa and Mastercard are accepted",
+  "payCardInvalidYear": "Invalid year",
+  "payCardInvalidCvc": "Enter the 3 digits on the back",
+  "payCardNumberHint": "Visa or Mastercard",
+  "paySave": "Save for faster checkout",
+  "paySaveSub": "Next time, pay with one tap",
+  "payDefault": "Default",
+  "payExpired": "Expired",
+  "payExpires": "Expires {date}",
+  "@payExpires": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "payNeedsDetails": "Re-enter card details to pay",
+  "payCardEnding": "{brand} ending {last4}",
+  "@payCardEnding": {
+    "placeholders": {
+      "brand": {
+        "type": "String"
+      },
+      "last4": {
+        "type": "String"
+      }
+    }
+  },
+  "paySecureNote": "Secure checkout. Afriva never asks for your PIN or stores your card number.",
+  "payTotal": "Total",
+  "payDemoNote": "Test mode: payments are approved automatically.",
+  "payNothingAvailable": "Payments are not available right now. Please try again later.",
+  "promptTitle": "Check your phone",
+  "promptSentTo": "We sent a {network} prompt to",
+  "@promptSentTo": {
+    "placeholders": {
+      "network": {
+        "type": "String"
+      }
+    }
+  },
+  "promptSentToPlain": "We sent a payment prompt to",
+  "promptPinNote": "Enter your PIN on the prompt that appears on your phone. Afriva will never ask for your PIN.",
+  "promptWaiting": "Waiting for your confirmation",
+  "promptCardTitle": "Confirming your payment",
+  "promptCardBody": "This usually takes a few seconds.",
+  "promptTimeoutTitle": "No confirmation yet",
+  "promptTimeoutBody": "If you approved it on your phone, check again. Otherwise, try once more.",
+  "promptFailedBody": "No money was taken. Check your balance or number and try again.",
+  "promptCheckAgain": "Check again",
+  "promptSuccess": "Payment received",
+  "promptNoPrompt": "No prompt? Make sure your phone is on and unlocked.",
+  "paymentMethodsTitle": "Payment methods",
+  "paymentMethodsEmptyTitle": "No saved payment methods",
+  "paymentMethodsEmptyBody": "Save a number or card when you pay and checkout becomes one tap.",
+  "paymentMethodsAddNumber": "Add mobile money number",
+  "paymentMethodsCardNote": "Cards are saved after you pay with them.",
+  "paymentMethodsMakeDefault": "Make default",
+  "paymentMethodsRemove": "Remove",
+  "paymentMethodsRemoveTitle": "Remove this payment method?",
+  "paymentMethodsRemoveBody": "You can add it again any time.",
+  "paymentMethodsRemoved": "Payment method removed",
+  "paymentMethodsDefaultSet": "Default payment method updated",
+  "paymentMethodsAdded": "Number saved",
+  "paymentMethodsSaveNumber": "Save number",
+  "settingsPayments": "Payments"
+}

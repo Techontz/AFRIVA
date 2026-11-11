@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ic_launcher_background">#E90204</color>
+    <!-- Window color behind Flutter while it starts; matches the dark theme bg. -->
+    <color name="afriva_window_bg">#0B0B0B</color>
+</resources>

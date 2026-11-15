@@ -16,3 +16,6 @@ Schedule::call(function () {
 
 // Fallback for missed Bunny Stream webhooks: re-check uploads still uploading/processing (no-op when not configured).
 Schedule::command('bunny:sync')->everyFiveMinutes()->withoutOverlapping();
+
+// Infrastructure budget: one email per threshold (50/75/90/100%) per month. No-op without a budget.
+Schedule::command('infra:check-budget')->hourly()->withoutOverlapping();

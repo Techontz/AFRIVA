@@ -1,0 +1,12 @@
+# Every night at 02:15 server time (Africa/Dar_es_Salaam), the quietest hour for viewers.
+# Persistent=true runs a missed backup after the server was off.
+[Unit]
+Description=Afriva nightly database backup timer
+
+[Timer]
+OnCalendar=*-*-* 02:15:00
+RandomizedDelaySec=10m
+Persistent=true
+
+[Install]
+WantedBy=timers.target

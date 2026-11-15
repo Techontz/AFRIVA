@@ -1,0 +1,93 @@
+# Manual deployment of the Laravel API to the Hetzner server.
+#
+# Setup (owner, once): GitHub repo Settings > Environments > New environment "production":
+#   - Required reviewers: add yourself, so every run waits for your approval.
+#   - Deployment branches: "Selected branches" > main (optional but recommended).
+#   - Environment secrets:
+#       DEPLOY_HOST          server IP or hostname (not the Cloudflare-proxied api name)
+#       DEPLOY_USER          deploy
+#       DEPLOY_SSH_KEY       private key of a key pair made only for GitHub Actions; its public half is
+#                            added to /home/deploy/.ssh/authorized_keys on the server
+#       DEPLOY_KNOWN_HOSTS   optional but recommended: output of "ssh-keyscan -t ed25519 <server-ip>"
+#                            run once from your own machine (pins the server's host key)
+#
+# The website is not deployed here: Vercel builds it from GitHub automatically.
+name: Deploy API
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Git ref to deploy (branch, tag or commit SHA)"
+        required: true
+        default: main
+        type: string
+      allow_destructive_migrations:
+        description: "Allow migrations with DROP / RENAME / TRUNCATE (only after reviewing them)"
+        required: true
+        default: false
+        type: boolean
+
+concurrency:
+  group: deploy-api-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy ${{ inputs.ref }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: production
+      url: https://api.afriva.co.tz/up
+    env:
+      REF: ${{ inputs.ref }}
+      ALLOW_DESTRUCTIVE: ${{ inputs.allow_destructive_migrations && '1' || '0' }}
+    steps:
+      - name: Validate ref
+        run: |
+          if ! printf '%s' "$REF" | grep -Eq '^[A-Za-z0-9._/-]+$'; then
+            echo "Invalid ref: $REF" >&2
+            exit 1
+          fi
+
+      - name: Configure SSH
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          if [ -n "$DEPLOY_KNOWN_HOSTS" ]; then
+            printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          else
+            echo "::warning::DEPLOY_KNOWN_HOSTS is not set; trusting the host key seen now (ssh-keyscan)."
+            ssh-keyscan -t ed25519 "$DEPLOY_HOST" > ~/.ssh/known_hosts 2> /dev/null
+          fi
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Run deploy.sh on the server
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            -o ServerAliveInterval=30 "$DEPLOY_USER@$DEPLOY_HOST" \
+            "ALLOW_DESTRUCTIVE_MIGRATIONS=$ALLOW_DESTRUCTIVE /srv/afriva/repo/deploy/scripts/deploy.sh '$REF'"
+
+      - name: Public health check (through Cloudflare)
+        run: |
+          code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 https://api.afriva.co.tz/up || true)"
+          echo "https://api.afriva.co.tz/up -> $code"
+          if [ "$code" != "200" ]; then
+            echo "::warning::Public /up returned $code (server-side checks passed; check DNS and Cloudflare)."
+          fi
+
+      - name: Remove key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key

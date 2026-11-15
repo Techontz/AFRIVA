@@ -118,6 +118,12 @@ return [
     |
     */
 
+    /*
+    | Store used by the rate limiter (throttle middleware). Null = the default store above, so with
+    | CACHE_STORE=redis the limiter is on Redis too. Set RATE_LIMITER_STORE to keep it elsewhere.
+    */
+    'limiter' => env('RATE_LIMITER_STORE'),
+
     'prefix' => env('CACHE_PREFIX', Str::slug((string) env('APP_NAME', 'laravel')).'-cache-'),
 
     /*

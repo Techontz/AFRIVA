@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\MediaStorage;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -15,8 +16,14 @@ class StudioApplication extends Model
     /** Sample videos required before an application can be approved. */
     public const REQUIRED_SAMPLES = 10;
 
-    /** The private disk ID documents live on (never the public disk). */
+    /** Default private disk for ID documents (never the public disk). PRIVATE_DOCUMENTS_DISK can move them to R2. */
     public const DISK = 'local';
+
+    /** The private disk ID documents live on (config filesystems.private_documents_disk). */
+    public static function disk(): string
+    {
+        return MediaStorage::privateDiskName();
+    }
 
     protected $fillable = [
         'company_id', 'user_id', 'existing_user', 'full_name', 'id_type', 'id_number', 'id_document_path', 'phone',

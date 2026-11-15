@@ -37,7 +37,7 @@ class StudioApplicationController extends Controller
         $data = $request->validated();
         $share = Setting::creatorShare();
         $documentPath = $request->hasFile('id_document')
-            ? $request->file('id_document')->store('id-documents', StudioApplication::DISK)
+            ? $request->file('id_document')->store('id-documents', StudioApplication::disk())
             : null;
 
         try {
@@ -95,7 +95,7 @@ class StudioApplicationController extends Controller
             });
         } catch (\Throwable $e) {
             if ($documentPath) {
-                Storage::disk(StudioApplication::DISK)->delete($documentPath);
+                Storage::disk(StudioApplication::disk())->delete($documentPath);
             }
             throw $e;
         }

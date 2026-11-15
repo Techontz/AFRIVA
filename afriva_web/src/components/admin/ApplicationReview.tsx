@@ -49,18 +49,25 @@ export function ApplicationReview({ company, onClose, onDone }: { company: Compa
   }, [company]);
 
   useEffect(() => () => {
-    if (idUrl) URL.revokeObjectURL(idUrl.url);
+    if (idUrl?.url.startsWith("blob:")) URL.revokeObjectURL(idUrl.url);
   }, [idUrl]);
 
   if (!company || !app) return null;
 
   const viewId = async () => {
     try {
-      const res = await fetch(`${API_URL}/admin/companies/${company.id}/id-document`, {
+      // ?as=url: on R2 the API answers with a short-lived signed link (shown directly, no bucket CORS needed);
+      // on the server's own disk it streams the file as before.
+      const res = await fetch(`${API_URL}/admin/companies/${company.id}/id-document?as=url`, {
         headers: { Authorization: `Bearer ${getToken() ?? ""}`, Accept: "*/*" },
         cache: "no-store",
       });
       if (!res.ok) throw new Error(String(res.status));
+      if ((res.headers.get("content-type") ?? "").includes("application/json")) {
+        const { data } = (await res.json()) as { data: { url: string; pdf: boolean } };
+        setIdUrl({ url: data.url, pdf: data.pdf });
+        return;
+      }
       const blob = await res.blob();
       setIdUrl({ url: URL.createObjectURL(blob), pdf: blob.type === "application/pdf" });
     } catch (e) {

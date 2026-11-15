@@ -1,0 +1,9 @@
+# Refreshes Cloudflare IP ranges for Nginx real_ip (deploy/scripts/update-cloudflare-ips.sh).
+[Unit]
+Description=Refresh Cloudflare IP ranges for Nginx
+Wants=network-online.target
+After=network-online.target nginx.service
+
+[Service]
+Type=oneshot
+ExecStart=/srv/afriva/repo/deploy/scripts/update-cloudflare-ips.sh

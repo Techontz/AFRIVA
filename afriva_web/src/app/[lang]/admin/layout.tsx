@@ -26,6 +26,7 @@ export default async function AdminLayout({ children }: LayoutProps<"/[lang]/adm
     { href: "/admin/users", label: n.users, icon: "users" },
     { href: "/admin/payments", label: n.payments, icon: "wallet" },
     { href: "/admin/payouts", label: n.payouts, icon: "payout" },
+    { href: "/admin/infrastructure", label: n.infrastructure, icon: "server" },
     { href: "/admin/settings", label: n.settings, icon: "settings" },
   ];
   return (

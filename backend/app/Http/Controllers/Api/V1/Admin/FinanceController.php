@@ -98,7 +98,7 @@ class FinanceController extends Controller
         $values = $request->input('settings', $request->except(['settings', '_method', '_token']));
         $previousShare = Setting::creatorShare();
         foreach ((array) $values as $key => $value) {
-            if (is_string($key) && preg_match('/^[a-z0-9_.]{1,100}$/', $key)) {
+            if (is_string($key) && preg_match('/^[a-z0-9_.]{1,100}$/', $key) && ! in_array($key, Setting::HIDDEN_KEYS, true)) {
                 Setting::put($key, $value);
             }
         }

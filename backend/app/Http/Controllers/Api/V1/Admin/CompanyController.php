@@ -15,13 +15,14 @@ use App\Models\User;
 use App\Services\BunnyStream;
 use App\Services\ContentService;
 use App\Services\StatsService;
+use App\Support\MediaStorage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
-use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\HttpFoundation\Response;
 
 class CompanyController extends Controller
 {
@@ -169,16 +170,42 @@ class CompanyController extends Controller
         ]);
     }
 
-    /** Super admin only: the uploaded ID photo of a request to post (private disk, never public). */
-    public function idDocument(Company $company): StreamedResponse
+    /**
+     * Super admin only: the uploaded ID photo of a request to post (private disk, never public).
+     * Local disk: streamed through the API as before. Cloud disk (private R2 bucket): a signed URL that expires
+     * after PRIVATE_DOCUMENT_URL_TTL_MINUTES (default 10), as a 302 redirect, or as JSON with ?as=url so the
+     * admin page can show it in an <img>/<iframe> without needing CORS on the bucket.
+     */
+    public function idDocument(Request $request, Company $company): Response
     {
         $path = $company->application()->value('id_document_path');
-        abort_unless($path && Storage::disk(StudioApplication::DISK)->exists($path), 404);
+        $diskName = StudioApplication::disk();
+        $disk = Storage::disk($diskName);
+        abort_unless($path && $disk->exists($path), 404);
 
-        return Storage::disk(StudioApplication::DISK)->response($path, 'id-document-'.$company->id.'.'.pathinfo($path, PATHINFO_EXTENSION), [
-            'Cache-Control' => 'private, no-store, max-age=0',
-            'X-Content-Type-Options' => 'nosniff',
+        $filename = 'id-document-'.$company->id.'.'.pathinfo($path, PATHINFO_EXTENSION);
+        $noStore = ['Cache-Control' => 'private, no-store, max-age=0', 'X-Content-Type-Options' => 'nosniff'];
+
+        if (MediaStorage::isLocal($diskName)) {
+            return $disk->response($path, $filename, $noStore);
+        }
+
+        $ttl = MediaStorage::privateUrlTtlMinutes();
+        $expires = now()->addMinutes($ttl);
+        $url = $disk->temporaryUrl($path, $expires, [
+            'ResponseContentDisposition' => 'inline; filename="'.$filename.'"',
+            'ResponseCacheControl' => 'private, no-store, max-age=0',
         ]);
+
+        if ($request->query('as') === 'url') {
+            return $this->ok([
+                'url' => $url,
+                'expires_at' => $expires->toIso8601String(),
+                'pdf' => strtolower(pathinfo($path, PATHINFO_EXTENSION)) === 'pdf',
+            ])->withHeaders($noStore);
+        }
+
+        return redirect()->away($url)->withHeaders($noStore);
     }
 
     public function destroy(Company $company): JsonResponse
@@ -193,7 +220,7 @@ class CompanyController extends Controller
             app(BunnyStream::class)->deleteVideos($guids);
             $company->delete();
             if ($paths) {
-                Storage::disk(StudioApplication::DISK)->delete($paths);
+                Storage::disk(StudioApplication::disk())->delete($paths);
             }
         });
 

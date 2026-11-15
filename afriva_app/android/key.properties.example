@@ -1,0 +1,6 @@
+# Copy to android/key.properties (git-ignored) and fill in. Never commit the real file or the keystore.
+storePassword=CHANGE_ME
+keyPassword=CHANGE_ME
+keyAlias=upload
+# Absolute path to the upload keystore created with keytool (keep it outside the repo and back it up).
+storeFile=/Users/you/afriva-upload-keystore.jks

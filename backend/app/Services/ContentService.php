@@ -6,6 +6,7 @@ use App\Models\Drama;
 use App\Models\Episode;
 use App\Models\Tag;
 use App\Support\CatalogCache;
+use App\Support\MediaStorage;
 use App\Support\WebpImage;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -15,7 +16,8 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Create/update dramas & episodes (shared by Admin and Studio controllers), incl. file uploads to the public disk.
+ * Create/update dramas & episodes (shared by Admin and Studio controllers), incl. file uploads to the media disk
+ * (MEDIA_DISK: the local public disk by default, or the r2_public bucket).
  */
 class ContentService
 {
@@ -25,7 +27,7 @@ class ContentService
     protected const SMALL_IMAGE_DIRS = ['logos', 'avatars', 'payment-methods'];
 
     /**
-     * Stores a public upload. Images are converted to WebP (downscaled first) to save space and bandwidth;
+     * Stores a public upload on the media disk and returns its absolute URL. Images are converted to WebP (downscaled first) to save space and bandwidth;
      * if GD cannot do it the original file is stored. Videos and other files are stored unchanged.
      */
     public function storeFile(UploadedFile $file, string $dir): string
@@ -35,14 +37,14 @@ class ContentService
             $webp = WebpImage::encode($file, $w, $h);
             if ($webp !== null) {
                 $path = trim($dir, '/').'/'.Str::random(40).'.webp';
-                Storage::disk('public')->put($path, $webp, ['visibility' => 'public', 'ContentType' => 'image/webp']);
 
-                return Storage::disk('public')->url($path);
+                return MediaStorage::putPublic($path, $webp, 'image/webp');
             }
         }
-        $path = $file->store($dir, 'public');
+        $disk = MediaStorage::mediaDiskName();
+        $path = $file->store($dir, $disk);
 
-        return Storage::disk('public')->url($path);
+        return Storage::disk($disk)->url($path);
     }
 
     /** @return array{0:int,1:int} 720x1280 for portrait images, 1280x720 for landscape. */

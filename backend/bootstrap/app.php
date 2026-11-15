@@ -3,6 +3,7 @@
 use App\Exceptions\ApiException;
 use App\Http\Middleware\EnsureRole;
 use App\Http\Middleware\SetLocaleFromHeader;
+use App\Support\ErrorAlerter;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -32,6 +33,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectGuestsTo(fn (Request $request) => $request->is('api/*') ? null : '/');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // Optional email alert for unhandled errors (INFRA_ALERT_EMAIL), throttled per exception class.
+        // Logging is unchanged: this callback does not stop the default log reporting.
+        $exceptions->report(function (Throwable $e): void {
+            ErrorAlerter::report($e);
+        });
+
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );

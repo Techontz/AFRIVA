@@ -15,6 +15,11 @@ return [
 
     'name' => env('APP_NAME', 'Laravel'),
 
+    // Afriva: optional build identifiers shown by GET /api/v1/health (set by the deploy, never secrets).
+    'version' => env('APP_VERSION'),
+
+    'commit' => env('APP_COMMIT'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Environment

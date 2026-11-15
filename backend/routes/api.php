@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CatalogController;
 use App\Http\Controllers\Api\V1\CreatorApplicationController;
 use App\Http\Controllers\Api\V1\EpisodeController;
+use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\MeController;
 use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\SavedPaymentMethodController;
@@ -17,6 +18,9 @@ use Illuminate\Support\Facades\Route;
 | Afriva REST API v1 — see SPEC.md §6. All responses: { data, meta? }; errors: { message, code, errors? }.
 */
 Route::prefix('v1')->group(function () {
+
+    // ---- Health (public, no secrets): 200 when DB, cache, queue and storage pass, else 503. /up stays too. ----
+    Route::get('health', HealthController::class)->middleware('throttle:60,1');
 
     // ---- Auth -------------------------------------------------------------
     Route::post('auth/register', [AuthController::class, 'register'])->middleware('throttle:20,1');
@@ -34,7 +38,7 @@ Route::prefix('v1')->group(function () {
     Route::get('dramas/{slug}', [CatalogController::class, 'show']);
     Route::get('feed', [CatalogController::class, 'feed']);
     Route::get('plans', [CatalogController::class, 'plans']);
-        Route::get('payment-methods', [CatalogController::class, 'paymentMethods']);
+    Route::get('payment-methods', [CatalogController::class, 'paymentMethods']);
     Route::get('checkout/options', [SavedPaymentMethodController::class, 'options']);
     Route::get('episodes/{id}/play', [EpisodeController::class, 'play'])->whereNumber('id');
 
@@ -56,7 +60,7 @@ Route::prefix('v1')->group(function () {
         Route::get('payments/{reference}', [PaymentController::class, 'show']);
 
         Route::get('me/subscription', [MeController::class, 'subscription']);
-                Route::get('me/payments', [MeController::class, 'payments']);
+        Route::get('me/payments', [MeController::class, 'payments']);
         Route::get('me/payment-methods', [SavedPaymentMethodController::class, 'index']);
         Route::post('me/payment-methods', [SavedPaymentMethodController::class, 'store'])->middleware('throttle:20,1');
         Route::match(['put', 'patch'], 'me/payment-methods/{id}', [SavedPaymentMethodController::class, 'update'])->whereNumber('id');
@@ -73,6 +77,7 @@ Route::prefix('v1')->group(function () {
         // ---- Super admin ----
         Route::prefix('admin')->middleware('role:super_admin')->group(function () {
             Route::get('dashboard', Admin\DashboardController::class);
+            Route::get('infrastructure', Admin\InfrastructureController::class)->middleware('throttle:30,1');
 
             Route::get('companies/{company}/stats', [Admin\CompanyController::class, 'stats']);
             Route::get('companies/{company}/samples', [Admin\CompanyController::class, 'samples']);

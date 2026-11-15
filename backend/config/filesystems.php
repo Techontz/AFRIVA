@@ -60,7 +60,53 @@ return [
             'report' => false,
         ],
 
+        // Cloudflare R2 (S3 compatible). Only used when MEDIA_DISK / PRIVATE_DOCUMENTS_DISK select them.
+        // R2 has no object ACLs: public access comes from the bucket's custom domain (R2_PUBLIC_URL), so
+        // visibility is never sent and never read back (retain_visibility off).
+        'r2_public' => [
+            'driver' => 's3',
+            'key' => env('R2_ACCESS_KEY_ID'),
+            'secret' => env('R2_SECRET_ACCESS_KEY'),
+            'region' => 'auto',
+            'bucket' => env('R2_PUBLIC_BUCKET'),
+            'url' => env('R2_PUBLIC_URL'),
+            'endpoint' => env('R2_ENDPOINT'),
+            'use_path_style_endpoint' => true,
+            'retain_visibility' => false,
+            'request_checksum_calculation' => 'when_required',
+            'response_checksum_validation' => 'when_required',
+            'throw' => false,
+            'report' => false,
+        ],
+
+        // Private bucket for creator ID documents: no public URL, only short-lived signed URLs.
+        'r2_private' => [
+            'driver' => 's3',
+            'key' => env('R2_ACCESS_KEY_ID'),
+            'secret' => env('R2_SECRET_ACCESS_KEY'),
+            'region' => 'auto',
+            'bucket' => env('R2_PRIVATE_BUCKET'),
+            'endpoint' => env('R2_ENDPOINT'),
+            'use_path_style_endpoint' => true,
+            'retain_visibility' => false,
+            'request_checksum_calculation' => 'when_required',
+            'response_checksum_validation' => 'when_required',
+            'throw' => false,
+            'report' => false,
+        ],
+
     ],
+
+    /*
+    | Afriva: where uploads go. Defaults keep today's behaviour (local public disk for images, local private
+    | disk for ID documents). Production on R2: MEDIA_DISK=r2_public, PRIVATE_DOCUMENTS_DISK=r2_private.
+    */
+    'media_disk' => env('MEDIA_DISK', 'public'),
+
+    'private_documents_disk' => env('PRIVATE_DOCUMENTS_DISK', 'local'),
+
+    // Lifetime of signed URLs for private documents on a cloud disk.
+    'private_url_ttl_minutes' => (int) env('PRIVATE_DOCUMENT_URL_TTL_MINUTES', 10),
 
     /*
     |--------------------------------------------------------------------------

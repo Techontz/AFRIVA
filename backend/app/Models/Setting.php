@@ -20,7 +20,12 @@ class Setting extends Model
         'social_youtube' => '',
         'social_tiktok' => '',
         'social_instagram' => '',
+        // Monthly infrastructure budget in USD for the admin Infrastructure page and budget emails (empty = env).
+        'infra_monthly_budget_usd' => '',
     ];
+
+    /** Internal state rows that the admin settings form never shows or edits. */
+    public const HIDDEN_KEYS = ['infra_budget_alerts'];
 
     public const SOCIAL_KEYS = ['social_facebook', 'social_youtube', 'social_tiktok', 'social_instagram'];
 
@@ -55,6 +60,6 @@ class Setting extends Model
     /** @return array<string,mixed> */
     public static function allAsArray(): array
     {
-        return array_merge(self::DEFAULTS, static::pluck('value', 'key')->all());
+        return array_diff_key(array_merge(self::DEFAULTS, static::pluck('value', 'key')->all()), array_flip(self::HIDDEN_KEYS));
     }
 }

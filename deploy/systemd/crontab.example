@@ -1,0 +1,5 @@
+# Alternative to the systemd timers, if preferred (crontab -e as deploy for the backup, as root for Cloudflare).
+# deploy user:
+15 2 * * * /srv/afriva/repo/deploy/scripts/backup-db.sh --label nightly >> /srv/afriva/state/backup.log 2>&1
+# root:
+30 4 * * 1 /srv/afriva/repo/deploy/scripts/update-cloudflare-ips.sh >> /var/log/afriva-cloudflare-ips.log 2>&1

@@ -1,0 +1,151 @@
+# Afriva API production stack (one Hetzner server).
+#
+# Always run through the wrapper, which sets the image tag and the env file:
+#   /srv/afriva/repo/deploy/scripts/compose.sh ps
+#   /srv/afriva/repo/deploy/scripts/compose.sh logs -f worker
+#
+# Variables used here are read from /srv/afriva/shared/.env (passed with --env-file) and from
+# AFRIVA_IMAGE_TAG (set by deploy.sh / rollback.sh / compose.sh from /srv/afriva/state/current_tag).
+#
+# Network exposure: only php-fpm is published, and only on 127.0.0.1:9000 for the host Nginx.
+# MySQL and Redis have no published ports. Note that Docker bypasses UFW for published ports,
+# which is why every published port is bound to 127.0.0.1.
+
+name: afriva
+
+x-laravel: &laravel
+  image: afriva-api:${AFRIVA_IMAGE_TAG:?set AFRIVA_IMAGE_TAG (use deploy/scripts/compose.sh)}
+  restart: unless-stopped
+  environment:
+    # Real environment variables win over .env, so the health endpoint reports the running build.
+    APP_COMMIT: ${AFRIVA_IMAGE_TAG}
+  volumes:
+    - ${AFRIVA_ROOT:-/srv/afriva}/shared/.env:/var/www/html/.env:ro
+    - ${AFRIVA_ROOT:-/srv/afriva}/shared/storage:/var/www/html/storage
+  depends_on:
+    mysql:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "5"
+
+services:
+  app:
+    <<: *laravel
+    build:
+      context: ../backend
+      dockerfile: ../deploy/docker/php/Dockerfile
+      additional_contexts:
+        phpconf: ./docker/php
+      args:
+        APP_UID: ${AFRIVA_UID:-1000}
+        APP_GID: ${AFRIVA_GID:-1000}
+    command: ["php-fpm", "--nodaemonize"]
+    ports:
+      - "127.0.0.1:9000:9000"
+    healthcheck:
+      test: ["CMD-SHELL", "SCRIPT_NAME=/fpm-ping SCRIPT_FILENAME=/fpm-ping REQUEST_METHOD=GET cgi-fcgi -bind -connect 127.0.0.1:9000 | grep -q pong"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 2g
+
+  # No Horizon: a plain queue:work under the compose restart policy. --max-time makes the worker exit
+  # every hour (fresh memory, picks up nothing new since code only changes with a new image) and
+  # "restart: unless-stopped" starts it again. stop_grace_period lets a running job finish on deploy.
+  worker:
+    <<: *laravel
+    command: ["php", "artisan", "queue:work", "redis", "--sleep=3", "--tries=3", "--backoff=10", "--timeout=120", "--max-time=3600", "--max-jobs=1000"]
+    stop_grace_period: 130s
+    healthcheck:
+      test: ["CMD", "afriva-healthcheck", "worker"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+
+  # schedule:work runs schedule:run every minute (earnings:distribute, subscriptions:expire, bunny:sync).
+  # Only ONE scheduler may run: never scale this service.
+  scheduler:
+    <<: *laravel
+    command: ["php", "artisan", "schedule:work"]
+    stop_grace_period: 60s
+    healthcheck:
+      test: ["CMD", "afriva-healthcheck", "scheduler"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:?DB_DATABASE missing in .env}
+      MYSQL_USER: ${DB_USERNAME:?DB_USERNAME missing in .env}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD missing in .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD missing in .env}
+      TZ: UTC
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./docker/mysql/my.cnf:/etc/mysql/conf.d/afriva.cnf:ro
+    healthcheck:
+      test: ["CMD-SHELL", "MYSQL_PWD=\"$$MYSQL_ROOT_PASSWORD\" mysqladmin ping -h 127.0.0.1 -uroot --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 3g
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  redis:
+    image: redis:7.4-alpine
+    restart: unless-stopped
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD missing in .env}
+    command: ["sh", "-c", "exec redis-server /usr/local/etc/redis/redis.conf --requirepass \"$$REDIS_PASSWORD\""]
+    volumes:
+      - redis-data:/data
+      - ./docker/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    healthcheck:
+      test: ["CMD-SHELL", "REDISCLI_AUTH=\"$$REDIS_PASSWORD\" redis-cli ping | grep -q PONG"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 768m
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  mysql-data:
+  redis-data:

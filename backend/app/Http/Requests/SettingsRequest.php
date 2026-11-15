@@ -27,6 +27,8 @@ class SettingsRequest extends FormRequest
             'coin_value_tzs' => ['sometimes', 'numeric', 'min:0'],
             'creator_revenue_share_percent' => ['sometimes', 'numeric', 'min:0', 'max:100'],
             'settings.creator_revenue_share_percent' => ['sometimes', 'numeric', 'min:0', 'max:100'],
+            'infra_monthly_budget_usd' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:1000000'],
+            'settings.infra_monthly_budget_usd' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:1000000'],
         ];
     }
 }

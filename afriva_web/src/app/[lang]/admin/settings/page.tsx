@@ -13,7 +13,13 @@ import { api, errorMessage } from "@/lib/api";
 import { useApi } from "@/lib/hooks";
 import type { Settings } from "@/lib/types";
 
-type KnownKey = "platform_name" | "support_email" | "default_currency" | "coin_value_tzs" | "creator_revenue_share_percent";
+type KnownKey =
+  | "platform_name"
+  | "support_email"
+  | "default_currency"
+  | "coin_value_tzs"
+  | "creator_revenue_share_percent"
+  | "infra_monthly_budget_usd";
 
 const KNOWN: { key: KnownKey; type?: string }[] = [
   { key: "platform_name" },
@@ -21,6 +27,7 @@ const KNOWN: { key: KnownKey; type?: string }[] = [
   { key: "default_currency" },
   { key: "coin_value_tzs", type: "number" },
   { key: "creator_revenue_share_percent", type: "number" },
+  { key: "infra_monthly_budget_usd", type: "number" },
 ];
 
 const SOCIAL = ["social_facebook", "social_youtube", "social_tiktok", "social_instagram"] as const;
@@ -60,6 +67,7 @@ export default function SettingsPage() {
         payload.coin_value_tzs = Number(payload.coin_value_tzs);
       if (payload.creator_revenue_share_percent !== undefined && payload.creator_revenue_share_percent !== null && payload.creator_revenue_share_percent !== "")
         payload.creator_revenue_share_percent = Number(payload.creator_revenue_share_percent);
+      if (payload.infra_monthly_budget_usd === "") payload.infra_monthly_budget_usd = null;
       await api.put("/admin/settings", payload);
       toast.success(tr.saved);
       setDraft({});

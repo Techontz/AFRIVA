@@ -224,7 +224,7 @@ const user = {
     total: "{n} total",
     comingSoon: "Coming soon",
     comingSoonHint: "Episode {n} is still being prepared. Check back shortly.",
-    playbackError: "This video could not be played. Please try again.",
+    playbackError: "This video is temporarily unavailable. Please try again later.",
   },
   feed: {
     added: "Added to My List",

@@ -229,7 +229,7 @@ const user: typeof en = {
     total: "Jumla {n}",
     comingSoon: "Inakuja hivi karibuni",
     comingSoonHint: "Kipindi {n} bado kinaandaliwa. Rudi baadaye kidogo.",
-    playbackError: "Video hii imeshindwa kucheza. Tafadhali jaribu tena.",
+    playbackError: "Video hii haipatikani kwa sasa. Tafadhali jaribu tena baadaye.",
   },
   feed: {
     added: "Imeongezwa kwenye Orodha Yangu",

@@ -178,9 +178,14 @@ export function StreamVideo({ src, ref, onFatalError, quality, onQualities, onAc
           callbacks.current.onActiveQuality?.(l ? shortSide(l.width, l.height) : null);
         });
         let mediaRecoveries = 0;
+        let networkRetries = 0;
         instance.on(Hls.Events.ERROR, (_evt, data) => {
           if (!data.fatal) return;
-          if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+          // A 4xx from the video CDN (e.g. the stream is blocked or gone) will not fix itself: show the error
+          // right away instead of spinning. Other network failures get two retries.
+          const status = (data.response as { code?: number } | undefined)?.code ?? 0;
+          if (data.type === Hls.ErrorTypes.NETWORK_ERROR && status < 400 && networkRetries < 2) {
+            networkRetries++;
             instance.startLoad();
           } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR && mediaRecoveries < 2) {
             mediaRecoveries++;

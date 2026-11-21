@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
+import { useRouter } from "@/lib/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useT } from "@/i18n/client";
 import { stripLocale } from "@/i18n/config";

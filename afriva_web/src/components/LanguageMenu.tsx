@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/lib/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { LANG_COOKIE, LOCALES, LOCALE_LABELS, stripLocale, type Locale } from "@/i18n/config";
 import { useLocale, useT } from "@/i18n/client";

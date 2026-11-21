@@ -1,7 +1,8 @@
 "use client";
 
 import { stripLocale } from "@/i18n/config";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
+import { useRouter } from "@/lib/navigation";
 import { useEffect } from "react";
 import { homeForRole, useAuth } from "@/lib/auth";
 import type { Role } from "@/lib/types";

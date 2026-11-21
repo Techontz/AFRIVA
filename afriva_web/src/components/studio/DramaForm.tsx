@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/lib/navigation";
 import { useState, type FormEvent, type KeyboardEvent } from "react";
 import { toast } from "sonner";
 import { Card } from "@/components/portal/Kit";

@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { Providers } from "@/components/Providers";
+import { Suspense } from "react";
+import { NavProgress } from "@/components/ui/NavProgress";
 import { LOCALES } from "@/i18n/config";
 import { I18nProvider } from "@/i18n/client";
 import { getDict, getLocale } from "@/i18n/server";
@@ -50,6 +52,9 @@ export default async function RootLayout({ children }: LayoutProps<"/[lang]">) {
       </head>
       <body className="min-h-full flex flex-col bg-bg text-text">
         <I18nProvider locale={locale} messages={{ common: t.common, errors: t.errors }}>
+          <Suspense fallback={null}>
+            <NavProgress />
+          </Suspense>
           <Providers>{children}</Providers>
         </I18nProvider>
       </body>

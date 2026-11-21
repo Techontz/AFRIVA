@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/lib/navigation";
 import { createContext, useContext, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useT } from "@/i18n/client";

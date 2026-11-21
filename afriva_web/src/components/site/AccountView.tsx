@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { useRouter } from "@/lib/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useLocale, useT } from "@/i18n/client";
 import { fmt, plural } from "@/i18n/format";

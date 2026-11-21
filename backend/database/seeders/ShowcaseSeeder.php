@@ -91,7 +91,6 @@ class ShowcaseSeeder extends Seeder
         }
         $categories = Category::pluck('id', 'name');
 
-        $viewRows = [];
         foreach (self::catalogue() as $i => [$slug, $title, $cats, $tags, $badge, $featured, $epCount, $synopsis]) {
             $views = match ($badge) {
                 'hot' => mt_rand(1_200_000, 3_800_000),
@@ -115,7 +114,7 @@ class ShowcaseSeeder extends Seeder
                 'badge' => $badge,
                 'language' => 'sw',
                 'release_date' => $release->toDateString(),
-                'views' => $views,
+                'views' => 0, // real views only: counted from episode_views as people watch
             ]);
             $drama->categories()->sync(array_map(fn ($c) => $categories[$c], $cats));
             $drama->tags()->sync(Tag::idsFor($tags));
@@ -133,28 +132,13 @@ class ShowcaseSeeder extends Seeder
                     'thumbnail_url' => "{$base}/{$slug}.webp",
                     'duration_seconds' => mt_rand(80, 180),
                     'is_free' => null,
-                    'views' => (int) round($views * 0.18 * pow(0.955, $n - 1)),
+                    'views' => 0,
                     'created_at' => $release,
                     'updated_at' => $release,
                 ];
             }
             DB::table('episodes')->insert($episodes);
 
-            // A week of viewing activity so "Trending" has a ranking (hot titles watched most).
-            $firstEpisode = DB::table('episodes')->where('drama_id', $drama->id)->where('number', 1)->value('id');
-            $daily = match ($badge) {
-                'hot' => mt_rand(30, 60), 'vip' => mt_rand(18, 35), 'new' => mt_rand(12, 28), default => mt_rand(4, 15)
-            };
-            for ($d = 0; $d < 7; $d++) {
-                $day = $now->copy()->subDays($d);
-                for ($k = 0; $k < $daily; $k++) {
-                    $viewRows[] = ['episode_id' => $firstEpisode, 'drama_id' => $drama->id, 'company_id' => $company->id,
-                        'user_id' => null, 'viewed_on' => $day->toDateString(), 'created_at' => $day, 'updated_at' => $day];
-                }
-            }
-        }
-        foreach (array_chunk($viewRows, 500) as $chunk) {
-            DB::table('episode_views')->insert($chunk);
         }
 
         CatalogCache::flush();

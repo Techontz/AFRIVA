@@ -192,6 +192,16 @@ const site = {
       title: "Media & PR",
       body: ["For interviews, press assets and audience statistics, contact press@afriva.co.tz."],
     },
+    "delete-account": {
+      title: "Delete your Afriva account",
+      body: [
+        "You can delete your Afriva account and the personal data linked to it at any time.",
+        "In the app: open Profile, tap Settings, then Delete account and confirm. Your account is deleted straight away.",
+        "Without the app: email agm.msume@gmail.com from the email address or with the phone number on your account, with the subject \"Delete my Afriva account\". We delete it within 7 days and confirm by email.",
+        "What is deleted: your name, email address, phone number, profile picture, Google or Facebook sign-in link, My List, watch history, coins and saved payment methods. Active VIP passes and episode packs end.",
+        "What is kept: records of payments you made (amount, date and plan, without your name or contact details) are kept for up to 7 years because tax and accounting law requires it.",
+      ],
+    },
     "do-not-sell": {
       title: "Do Not Sell or Share My Info",
       body: [

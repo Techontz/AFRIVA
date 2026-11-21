@@ -212,6 +212,16 @@ const site: typeof en = {
       title: "Vyombo vya Habari",
       body: ["Kwa mahojiano, nyenzo za habari na takwimu za watazamaji, wasiliana na press@afriva.co.tz."],
     },
+    "delete-account": {
+      title: "Futa akaunti yako ya Afriva",
+      body: [
+        "Unaweza kufuta akaunti yako ya Afriva na taarifa binafsi zinazohusiana nayo wakati wowote.",
+        "Kwenye programu: fungua Wasifu, bonyeza Mipangilio, kisha Futa akaunti na uthibitishe. Akaunti inafutwa papo hapo.",
+        "Bila programu: tuma barua pepe kwa agm.msume@gmail.com kutoka kwenye barua pepe au ukitaja namba ya simu ya akaunti yako, kichwa \"Futa akaunti yangu ya Afriva\". Tutaifuta ndani ya siku 7 na kukuthibitishia.",
+        "Kinachofutwa: jina, barua pepe, namba ya simu, picha ya wasifu, muunganiko wa Google au Facebook, Orodha Yangu, historia ya kutazama, sarafu na njia za malipo zilizohifadhiwa. VIP na vifurushi vilivyo hai vinaisha.",
+        "Kinachobaki: kumbukumbu za malipo uliyofanya (kiasi, tarehe na kifurushi, bila jina wala mawasiliano yako) huhifadhiwa hadi miaka 7 kwa mujibu wa sheria za kodi na uhasibu.",
+      ],
+    },
     "do-not-sell": {
       title: "Usiuze wala Kushiriki Taarifa Zangu",
       body: [

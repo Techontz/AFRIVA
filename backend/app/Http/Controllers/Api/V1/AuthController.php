@@ -119,6 +119,41 @@ class AuthController extends Controller
         ]);
     }
 
+    /**
+     * DELETE /me: the viewer deletes their own account (Google Play requires this in the app).
+     * Personal data, sign-ins, favourites, history and saved payment methods are removed; payment
+     * records are kept without personal details because they are needed for accounting.
+     * Studio and admin accounts are closed by Afriva support instead.
+     */
+    public function destroy(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        if ($user->role !== User::ROLE_VIEWER) {
+            throw new ApiException(__('api.account_delete_contact'), 'account_delete_contact', 403);
+        }
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($user) {
+            $user->tokens()->delete();
+            foreach (['favorites', 'watch_histories', 'saved_payment_methods'] as $table) {
+                \Illuminate\Support\Facades\DB::table($table)->where('user_id', $user->id)->delete();
+            }
+            \Illuminate\Support\Facades\DB::table('payments')->where('user_id', $user->id)->update(['phone' => null]);
+            $user->forceFill([
+                'name' => 'Deleted user',
+                'email' => null,
+                'phone' => null,
+                'google_id' => null,
+                'facebook_id' => null,
+                'avatar_url' => null,
+                'password' => Hash::make(Str::random(48)),
+                'status' => 'deleted',
+                'coins' => 0,
+            ])->save();
+        });
+
+        return $this->ok(['deleted' => true]);
+    }
+
     protected function ensureCanSignIn(User $user): void
     {
         if ($user->status === 'rejected') {

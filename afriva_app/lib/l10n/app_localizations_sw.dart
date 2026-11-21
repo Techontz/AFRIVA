@@ -1622,4 +1622,27 @@ class AppLocalizationsSw extends AppLocalizations {
   @override
   String get playFailed =>
       'Malipo hayakufanikiwa. Hujakatwa pesa; tafadhali jaribu tena.';
+
+  @override
+  String get settingsAccount => 'Akaunti';
+
+  @override
+  String get deleteAccountTitle => 'Futa akaunti';
+
+  @override
+  String get deleteAccountSubtitle =>
+      'Ondoa akaunti yako na taarifa zako binafsi kabisa';
+
+  @override
+  String get deleteAccountConfirmTitle => 'Futa akaunti yako?';
+
+  @override
+  String get deleteAccountConfirmBody =>
+      'Hii itafuta kabisa akaunti yako ya Afriva: jina, barua pepe au simu, Orodha Yangu, historia ya kutazama, sarafu na njia za malipo zilizohifadhiwa. VIP na vifurushi vilivyo hai vitapotea. Huwezi kurudisha.';
+
+  @override
+  String get deleteAccountConfirm => 'Futa';
+
+  @override
+  String get deleteAccountDone => 'Akaunti yako imefutwa.';
 }

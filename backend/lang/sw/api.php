@@ -17,6 +17,7 @@ return [
     'invalid_credentials' => 'Taarifa hizi za kuingia hazilingani na kumbukumbu zetu.',
     'google_failed' => 'Kuingia kwa Google hakukuthibitishwa. Tafadhali jaribu tena.',
     'facebook_failed' => 'Kuingia kwa Facebook hakukuthibitishwa. Tafadhali jaribu tena.',
+    'account_delete_contact' => 'Ili kufunga akaunti ya studio au ya msimamizi, tafadhali wasiliana na huduma kwa wateja wa Afriva.',
     'play_purchase_invalid' => 'Hatukuweza kuthibitisha ununuzi huu wa Google Play. Kama umekatwa pesa, zitarudishwa wenyewe.',
     'account_suspended' => 'Akaunti yako imesimamishwa.',
     'account_pending' => 'Ombi lako la kupost linasubiri kukaguliwa. Utaweza kupost likishaidhinishwa.',

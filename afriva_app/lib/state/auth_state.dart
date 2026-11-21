@@ -111,6 +111,14 @@ class AuthState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Deletes the account on the server, then clears the local session.
+  Future<void> deleteAccount() async {
+    await service.deleteAccount();
+    await storage.clear();
+    api.token = null;
+    _setSignedOut();
+  }
+
   Future<void> logout() async {
     await service.logout();
     await storage.clear();

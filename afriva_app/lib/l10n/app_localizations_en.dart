@@ -1642,4 +1642,27 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get playFailed =>
       'The payment didn\'t go through. You have not been charged; please try again.';
+
+  @override
+  String get settingsAccount => 'Account';
+
+  @override
+  String get deleteAccountTitle => 'Delete account';
+
+  @override
+  String get deleteAccountSubtitle =>
+      'Permanently remove your account and personal data';
+
+  @override
+  String get deleteAccountConfirmTitle => 'Delete your account?';
+
+  @override
+  String get deleteAccountConfirmBody =>
+      'This permanently deletes your Afriva account: your name, email or phone, My List, watch history, coins and saved payment methods. Active VIP passes and episode packs are lost. This cannot be undone.';
+
+  @override
+  String get deleteAccountConfirm => 'Delete';
+
+  @override
+  String get deleteAccountDone => 'Your account has been deleted.';
 }

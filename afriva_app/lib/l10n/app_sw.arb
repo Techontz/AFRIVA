@@ -450,5 +450,12 @@
   "playSuccess": "Malipo yamefanikiwa. Kifurushi chako kiko hai, furahia Afriva!",
   "playPending": "Malipo yako yanashughulikiwa na Google Play. Kifurushi kitaanza mara yakithibitishwa.",
   "playUnavailable": "Kifurushi hiki hakipatikani Google Play kwa sasa. Tafadhali jaribu tena baadaye.",
-  "playFailed": "Malipo hayakufanikiwa. Hujakatwa pesa; tafadhali jaribu tena."
+  "playFailed": "Malipo hayakufanikiwa. Hujakatwa pesa; tafadhali jaribu tena.",
+  "settingsAccount": "Akaunti",
+  "deleteAccountTitle": "Futa akaunti",
+  "deleteAccountSubtitle": "Ondoa akaunti yako na taarifa zako binafsi kabisa",
+  "deleteAccountConfirmTitle": "Futa akaunti yako?",
+  "deleteAccountConfirmBody": "Hii itafuta kabisa akaunti yako ya Afriva: jina, barua pepe au simu, Orodha Yangu, historia ya kutazama, sarafu na njia za malipo zilizohifadhiwa. VIP na vifurushi vilivyo hai vitapotea. Huwezi kurudisha.",
+  "deleteAccountConfirm": "Futa",
+  "deleteAccountDone": "Akaunti yako imefutwa."
 }

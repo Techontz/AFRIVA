@@ -928,5 +928,12 @@
   "playSuccess": "Payment successful. Your plan is active, enjoy Afriva!",
   "playPending": "Your payment is being processed by Google Play. Your plan will start as soon as it is confirmed.",
   "playUnavailable": "This plan isn't available on Google Play right now. Please try again later.",
-  "playFailed": "The payment didn't go through. You have not been charged; please try again."
+  "playFailed": "The payment didn't go through. You have not been charged; please try again.",
+  "settingsAccount": "Account",
+  "deleteAccountTitle": "Delete account",
+  "deleteAccountSubtitle": "Permanently remove your account and personal data",
+  "deleteAccountConfirmTitle": "Delete your account?",
+  "deleteAccountConfirmBody": "This permanently deletes your Afriva account: your name, email or phone, My List, watch history, coins and saved payment methods. Active VIP passes and episode packs are lost. This cannot be undone.",
+  "deleteAccountConfirm": "Delete",
+  "deleteAccountDone": "Your account has been deleted."
 }

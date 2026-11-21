@@ -70,6 +70,10 @@ class AuthService {
 
   void forgetUser() => DiskCache.remove(_userKey);
 
+  Future<void> deleteAccount() async {
+    await _api.deleteJson('/me');
+  }
+
   Future<void> logout() async {
     try {
       await _api.post('/auth/logout');

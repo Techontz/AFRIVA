@@ -59,6 +59,7 @@ Route::prefix('v1')->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('auth/logout', [AuthController::class, 'logout']);
         Route::get('auth/me', [AuthController::class, 'me']);
+        Route::delete('me', [AuthController::class, 'destroy'])->middleware('throttle:5,1');
 
         Route::post('episodes/{id}/unlock', [EpisodeController::class, 'unlock'])->whereNumber('id');
         Route::post('episodes/{id}/progress', [EpisodeController::class, 'progress'])->whereNumber('id');

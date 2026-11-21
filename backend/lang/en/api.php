@@ -17,6 +17,7 @@ return [
     'invalid_credentials' => 'These credentials do not match our records.',
     'google_failed' => 'Google sign-in could not be verified. Please try again.',
     'facebook_failed' => 'Facebook sign-in could not be verified. Please try again.',
+    'account_delete_contact' => 'To close a studio or admin account, please contact Afriva support.',
     'play_purchase_invalid' => 'We could not confirm this Google Play purchase. If you were charged, it will be refunded automatically.',
     'account_suspended' => 'Your account is suspended.',
     'account_pending' => 'Your request to post is waiting for review. You can post once it is approved.',

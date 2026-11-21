@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/api_client.dart';
 import '../../core/config.dart';
 import '../../core/haptics.dart';
 import '../../core/theme.dart';
@@ -135,6 +136,15 @@ class SettingsScreen extends StatelessWidget {
               subtitle: Text(AppConfig.apiUrl, style: text.labelSmall),
             ),
           ]),
+          if (loggedIn)
+            _Group(title: l.settingsAccount, children: [
+              ListTile(
+                leading: const Icon(Icons.delete_forever_outlined, color: AppColors.danger),
+                title: Text(l.deleteAccountTitle, style: text.titleSmall!.copyWith(color: AppColors.danger)),
+                subtitle: Text(l.deleteAccountSubtitle, style: text.labelSmall),
+                onTap: () => _deleteAccount(context),
+              ),
+            ]),
           const SizedBox(height: 24),
           const Center(child: AfrivaLogo(size: 18)),
           const SizedBox(height: 8),
@@ -142,6 +152,35 @@ class SettingsScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  /// Google Play requires account deletion inside the app.
+  static Future<void> _deleteAccount(BuildContext context) async {
+    final l = context.l10n;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l.deleteAccountConfirmTitle),
+        content: Text(l.deleteAccountConfirmBody),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l.actionCancel)),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l.deleteAccountConfirm, style: const TextStyle(color: AppColors.danger)),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !context.mounted) return;
+    try {
+      await context.read<AuthState>().deleteAccount();
+      Haptics.success();
+      if (!context.mounted) return;
+      showSnack(context, l.deleteAccountDone);
+      context.go('/home');
+    } catch (e) {
+      if (context.mounted) showSnack(context, errorMessage(e));
+    }
   }
 
   static void _info(BuildContext context, String title, String body) {

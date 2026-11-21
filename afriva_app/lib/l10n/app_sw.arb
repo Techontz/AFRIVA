@@ -444,5 +444,11 @@
   "facebookSignInUnavailable": "Kuingia kwa Facebook hakupatikani kwenye kifaa hiki kwa sasa. Tumia Google au namba yako ya simu.",
   "actionContinueWithPhone": "Endelea kwa namba ya simu",
   "registerWithEmail": "Jisajili kwa barua pepe badala yake",
-  "registerWithPhone": "Jisajili kwa namba ya simu badala yake"
+  "registerWithPhone": "Jisajili kwa namba ya simu badala yake",
+  "vipPlayNote": "Lipa kwa usalama kupitia Google Play. Chagua kifurushi na ubonyeze Endelea: Google Play itaonyesha bei na kukuruhusu kulipa kwa kadi au salio la simu panapowezekana. Kifurushi chako kinaanza mara tu malipo yakikamilika. Hakuna kinachojirudia chenyewe.",
+  "playOpening": "Tunafungua Google Play…",
+  "playSuccess": "Malipo yamefanikiwa. Kifurushi chako kiko hai, furahia Afriva!",
+  "playPending": "Malipo yako yanashughulikiwa na Google Play. Kifurushi kitaanza mara yakithibitishwa.",
+  "playUnavailable": "Kifurushi hiki hakipatikani Google Play kwa sasa. Tafadhali jaribu tena baadaye.",
+  "playFailed": "Malipo hayakufanikiwa. Hujakatwa pesa; tafadhali jaribu tena."
 }

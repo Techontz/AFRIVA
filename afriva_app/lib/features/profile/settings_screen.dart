@@ -39,6 +39,8 @@ class SettingsScreen extends StatelessWidget {
           ]),
           if (loggedIn)
             _Group(title: l.settingsPayments, children: [
+              // Play Store build pays through Google Play: no saved mobile money or cards.
+              if (!AppConfig.isPlayStore)
               ListTile(
                 leading: const Icon(Icons.account_balance_wallet_outlined),
                 title: Text(l.paymentMethodsTitle, style: text.titleSmall),

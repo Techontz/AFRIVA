@@ -52,6 +52,12 @@ return [
         'app_secret' => env('FACEBOOK_APP_SECRET'),
     ],
 
+    // Google Play Billing (Play Store build): package name and a service account JSON (path or raw JSON).
+    'google_play' => [
+        'package' => env('GOOGLE_PLAY_PACKAGE', 'com.afriva.afriva_app'),
+        'service_account' => env('GOOGLE_PLAY_SERVICE_ACCOUNT'),
+    ],
+
     'bunny' => [
         'library_id' => env('BUNNY_STREAM_LIBRARY_ID'),
         'api_key' => env('BUNNY_STREAM_API_KEY'),

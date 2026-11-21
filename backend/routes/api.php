@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CatalogController;
 use App\Http\Controllers\Api\V1\CreatorApplicationController;
 use App\Http\Controllers\Api\V1\EpisodeController;
+use App\Http\Controllers\Api\V1\GooglePlayController;
 use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\MeController;
 use App\Http\Controllers\Api\V1\PaymentController;
@@ -63,6 +64,7 @@ Route::prefix('v1')->group(function () {
         Route::post('episodes/{id}/progress', [EpisodeController::class, 'progress'])->whereNumber('id');
 
         Route::post('checkout', [PaymentController::class, 'checkout']);
+        Route::post('payments/google-play', [GooglePlayController::class, 'store'])->middleware('throttle:30,1');
         Route::get('payments/{reference}', [PaymentController::class, 'show']);
 
         Route::get('me/subscription', [MeController::class, 'subscription']);

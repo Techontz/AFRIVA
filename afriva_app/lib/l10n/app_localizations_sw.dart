@@ -1599,4 +1599,27 @@ class AppLocalizationsSw extends AppLocalizations {
 
   @override
   String get registerWithPhone => 'Jisajili kwa namba ya simu badala yake';
+
+  @override
+  String get vipPlayNote =>
+      'Lipa kwa usalama kupitia Google Play. Chagua kifurushi na ubonyeze Endelea: Google Play itaonyesha bei na kukuruhusu kulipa kwa kadi au salio la simu panapowezekana. Kifurushi chako kinaanza mara tu malipo yakikamilika. Hakuna kinachojirudia chenyewe.';
+
+  @override
+  String get playOpening => 'Tunafungua Google Play…';
+
+  @override
+  String get playSuccess =>
+      'Malipo yamefanikiwa. Kifurushi chako kiko hai, furahia Afriva!';
+
+  @override
+  String get playPending =>
+      'Malipo yako yanashughulikiwa na Google Play. Kifurushi kitaanza mara yakithibitishwa.';
+
+  @override
+  String get playUnavailable =>
+      'Kifurushi hiki hakipatikani Google Play kwa sasa. Tafadhali jaribu tena baadaye.';
+
+  @override
+  String get playFailed =>
+      'Malipo hayakufanikiwa. Hujakatwa pesa; tafadhali jaribu tena.';
 }

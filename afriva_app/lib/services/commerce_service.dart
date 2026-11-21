@@ -31,6 +31,15 @@ class CommerceService {
   Future<CheckoutResult> payWithSaved({required int planId, required int savedMethodId}) =>
       _checkout({'plan_id': planId, 'saved_method_id': savedMethodId});
 
+  /// Google Play: the server checks the purchase token with Google, then activates the plan.
+  Future<Payment> verifyPlayPurchase({required String productId, required String purchaseToken}) async {
+    final data = asMap(await _api.post('/payments/google-play', body: {
+      'product_id': productId,
+      'purchase_token': purchaseToken,
+    }));
+    return Payment.fromJson(data['payment'] is Map ? asMap(data['payment']) : data);
+  }
+
   Future<CheckoutResult> _checkout(Map<String, dynamic> body) async =>
       CheckoutResult.fromJson(asMap(await _api.post('/checkout', body: body)));
 

@@ -11,7 +11,7 @@ class Plan extends Model
 
     protected $fillable = [
         'name', 'type', 'price', 'currency', 'duration_days', 'episode_quota', 'coins', 'bonus_coins',
-        'description', 'features', 'is_popular', 'is_active', 'sort_order',
+        'description', 'features', 'is_popular', 'is_active', 'sort_order', 'play_product_id',
     ];
 
     protected function casts(): array

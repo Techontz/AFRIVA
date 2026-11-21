@@ -2,6 +2,7 @@ import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/config.dart';
 import '../../core/format.dart';
 import '../../core/haptics.dart';
 import '../../core/theme.dart';
@@ -52,6 +53,8 @@ class ProfileScreen extends StatelessWidget {
             _MenuGroup(items: [
               _MenuItem(Icons.history_rounded, l.watchHistoryTitle, () => _gated(context, '/history')),
               _MenuItem(Icons.bookmark_border_rounded, l.navMyList, () => context.go('/mylist')),
+              // Play Store build pays through Google Play: no saved mobile money or cards.
+              if (!AppConfig.isPlayStore)
               _MenuItem(Icons.account_balance_wallet_outlined, l.paymentMethodsTitle, () => _gated(context, '/payment-methods')),
               _MenuItem(Icons.receipt_long_outlined, l.paymentHistoryTitle, () => _gated(context, '/payments')),
             ]),

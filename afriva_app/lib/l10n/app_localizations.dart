@@ -2767,6 +2767,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sign up with phone number instead'**
   String get registerWithPhone;
+
+  /// No description provided for @vipPlayNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay safely with Google Play. Pick a plan and tap Continue: Google Play shows the price and lets you pay with a card or your mobile balance where available. Your plan starts as soon as the payment goes through. Nothing renews automatically.'**
+  String get vipPlayNote;
+
+  /// No description provided for @playOpening.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening Google Play…'**
+  String get playOpening;
+
+  /// No description provided for @playSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment successful. Your plan is active, enjoy Afriva!'**
+  String get playSuccess;
+
+  /// No description provided for @playPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Your payment is being processed by Google Play. Your plan will start as soon as it is confirmed.'**
+  String get playPending;
+
+  /// No description provided for @playUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This plan isn\'t available on Google Play right now. Please try again later.'**
+  String get playUnavailable;
+
+  /// No description provided for @playFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The payment didn\'t go through. You have not been charged; please try again.'**
+  String get playFailed;
 }
 
 class _AppLocalizationsDelegate

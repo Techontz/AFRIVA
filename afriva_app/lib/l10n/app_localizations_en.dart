@@ -1619,4 +1619,27 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get registerWithPhone => 'Sign up with phone number instead';
+
+  @override
+  String get vipPlayNote =>
+      'Pay safely with Google Play. Pick a plan and tap Continue: Google Play shows the price and lets you pay with a card or your mobile balance where available. Your plan starts as soon as the payment goes through. Nothing renews automatically.';
+
+  @override
+  String get playOpening => 'Opening Google Play…';
+
+  @override
+  String get playSuccess =>
+      'Payment successful. Your plan is active, enjoy Afriva!';
+
+  @override
+  String get playPending =>
+      'Your payment is being processed by Google Play. Your plan will start as soon as it is confirmed.';
+
+  @override
+  String get playUnavailable =>
+      'This plan isn\'t available on Google Play right now. Please try again later.';
+
+  @override
+  String get playFailed =>
+      'The payment didn\'t go through. You have not been charged; please try again.';
 }

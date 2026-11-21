@@ -113,7 +113,7 @@ class AdminStudioTest extends ApiTestCase
             ->assertJsonCount(30, 'data.revenue_chart');
 
         $this->withToken($token)->getJson('/api/v1/admin/users?role=company')->assertOk()->assertJsonPath('meta.total', 1);
-        $this->withToken($token)->getJson('/api/v1/admin/payment-methods')->assertOk()->assertJsonCount(11, 'data');
+        $this->withToken($token)->getJson('/api/v1/admin/payment-methods')->assertOk()->assertJsonCount(12, 'data');
         $this->withToken($token)->putJson('/api/v1/admin/payment-methods/1', ['is_enabled' => false])->assertOk()->assertJsonPath('data.is_enabled', false);
         $this->getJson('/api/v1/payment-methods')->assertJsonCount(10, 'data');
         $this->withToken($token)->getJson("/api/v1/admin/companies/{$this->company->id}/stats")->assertOk()->assertJsonStructure(['data' => ['views', 'earnings', 'views_chart']]);

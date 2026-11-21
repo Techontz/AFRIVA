@@ -69,6 +69,11 @@ class AppConfig {
   /// While the app id is empty the "Continue with Facebook" button is hidden.
   static const String facebookAppId = String.fromEnvironment('FACEBOOK_APP_ID');
 
+  /// Store build: `--dart-define=STORE=play` for Google Play. Purchases then go
+  /// through Google Play Billing (Play policy); other builds use mobile money / card.
+  static const String store = String.fromEnvironment('STORE');
+  static bool get isPlayStore => store == 'play';
+
   static const Duration connectTimeout = Duration(seconds: 10);
   static const Duration receiveTimeout = Duration(seconds: 20);
   static const Duration paymentPollInterval = Duration(seconds: 3);

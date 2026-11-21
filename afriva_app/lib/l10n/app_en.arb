@@ -922,5 +922,11 @@
   "facebookSignInUnavailable": "Facebook sign-in isn't available on this device right now. Use Google or your phone number instead.",
   "actionContinueWithPhone": "Continue with phone number",
   "registerWithEmail": "Sign up with email instead",
-  "registerWithPhone": "Sign up with phone number instead"
+  "registerWithPhone": "Sign up with phone number instead",
+  "vipPlayNote": "Pay safely with Google Play. Pick a plan and tap Continue: Google Play shows the price and lets you pay with a card or your mobile balance where available. Your plan starts as soon as the payment goes through. Nothing renews automatically.",
+  "playOpening": "Opening Google Play…",
+  "playSuccess": "Payment successful. Your plan is active, enjoy Afriva!",
+  "playPending": "Your payment is being processed by Google Play. Your plan will start as soon as it is confirmed.",
+  "playUnavailable": "This plan isn't available on Google Play right now. Please try again later.",
+  "playFailed": "The payment didn't go through. You have not been charged; please try again."
 }

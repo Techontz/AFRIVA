@@ -3,12 +3,14 @@ import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/auth_guard.dart';
+import '../../core/config.dart';
 import '../../core/format.dart';
 import '../../core/haptics.dart';
 import '../../core/theme.dart';
 import '../../l10n/l10n.dart';
 import '../../models/commerce.dart';
 import '../../services/commerce_service.dart';
+import '../../services/play_billing.dart';
 import '../../state/auth_state.dart';
 import '../../widgets/badges.dart';
 import '../../widgets/buttons.dart';
@@ -42,7 +44,9 @@ class _VipScreenState extends State<VipScreen> {
   Future<void> _load() async {
     setState(() => _error = null);
     try {
-      final plans = await context.read<CommerceService>().plans();
+      var plans = await context.read<CommerceService>().plans();
+      // Play Store build: only what is sold through Google Play.
+      if (AppConfig.isPlayStore) plans = plans.where((p) => p.playProductId != null).toList();
       if (!mounted) return;
       setState(() {
         _plans = plans;
@@ -78,12 +82,80 @@ class _VipScreenState extends State<VipScreen> {
     if (plan == null) return;
     if (!await requireLogin(context)) return;
     if (!mounted) return;
+    if (AppConfig.isPlayStore) return _buyOnPlay(plan);
     final paid = await Navigator.of(context, rootNavigator: true).push<bool>(
       MaterialPageRoute(builder: (_) => CheckoutScreen(plan: plan)),
     );
     if (paid == true && mounted) {
       context.read<AuthState>().refresh();
       if (context.canPop()) context.pop(true);
+    }
+  }
+
+  /// Google Play Billing: opens Play's payment sheet and waits for the verified result.
+  Future<void> _buyOnPlay(Plan plan) async {
+    final l = context.l10n;
+    final billing = context.read<PlayBilling>();
+    final id = plan.playProductId!;
+    final nav = Navigator.of(context, rootNavigator: true);
+    var dialogOpen = true;
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      useRootNavigator: true,
+      builder: (_) => PopScope(
+        canPop: false,
+        child: AlertDialog(
+          content: Row(children: [
+            const SizedBox.square(dimension: 22, child: CircularProgressIndicator(strokeWidth: 2.4)),
+            const SizedBox(width: 16),
+            Expanded(child: Text(l.playOpening)),
+          ]),
+        ),
+      ),
+    ).then((_) => dialogOpen = false);
+    void closeDialog() {
+      if (dialogOpen) nav.pop();
+      dialogOpen = false;
+    }
+
+    try {
+      final product = (await billing.products({id}))[id];
+      if (product == null) {
+        closeDialog();
+        if (mounted) showSnack(context, l.playUnavailable);
+        return;
+      }
+      final result = billing.events.firstWhere((e) => e.productId == id);
+      if (!await billing.buy(product)) {
+        closeDialog();
+        return;
+      }
+      final event = await result.timeout(const Duration(minutes: 10));
+      closeDialog();
+      if (!mounted) return;
+      switch (event.outcome) {
+        case PlayPurchaseOutcome.success:
+          Haptics.success();
+          await showDialog<void>(
+            context: context,
+            builder: (c) => AlertDialog(
+              icon: const Icon(Icons.check_circle_rounded, color: AppColors.primary, size: 40),
+              content: Text(l.playSuccess, textAlign: TextAlign.center),
+              actions: [TextButton(onPressed: () => Navigator.pop(c), child: Text(l.actionContinue))],
+            ),
+          );
+          if (mounted && context.canPop()) context.pop(true);
+        case PlayPurchaseOutcome.pending:
+          showSnack(context, l.playPending);
+        case PlayPurchaseOutcome.cancelled:
+          break;
+        case PlayPurchaseOutcome.failed:
+          showSnack(context, event.message?.isNotEmpty == true ? event.message! : l.playFailed);
+      }
+    } catch (_) {
+      closeDialog();
+      if (mounted) showSnack(context, l.playFailed);
     }
   }
 
@@ -113,7 +185,7 @@ class _VipScreenState extends State<VipScreen> {
                     StateMessage(icon: Icons.storefront_outlined, title: l.vipNoPlans),
                   const SizedBox(height: 16),
                   Text(
-                    l.vipPaymentsNote,
+                    AppConfig.isPlayStore ? l.vipPlayNote : l.vipPaymentsNote,
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.labelSmall,
                   ),

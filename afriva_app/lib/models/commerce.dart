@@ -15,6 +15,7 @@ class Plan {
     this.description = '',
     this.features = const [],
     this.isPopular = false,
+    this.playProductId,
   });
 
   final int id;
@@ -31,6 +32,9 @@ class Plan {
   final String description;
   final List<String> features;
   final bool isPopular;
+
+  /// Google Play product id (Play Store build); null when not sold on Play.
+  final String? playProductId;
 
   /// How much this subscription saves against buying the next shorter one
   /// repeatedly (monthly vs 4 weeks, yearly vs 12 months). Null when none.
@@ -77,6 +81,7 @@ class Plan {
         description: asString(j['description']),
         features: asStringList(j['features']),
         isPopular: asBool(j['is_popular']),
+        playProductId: (j['play_product_id'] as String?)?.trim().isEmpty ?? true ? null : (j['play_product_id'] as String).trim(),
       );
 }
 

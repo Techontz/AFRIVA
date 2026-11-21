@@ -26,6 +26,7 @@ class PlanResource extends JsonResource
             'is_popular' => (bool) $this->is_popular,
             'is_active' => (bool) $this->is_active,
             'sort_order' => (int) $this->sort_order,
+            'play_product_id' => $this->play_product_id,
         ];
     }
 }

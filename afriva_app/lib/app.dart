@@ -13,6 +13,7 @@ import 'services/commerce_service.dart';
 import 'services/facebook_auth.dart';
 import 'services/google_auth.dart';
 import 'services/me_service.dart';
+import 'services/play_billing.dart';
 import 'services/player_service.dart';
 import 'services/studio_service.dart';
 import 'services/token_storage.dart';
@@ -100,6 +101,14 @@ class _AfrivaAppState extends State<AfrivaApp> {
           ),
         ),
         ChangeNotifierProvider(create: (c) => FavoritesState(c.read<MeService>())),
+        // Google Play Billing (Play Store build only); finishes purchases left from earlier sessions.
+        Provider<PlayBilling>(
+          lazy: false,
+          create: (c) => PlayBilling(c.read<CommerceService>())
+            ..onEntitlementChanged = (() => c.read<AuthState>().refresh())
+            ..start(),
+          dispose: (_, b) => b.dispose(),
+        ),
         ChangeNotifierProvider(create: (_) => widget.settings ?? (SettingsState()..load())),
       ],
       child: Selector<SettingsState, (String, ThemeMode)>(

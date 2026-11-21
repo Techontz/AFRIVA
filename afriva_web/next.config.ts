@@ -26,6 +26,8 @@ if (apiUrl) {
 const nextConfig: NextConfig = {
   // Self-contained server.js bundle for Node hosting (cPanel/DirectAdmin "Setup Node.js App").
   output: "standalone",
+  // Server-only: where server components read public catalogue data (a CDN in front of the API). Inlined at build.
+  env: { API_CDN_URL: process.env.API_CDN_URL ?? "" },
   // Optional CDN pull zone in front of this site (e.g. https://afriva-web.b-cdn.net) for /_next/static and /brand.
   assetPrefix: process.env.NEXT_PUBLIC_ASSET_PREFIX || undefined,
   cacheComponents: true,

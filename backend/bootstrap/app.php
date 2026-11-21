@@ -23,7 +23,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->alias([
+                $middleware->alias([
+            'public.cache' => \App\Http\Middleware\PublicCache::class,
             'role' => EnsureRole::class,
         ]);
         // Locale first so that every API message (including 429s from the throttle) is localized.

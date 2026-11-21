@@ -30,16 +30,19 @@ Route::prefix('v1')->group(function () {
     Route::get('creator-guidelines', [StudioApplicationController::class, 'guidelines']);
 
     // ---- Public catalogue (auth optional: token, if sent, personalises is_favorite / is_unlocked) ----
-    Route::get('home', [CatalogController::class, 'home']);
-    Route::get('categories', [CatalogController::class, 'categories']);
-    Route::get('site-info', [CatalogController::class, 'siteInfo']);
-    Route::get('dramas', [CatalogController::class, 'dramas']);
-    Route::get('dramas/rankings', [CatalogController::class, 'rankings']);
-    Route::get('dramas/{slug}', [CatalogController::class, 'show']);
-    Route::get('feed', [CatalogController::class, 'feed']);
-    Route::get('plans', [CatalogController::class, 'plans']);
-    Route::get('payment-methods', [CatalogController::class, 'paymentMethods']);
-    Route::get('checkout/options', [SavedPaymentMethodController::class, 'options']);
+        // Anonymous answers may be cached for 60 s by the CDN and browsers (see PublicCache).
+    Route::middleware('public.cache:60')->group(function () {
+        Route::get('home', [CatalogController::class, 'home']);
+        Route::get('categories', [CatalogController::class, 'categories']);
+        Route::get('site-info', [CatalogController::class, 'siteInfo']);
+        Route::get('dramas', [CatalogController::class, 'dramas']);
+        Route::get('dramas/rankings', [CatalogController::class, 'rankings']);
+        Route::get('dramas/{slug}', [CatalogController::class, 'show']);
+        Route::get('feed', [CatalogController::class, 'feed']);
+        Route::get('plans', [CatalogController::class, 'plans']);
+        Route::get('payment-methods', [CatalogController::class, 'paymentMethods']);
+        Route::get('checkout/options', [SavedPaymentMethodController::class, 'options']);
+    });
     Route::get('episodes/{id}/play', [EpisodeController::class, 'play'])->whereNumber('id');
 
     // ---- Payment provider webhooks (public) ----

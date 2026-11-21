@@ -6,6 +6,16 @@ import type { PageMeta } from "./types";
 type Query = Record<string, string | number | undefined | null>;
 
 /**
+ * Public catalogue reads go through the CDN when API_CDN_URL is set (the API marks anonymous answers cacheable
+ * for 60 s). The language travels in the URL (?lang=) so each language is cached separately.
+ */
+const READ_BASE = (process.env.API_CDN_URL || "").replace(/\/$/, "") || API_URL;
+
+function readUrl(path: string, locale: string, query?: Query): string {
+  return `${READ_BASE}${path}${buildQuery({ ...query, lang: locale })}`;
+}
+
+/**
  * Server-side fetch of public API data.
  *
  * - Defers to request time (`connection()`), so pages never bake an
@@ -20,7 +30,7 @@ async function fetchEnvelope<T>(path: string, query?: Query, revalidate = 60): P
   await connection();
   const locale = await getLocale();
   try {
-    const res = await fetch(`${API_URL}${path}${buildQuery(query)}`, {
+    const res = await fetch(readUrl(path, locale, query), {
       headers: { Accept: "application/json", "Accept-Language": locale },
       next: { revalidate },
       signal: AbortSignal.timeout(8000),
@@ -55,7 +65,7 @@ export async function serverGetWithStatus<T>(
   await connection();
   const locale = await getLocale();
   try {
-    const res = await fetch(`${API_URL}${path}${buildQuery(query)}`, {
+    const res = await fetch(readUrl(path, locale, query), {
       headers: { Accept: "application/json", "Accept-Language": locale },
       next: { revalidate },
       signal: AbortSignal.timeout(8000),

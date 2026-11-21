@@ -50,6 +50,7 @@ dependencies:
   material_ui: ^1.8.0
   url_launcher: ^6.3.2
   google_sign_in: ^7.2.0
+  flutter_facebook_auth: ^7.3.3
 
 dev_dependencies:
   flutter_test:
@@ -69,6 +70,8 @@ flutter_launcher_icons:
   image_path: assets_src/icon-1024.png
   adaptive_icon_background: "#E90204"
   adaptive_icon_foreground: assets_src/icon-foreground.png
+  # The wordmark already sits inside the safe zone, so no extra inset (keeps it large).
+  adaptive_icon_foreground_inset: 0
   remove_alpha_ios: true
 
 # For information on the generic Dart part of this file, see the

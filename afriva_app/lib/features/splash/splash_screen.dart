@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/theme.dart';
 import '../../l10n/l10n.dart';
+import '../../services/catalog_service.dart';
 import '../../state/auth_state.dart';
 import '../../state/favorites_state.dart';
 import '../../widgets/afriva_logo.dart';
@@ -18,7 +19,7 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
   late final AnimationController _c = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 1100),
+    duration: const Duration(milliseconds: 500),
   )..forward();
 
   @override
@@ -30,9 +31,14 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   Future<void> _boot() async {
     final auth = context.read<AuthState>();
     final favs = context.read<FavoritesState>();
+    final catalog = context.read<CatalogService>();
+    // Start the home feed now; Home shows the copy saved on the device until it lands.
+    catalog.prefetchHome();
+    // A saved session starts instantly (profile refreshes in the background);
+    // only a first sign-in check on this device waits for the API, briefly.
     await Future.wait([
-      auth.bootstrap().timeout(const Duration(seconds: 5), onTimeout: () {}),
-      Future<void>.delayed(const Duration(milliseconds: 900)),
+      auth.bootstrap().timeout(const Duration(seconds: 3), onTimeout: () {}),
+      Future<void>.delayed(const Duration(milliseconds: 350)),
     ]);
     // Favorites load in the background; cards fall back to the API's
     // is_favorite flag until then.

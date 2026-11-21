@@ -34,6 +34,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    _categories = context.read<CatalogService>().cachedCategories() ?? _categories;
     _loadCategories();
   }
 
@@ -176,6 +177,8 @@ class _PopularTabState extends State<_PopularTab> with AutomaticKeepAliveClientM
   @override
   void initState() {
     super.initState();
+    // Paint the last saved home instantly, then refresh it from the API.
+    _data = context.read<CatalogService>().cachedHome();
     _load();
   }
 

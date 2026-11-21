@@ -33,6 +33,16 @@ class AuthState extends ChangeNotifier {
       return;
     }
     api.token = token;
+    // Signed in before: start right away with the saved profile and refresh it
+    // in the background (an expired session signs out through the 401 handler).
+    final cached = service.cachedUser();
+    if (cached != null) {
+      _user = cached;
+      _status = AuthStatus.signedIn;
+      notifyListeners();
+      refresh();
+      return;
+    }
     try {
       _user = await service.me();
       _status = AuthStatus.signedIn;
@@ -61,6 +71,11 @@ class AuthState extends ChangeNotifier {
 
   Future<void> loginWithGoogle(String idToken) async {
     final res = await service.google(idToken: idToken);
+    await _accept(res);
+  }
+
+  Future<void> loginWithFacebook(String accessToken) async {
+    final res = await service.facebook(accessToken: accessToken);
     await _accept(res);
   }
 
@@ -120,6 +135,7 @@ class AuthState extends ChangeNotifier {
   }
 
   void _setSignedOut() {
+    service.forgetUser();
     _user = null;
     _status = AuthStatus.signedOut;
     notifyListeners();

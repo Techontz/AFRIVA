@@ -13,6 +13,7 @@ import '../../models/drama.dart';
 import '../../models/episode.dart';
 import '../../services/player_service.dart';
 import '../../state/settings_state.dart';
+import '../../widgets/production_in_progress.dart';
 import '../../widgets/buttons.dart';
 import 'fullscreen_video.dart';
 import 'paywall_sheet.dart';
@@ -57,6 +58,7 @@ class _EpisodePageState extends State<EpisodePage> {
   UnlockInfo? _locked;
   Object? _error;
   bool _comingSoon = false;
+  int? _nextId;
   bool _loading = false;
   bool _endedFired = false;
   bool _paywallShown = false;
@@ -117,6 +119,7 @@ class _EpisodePageState extends State<EpisodePage> {
         final res = await _service.play(widget.episode.id);
         if (!mounted || gen != _generation) return;
         _locked = null;
+        _nextId = res.nextEpisodeId;
         final url = AppConfig.resolveUrl(res.videoUrl);
         if (url.isEmpty) {
           // Video not ready yet (uploading / encoding). Leave _url null so the
@@ -149,6 +152,9 @@ class _EpisodePageState extends State<EpisodePage> {
       if (resumeAt != null && resumeAt > Duration.zero) await c.seekTo(resumeAt);
       if (!mounted || gen != _generation) return;
       await c.play();
+      // Get the next episode ready while this one plays, so swiping to it is instant.
+      final next = _nextId;
+      if (next != null) _service.prefetch(next);
       _progressTimer?.cancel();
       _progressTimer = Timer.periodic(const Duration(seconds: 10), (_) => _saveProgress());
       setState(() => _loading = false);
@@ -404,12 +410,12 @@ class ComingSoonCard extends StatelessWidget {
     final l = context.l10n;
     return Center(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 48),
+        padding: const EdgeInsets.symmetric(horizontal: 32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.schedule_rounded, size: 30, color: Colors.white70),
-            const SizedBox(height: 14),
+            const ProductionScene(width: 240),
+            const SizedBox(height: 18),
             Text(l.videoComingSoonTitle, style: text.titleLarge, textAlign: TextAlign.center),
             const SizedBox(height: 6),
             Text(
@@ -417,6 +423,8 @@ class ComingSoonCard extends StatelessWidget {
               style: text.bodyMedium!.copyWith(color: Colors.white70),
               textAlign: TextAlign.center,
             ),
+            const SizedBox(height: 16),
+            const PulsingDots(),
             if (onRetry != null) ...[
               const SizedBox(height: 20),
               PillButton(

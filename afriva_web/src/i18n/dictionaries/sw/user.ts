@@ -104,6 +104,7 @@ const user: typeof en = {
     until: " hadi {date}",
     extend: ". Ukinunua tena, muda wako utaongezwa.",
     mostPopular: "Maarufu zaidi",
+    save: "Okoa TZS {amount}",
     checkout: "Malipo",
     choosePlan: "Chagua kifurushi ili uendelee.",
     loginToSubscribe: "Ingia ili ujiunge",
@@ -246,8 +247,8 @@ const user: typeof en = {
     qualityCurrent: "Ubora wa video: {q}",
     autoplay: "Cheza kipindi kijacho moja kwa moja",
     total: "Jumla {n}",
-    comingSoon: "Inakuja hivi karibuni",
-    comingSoonHint: "Kipindi {n} bado kinaandaliwa. Rudi baadaye kidogo.",
+    comingSoon: "Utengenezaji unaendelea",
+    comingSoonHint: "Timu yetu inarekodi kipindi {n} sasa hivi. Kitapatikana hivi karibuni.",
     playbackError: "Video hii haipatikani kwa sasa. Tafadhali jaribu tena baadaye.",
   },
   feed: {
@@ -268,7 +269,7 @@ const user: typeof en = {
     watchFull: "Tazama mfululizo wote",
     prevDrama: "Tamthilia iliyotangulia",
     nextDrama: "Tamthilia inayofuata",
-    comingSoon: "Inakuja hivi karibuni",
+    comingSoon: "Utengenezaji unaendelea",
   },
 };
 

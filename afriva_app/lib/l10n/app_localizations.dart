@@ -479,13 +479,13 @@ abstract class AppLocalizations {
   /// No description provided for @passwordHelper.
   ///
   /// In en, this message translates to:
-  /// **'At least 8 characters'**
+  /// **'At least 6 characters'**
   String get passwordHelper;
 
   /// No description provided for @validatePasswordLength.
   ///
   /// In en, this message translates to:
-  /// **'Use at least 8 characters'**
+  /// **'Use at least 6 characters'**
   String get validatePasswordLength;
 
   /// No description provided for @registerAgree.
@@ -1328,6 +1328,12 @@ abstract class AppLocalizations {
   /// **'Most popular'**
   String get vipMostPopular;
 
+  /// No description provided for @vipSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save TZS {amount}'**
+  String vipSave(String amount);
+
   /// No description provided for @vipPackDescription.
   ///
   /// In en, this message translates to:
@@ -1691,19 +1697,19 @@ abstract class AppLocalizations {
   /// No description provided for @videoComingSoonTitle.
   ///
   /// In en, this message translates to:
-  /// **'Coming soon'**
+  /// **'Production in progress'**
   String get videoComingSoonTitle;
 
   /// No description provided for @videoComingSoonMessage.
   ///
   /// In en, this message translates to:
-  /// **'This episode is still being prepared. Check back shortly.'**
+  /// **'Our crew is filming this episode right now. It will be here soon.'**
   String get videoComingSoonMessage;
 
   /// No description provided for @videoComingSoonBadge.
   ///
   /// In en, this message translates to:
-  /// **'Coming soon'**
+  /// **'Production in progress'**
   String get videoComingSoonBadge;
 
   /// No description provided for @settingsAppearance.
@@ -2725,6 +2731,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Google sign-in isn\'t available on this device right now. Use your email or phone instead.'**
   String get googleSignInUnavailable;
+
+  /// No description provided for @actionContinueWithFacebook.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Facebook'**
+  String get actionContinueWithFacebook;
+
+  /// No description provided for @facebookSignInFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Facebook sign-in didn\'t finish. Please try again.'**
+  String get facebookSignInFailed;
+
+  /// No description provided for @facebookSignInUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Facebook sign-in isn\'t available on this device right now. Use Google or your phone number instead.'**
+  String get facebookSignInUnavailable;
+
+  /// No description provided for @actionContinueWithPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with phone number'**
+  String get actionContinueWithPhone;
+
+  /// No description provided for @registerWithEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign up with email instead'**
+  String get registerWithEmail;
+
+  /// No description provided for @registerWithPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign up with phone number instead'**
+  String get registerWithPhone;
 }
 
 class _AppLocalizationsDelegate

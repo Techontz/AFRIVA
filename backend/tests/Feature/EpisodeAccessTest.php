@@ -22,6 +22,25 @@ class EpisodeAccessTest extends ApiTestCase
         $this->assertSame(1001, $this->drama->fresh()->views);
     }
 
+    public function test_prefetch_records_no_view_until_the_app_reports_it(): void
+    {
+        $ep = $this->episode(1);
+
+        $this->getJson("/api/v1/episodes/{$ep->id}/play?prefetch=1")->assertOk()
+            ->assertJsonPath('data.video_url', 'https://videos.example.com/1.mp4');
+        $this->assertSame(0, $ep->fresh()->views);
+        $this->assertDatabaseMissing('episode_views', ['episode_id' => $ep->id]);
+
+        $this->postJson("/api/v1/episodes/{$ep->id}/view")->assertOk()->assertJsonPath('data.recorded', true);
+        $this->assertSame(1, $ep->fresh()->views);
+    }
+
+    public function test_view_of_a_locked_episode_is_refused(): void
+    {
+        $this->postJson('/api/v1/episodes/'.$this->episode(4)->id.'/view')->assertStatus(402);
+        $this->assertSame(0, $this->episode(4)->fresh()->views);
+    }
+
     public function test_locked_episode_returns_402_with_unlock_info(): void
     {
         $user = $this->viewer(coins: 10);
@@ -75,7 +94,7 @@ class EpisodeAccessTest extends ApiTestCase
     {
         $user = $this->viewer();
         $token = $this->tokenFor($user);
-        $plan = Plan::where('type', 'episodes')->where('episode_quota', 6)->firstOrFail();
+        $plan = Plan::where('type', 'episodes')->where('episode_quota', 7)->firstOrFail();
 
         $this->withToken($token)->postJson('/api/v1/checkout', ['plan_id' => $plan->id, 'payment_method' => 'mpesa', 'phone' => '+255700000000'])
             ->assertCreated()->assertJsonPath('data.payment.status', 'success');
@@ -84,11 +103,11 @@ class EpisodeAccessTest extends ApiTestCase
             ->assertStatus(402)->assertJsonPath('unlock.can_use_pack', true);
 
         $this->withToken($token)->postJson('/api/v1/episodes/'.$this->episode(4)->id.'/unlock', ['method' => 'episode_pack'])
-            ->assertOk()->assertJsonPath('data.episodes_remaining', 5);
+            ->assertOk()->assertJsonPath('data.episodes_remaining', 6);
 
-        $this->assertDatabaseHas('subscriptions', ['user_id' => $user->id, 'type' => 'episodes', 'episodes_remaining' => 5]);
-        // 10000 / 6 × 70% = 1167
-        $this->assertDatabaseHas('company_earnings', ['source' => 'episode_pack', 'amount' => 1167]);
+        $this->assertDatabaseHas('subscriptions', ['user_id' => $user->id, 'type' => 'episodes', 'episodes_remaining' => 6]);
+        // 1000 / 7 × 70% = 100
+        $this->assertDatabaseHas('company_earnings', ['source' => 'episode_pack', 'amount' => 100]);
     }
 
     public function test_progress_saves_history(): void

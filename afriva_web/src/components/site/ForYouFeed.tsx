@@ -209,7 +209,7 @@ export function ForYouFeed() {
                 {!item.episode.video_url && (
                   <div className="absolute inset-x-0 top-1/3 flex justify-center">
                     <span className="flex items-center gap-1.5 rounded-full bg-black/60 px-3.5 py-1.5 text-xs font-bold backdrop-blur">
-                      <Icon name="clock" size={14} className="text-primary" /> {t.comingSoon}
+                      <Icon name="film" size={14} className="text-primary" /> {t.comingSoon}
                     </span>
                   </div>
                 )}

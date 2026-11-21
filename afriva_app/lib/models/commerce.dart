@@ -32,6 +32,23 @@ class Plan {
   final List<String> features;
   final bool isPopular;
 
+  /// How much this subscription saves against buying the next shorter one
+  /// repeatedly (monthly vs 4 weeks, yearly vs 12 months). Null when none.
+  int? savingsAgainst(Iterable<Plan> all) {
+    final days = durationDays ?? 0;
+    if (!isSubscription || days <= 0) return null;
+    Plan? shorter;
+    for (final p in all) {
+      final d = p.durationDays ?? 0;
+      if (!p.isSubscription || d <= 0 || d >= days) continue;
+      if (shorter == null || d > (shorter.durationDays ?? 0)) shorter = p;
+    }
+    if (shorter == null) return null;
+    final units = (days / shorter.durationDays!).round();
+    final save = units * shorter.price - price;
+    return units > 1 && save > 0 ? save : null;
+  }
+
   bool get isSubscription => const ['weekly', 'monthly', 'yearly'].contains(type);
   bool get isEpisodePack => type == 'episodes';
   bool get isCoins => type == 'coins';

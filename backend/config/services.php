@@ -46,6 +46,12 @@ return [
         'client_ids' => array_values(array_filter(array_map('trim', explode(',', (string) env('GOOGLE_CLIENT_IDS', ''))))),
     ],
 
+    // Facebook Login: the app id and secret from developers.facebook.com (off until both are set).
+    'facebook' => [
+        'app_id' => env('FACEBOOK_APP_ID'),
+        'app_secret' => env('FACEBOOK_APP_SECRET'),
+    ],
+
     'bunny' => [
         'library_id' => env('BUNNY_STREAM_LIBRARY_ID'),
         'api_key' => env('BUNNY_STREAM_API_KEY'),

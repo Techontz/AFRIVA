@@ -62,7 +62,7 @@ class ActivitySeeder extends Seeder
         $viewerIds = User::where('email', 'like', '%@demo.afriva.com')->pluck('id')->all();
 
         // ---------------------------------------------------------------- payments + subscriptions
-        $planWeights = ['Weekly VIP' => 28, 'Monthly VIP' => 30, 'Yearly VIP' => 4, '6 Episodes' => 10, '15 Episodes' => 5, '100 Coins' => 14, '550 Coins' => 9];
+        $planWeights = ['Weekly VIP' => 28, 'Monthly VIP' => 30, 'Yearly VIP' => 4, '7 Episodes' => 10, 'Full Series (30 Episodes)' => 5, '100 Coins' => 14, '550 Coins' => 9];
         $methodWeights = ['mpesa' => 36, 'tigopesa' => 20, 'airtelmoney' => 15, 'halopesa' => 8, 'tpesa' => 3, 'visa' => 8, 'mastercard' => 5, 'crdb' => 3, 'nmb' => 1, 'nbc' => 1];
 
         /** @var array<int,array{user_id:int,starts:Carbon,ends:Carbon}> $timeSubs */

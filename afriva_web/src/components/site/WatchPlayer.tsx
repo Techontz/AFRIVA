@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { ProductionScene } from "./ProductionScene";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useT } from "@/i18n/client";
@@ -313,11 +314,14 @@ export function WatchPlayer({ slug, initialNumber }: { slug: string; initialNumb
                   {state.kind === "loading" && <Spinner size={36} className="text-white" />}
                   {state.kind === "soon" && (
                     <div className="flex flex-col items-center gap-3 px-6 text-center">
-                      <span className="grid h-16 w-16 place-items-center rounded-full bg-black/60 text-primary ring-1 ring-white/30">
-                        <Icon name="clock" size={28} />
-                      </span>
+                      <ProductionScene className="w-[220px] max-w-[70%]" />
                       <p className="text-lg font-bold">{t.comingSoon}</p>
                       <p className="max-w-[260px] text-sm text-white/70">{fmt(t.comingSoonHint, { n: number })}</p>
+                      <span className="mt-1 flex gap-1.5" aria-hidden>
+                        {[0, 1, 2].map((i) => (
+                          <span key={i} className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" style={{ animationDelay: `${i * 200}ms` }} />
+                        ))}
+                      </span>
                     </div>
                   )}
                   {state.kind === "locked" && (

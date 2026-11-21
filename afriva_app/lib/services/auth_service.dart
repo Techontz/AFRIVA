@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../core/api_client.dart';
+import '../core/disk_cache.dart';
 import '../models/json.dart';
 import '../models/user.dart';
 
@@ -22,6 +23,14 @@ class AuthService {
     return AuthResult.fromJson(asMap(data));
   }
 
+  Future<AuthResult> facebook({required String accessToken}) async {
+    final data = await _api.post('/auth/facebook', body: {
+      'access_token': accessToken,
+      'device_name': defaultTargetPlatform == TargetPlatform.iOS ? 'ios' : 'android',
+    });
+    return AuthResult.fromJson(asMap(data));
+  }
+
   Future<AuthResult> register({
     required String name,
     String? email,
@@ -38,11 +47,28 @@ class AuthService {
     return AuthResult.fromJson(asMap(data));
   }
 
+  static const _userKey = 'auth.user';
+
   Future<User> me() async {
     final data = asMap(await _api.get('/auth/me'));
     // Accept both `{data:{user}}` and `{data:user}`.
-    return User.fromJson(data['user'] is Map ? asMap(data['user']) : data);
+    final json = data['user'] is Map ? asMap(data['user']) : data;
+    DiskCache.write(_userKey, json);
+    return User.fromJson(json);
   }
+
+  /// The profile saved by the last successful [me], for an instant start.
+  User? cachedUser() {
+    final json = DiskCache.read(_userKey);
+    if (json is! Map) return null;
+    try {
+      return User.fromJson(asMap(json));
+    } catch (_) {
+      return null;
+    }
+  }
+
+  void forgetUser() => DiskCache.remove(_userKey);
 
   Future<void> logout() async {
     try {

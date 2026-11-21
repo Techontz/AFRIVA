@@ -24,7 +24,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _name = TextEditingController();
   final _contact = TextEditingController();
   final _password = TextEditingController();
-  bool _usePhone = false;
+  bool _usePhone = true;
+  /// The phone (or email) form opens after "Continue with phone number".
+  bool _formOpen = false;
   bool _obscure = true;
   bool _busy = false;
   String? _error;
@@ -84,133 +86,192 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
+  void _openForm({required bool phone}) {
+    Haptics.tap();
+    setState(() {
+      _formOpen = true;
+      _usePhone = phone;
+      _contact.clear();
+      _fieldErrors = {};
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     final l = context.l10n;
+    // With no social sign-in configured, the form is the only way in, so show it straight away.
+    final open = _formOpen || !GoogleAuthSection.anyAvailable(context);
     return AuthScaffold(
       title: l.registerTitle,
       subtitle: l.registerSubtitle,
       children: [
-        Form(
-          key: _form,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+        FormErrorBanner(_error),
+        // 1 + 2: Google and Facebook (each only when configured).
+        GoogleAuthSection(
+          divider: false,
+          enabled: !_busy,
+          onStart: () => setState(() {
+            _error = null;
+            _fieldErrors = {};
+          }),
+          onSignedIn: _onSignedIn,
+          onError: (m) => setState(() => _error = m),
+        ),
+        // 3: phone number.
+        AnimatedSize(
+          duration: AppMotion.normal,
+          curve: AppMotion.curve,
+          alignment: Alignment.topCenter,
+          child: open
+              ? Padding(
+                  padding: EdgeInsets.only(top: GoogleAuthSection.anyAvailable(context) ? 22 : 0),
+                  child: _buildForm(text, l),
+                )
+              : Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: _PhoneChoiceButton(
+                    label: l.actionContinueWithPhone,
+                    onPressed: _busy ? null : () => _openForm(phone: true),
+                  ),
+                ),
+        ),
+        const SizedBox(height: 18),
+        Text(
+          l.registerAgree,
+          textAlign: TextAlign.center,
+          style: text.labelSmall,
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          alignment: WrapAlignment.center,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            Text(l.registerHaveAccount, style: text.bodyMedium),
+            TextButton(
+              onPressed: () => context.pushReplacement('/login'),
+              child: Text(l.actionLogIn, style: const TextStyle(color: AppColors.primary)),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildForm(TextTheme text, AppLocalizations l) {
+    return Form(
+      key: _form,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextFormField(
+            controller: _contact,
+            keyboardType: _usePhone ? TextInputType.phone : TextInputType.emailAddress,
+            textInputAction: TextInputAction.next,
+            autofocus: _formOpen,
+            autofillHints: [_usePhone ? AutofillHints.telephoneNumber : AutofillHints.email],
+            decoration: InputDecoration(
+              labelText: _usePhone ? l.fieldPhoneNumber : l.fieldEmail,
+              hintText: _usePhone ? '0712 345 678' : 'you@example.com',
+              prefixIcon: Icon(_usePhone ? Icons.phone_iphone_rounded : Icons.mail_outline_rounded),
+              errorText: _fieldErrors['contact'],
+            ),
+            validator: (v) {
+              final t = v?.trim() ?? '';
+              if (t.isEmpty) return _usePhone ? l.validatePhoneRequired : l.validateEmailRequired;
+              if (!_usePhone && !RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(t)) {
+                return l.validateEmailInvalid;
+              }
+              if (_usePhone && t.replaceAll(RegExp(r'\D'), '').length < 9) {
+                return l.validatePhoneInvalid;
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 14),
+          TextFormField(
+            controller: _name,
+            textCapitalization: TextCapitalization.words,
+            textInputAction: TextInputAction.next,
+            autofillHints: const [AutofillHints.name],
+            decoration: InputDecoration(
+              labelText: l.fieldFullName,
+              prefixIcon: const Icon(Icons.person_outline_rounded),
+              errorText: _fieldErrors['name'],
+            ),
+            validator: (v) => (v == null || v.trim().length < 2) ? l.validateName : null,
+          ),
+          const SizedBox(height: 14),
+          TextFormField(
+            controller: _password,
+            obscureText: _obscure,
+            textInputAction: TextInputAction.done,
+            autofillHints: const [AutofillHints.newPassword],
+            onFieldSubmitted: (_) => _submit(),
+            decoration: InputDecoration(
+              labelText: l.fieldPassword,
+              helperText: l.passwordHelper,
+              helperStyle: text.labelSmall,
+              prefixIcon: const Icon(Icons.lock_outline_rounded),
+              errorText: _fieldErrors['password'],
+              suffixIcon: IconButton(
+                icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined),
+                onPressed: () => setState(() => _obscure = !_obscure),
+              ),
+            ),
+            validator: (v) => (v == null || v.length < 6) ? l.validatePasswordLength : null,
+          ),
+          const SizedBox(height: 22),
+          PillButton(label: l.actionCreateAccount, expand: true, loading: _busy, onPressed: _submit),
+          const SizedBox(height: 4),
+          Center(
+            child: TextButton(
+              onPressed: _busy ? null : () => _openForm(phone: !_usePhone),
+              child: Text(
+                _usePhone ? l.registerWithEmail : l.registerWithPhone,
+                style: text.labelMedium!.copyWith(color: AppColors.textMuted),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Outlined pill matching the Google and Facebook buttons.
+class _PhoneChoiceButton extends StatelessWidget {
+  const _PhoneChoiceButton({required this.label, this.onPressed});
+  final String label;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.surface,
+      shape: StadiumBorder(side: BorderSide(color: AppColors.border)),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onPressed,
+        child: SizedBox(
+          height: 50,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              FormErrorBanner(_error),
-              SegmentedButton<bool>(
-                segments: [
-                  ButtonSegment(value: false, label: Text(l.fieldEmail), icon: const Icon(Icons.mail_outline_rounded)),
-                  ButtonSegment(value: true, label: Text(l.fieldPhone), icon: const Icon(Icons.phone_iphone_rounded)),
-                ],
-                selected: {_usePhone},
-                showSelectedIcon: false,
-                onSelectionChanged: (s) {
-                  Haptics.tap();
-                  setState(() {
-                    _usePhone = s.first;
-                    _contact.clear();
-                  });
-                },
-                style: ButtonStyle(
-                  backgroundColor: WidgetStateProperty.resolveWith(
-                    (s) => s.contains(WidgetState.selected)
-                        ? AppColors.primary
-                        : AppColors.surface,
-                  ),
-                  foregroundColor: WidgetStateProperty.resolveWith(
-                    (s) => s.contains(WidgetState.selected) ? Colors.white : AppColors.textMuted,
-                  ),
-                  side: const WidgetStatePropertyAll(BorderSide.none),
+              const Icon(Icons.phone_iphone_rounded, size: 20, color: AppColors.primary),
+              const SizedBox(width: 12),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelLarge!.copyWith(fontSize: 15, fontWeight: FontWeight.w600),
                 ),
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _name,
-                textCapitalization: TextCapitalization.words,
-                textInputAction: TextInputAction.next,
-                autofillHints: const [AutofillHints.name],
-                decoration: InputDecoration(
-                  labelText: l.fieldFullName,
-                  errorText: _fieldErrors['name'],
-                ),
-                validator: (v) => (v == null || v.trim().length < 2) ? l.validateName : null,
-              ),
-              const SizedBox(height: 14),
-              TextFormField(
-                controller: _contact,
-                keyboardType: _usePhone ? TextInputType.phone : TextInputType.emailAddress,
-                textInputAction: TextInputAction.next,
-                autofillHints: [_usePhone ? AutofillHints.telephoneNumber : AutofillHints.email],
-                decoration: InputDecoration(
-                  labelText: _usePhone ? l.fieldPhoneNumber : l.fieldEmail,
-                  hintText: _usePhone ? '0712 345 678' : 'you@example.com',
-                  errorText: _fieldErrors['contact'],
-                ),
-                validator: (v) {
-                  final t = v?.trim() ?? '';
-                  if (t.isEmpty) return _usePhone ? l.validatePhoneRequired : l.validateEmailRequired;
-                  if (!_usePhone && !RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(t)) {
-                    return l.validateEmailInvalid;
-                  }
-                  if (_usePhone && t.replaceAll(RegExp(r'\D'), '').length < 9) {
-                    return l.validatePhoneInvalid;
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 14),
-              TextFormField(
-                controller: _password,
-                obscureText: _obscure,
-                textInputAction: TextInputAction.done,
-                autofillHints: const [AutofillHints.newPassword],
-                onFieldSubmitted: (_) => _submit(),
-                decoration: InputDecoration(
-                  labelText: l.fieldPassword,
-                  helperText: l.passwordHelper,
-                  helperStyle: text.labelSmall,
-                  errorText: _fieldErrors['password'],
-                  suffixIcon: IconButton(
-                    icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined),
-                    onPressed: () => setState(() => _obscure = !_obscure),
-                  ),
-                ),
-                validator: (v) => (v == null || v.length < 8) ? l.validatePasswordLength : null,
-              ),
-              const SizedBox(height: 24),
-              PillButton(label: l.actionCreateAccount, expand: true, loading: _busy, onPressed: _submit),
-              GoogleAuthSection(
-                enabled: !_busy,
-                onStart: () => setState(() {
-                  _error = null;
-                  _fieldErrors = {};
-                }),
-                onSignedIn: _onSignedIn,
-                onError: (m) => setState(() => _error = m),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                l.registerAgree,
-                textAlign: TextAlign.center,
-                style: text.labelSmall,
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                alignment: WrapAlignment.center,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  Text(l.registerHaveAccount, style: text.bodyMedium),
-                  TextButton(
-                    onPressed: () => context.pushReplacement('/login'),
-                    child: Text(l.actionLogIn, style: const TextStyle(color: AppColors.primary)),
-                  ),
-                ],
               ),
             ],
           ),
         ),
-      ],
+      ),
     );
   }
 }

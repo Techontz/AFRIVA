@@ -42,7 +42,11 @@ class EpisodeController extends Controller
         return $episode;
     }
 
-    /** GET /episodes/{id}/play (auth optional). */
+    /**
+     * GET /episodes/{id}/play (auth optional).
+     * With ?prefetch=1 (the app loading the next episode ahead of time) no view is recorded;
+     * the app reports the view with POST /episodes/{id}/view once the viewer really watches it.
+     */
     public function play(int $id): JsonResponse
     {
         // Playback never needs the company, so skip that eager load on the hottest endpoint.
@@ -70,7 +74,7 @@ class EpisodeController extends Controller
         // No playable video yet ("coming soon"): answer with video_url null and record no view.
         $videoUrl = $this->bunny->playbackUrl($episode);
 
-        if ($videoUrl !== null) {
+        if ($videoUrl !== null && ! request()->boolean('prefetch')) {
             $this->recordView($episode, $drama, $user);
         }
 
@@ -85,6 +89,22 @@ class EpisodeController extends Controller
             'next_episode_id' => $siblings[$episode->number + 1] ?? null,
             'prev_episode_id' => $siblings[$episode->number - 1] ?? null,
         ]);
+    }
+
+    /** POST /episodes/{id}/view (auth optional): records the view of an episode that was prefetched. */
+    public function view(int $id): JsonResponse
+    {
+        $episode = $this->findEpisode($id, 'drama');
+        $user = Viewer::user();
+        if (! $this->access->canWatch($user, $episode)) {
+            throw new ApiException(__('api.episode_locked'), 'episode_locked', 402);
+        }
+        $recorded = $this->bunny->playbackUrl($episode) !== null;
+        if ($recorded) {
+            $this->recordView($episode, $episode->drama, $user);
+        }
+
+        return $this->ok(['recorded' => $recorded]);
     }
 
     protected function recordView(Episode $episode, Drama $drama, ?User $user): void

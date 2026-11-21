@@ -233,10 +233,10 @@ class AppLocalizationsSw extends AppLocalizations {
   String get validatePhoneInvalid => 'Weka namba ya simu sahihi';
 
   @override
-  String get passwordHelper => 'Angalau herufi 8';
+  String get passwordHelper => 'Angalau herufi 6';
 
   @override
-  String get validatePasswordLength => 'Tumia angalau herufi 8';
+  String get validatePasswordLength => 'Tumia angalau herufi 6';
 
   @override
   String get registerAgree =>
@@ -755,6 +755,11 @@ class AppLocalizationsSw extends AppLocalizations {
   String get vipMostPopular => 'Maarufu zaidi';
 
   @override
+  String vipSave(String amount) {
+    return 'Okoa TZS $amount';
+  }
+
+  @override
   String vipPackDescription(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -989,14 +994,14 @@ class AppLocalizationsSw extends AppLocalizations {
   String get cardHolderPlaceholder => 'JINA LA MMILIKI';
 
   @override
-  String get videoComingSoonTitle => 'Inakuja hivi karibuni';
+  String get videoComingSoonTitle => 'Utengenezaji unaendelea';
 
   @override
   String get videoComingSoonMessage =>
-      'Sehemu hii bado inaandaliwa. Rudi baadaye kidogo.';
+      'Timu yetu inarekodi sehemu hii sasa hivi. Itapatikana hivi karibuni.';
 
   @override
-  String get videoComingSoonBadge => 'Inakuja hivi karibuni';
+  String get videoComingSoonBadge => 'Utengenezaji unaendelea';
 
   @override
   String get settingsAppearance => 'Mwonekano';
@@ -1574,4 +1579,24 @@ class AppLocalizationsSw extends AppLocalizations {
   @override
   String get googleSignInUnavailable =>
       'Kuingia kwa Google hakupatikani kwenye kifaa hiki kwa sasa. Tumia barua pepe au simu yako badala yake.';
+
+  @override
+  String get actionContinueWithFacebook => 'Endelea na Facebook';
+
+  @override
+  String get facebookSignInFailed =>
+      'Kuingia kwa Facebook hakukukamilika. Tafadhali jaribu tena.';
+
+  @override
+  String get facebookSignInUnavailable =>
+      'Kuingia kwa Facebook hakupatikani kwenye kifaa hiki kwa sasa. Tumia Google au namba yako ya simu.';
+
+  @override
+  String get actionContinueWithPhone => 'Endelea kwa namba ya simu';
+
+  @override
+  String get registerWithEmail => 'Jisajili kwa barua pepe badala yake';
+
+  @override
+  String get registerWithPhone => 'Jisajili kwa namba ya simu badala yake';
 }

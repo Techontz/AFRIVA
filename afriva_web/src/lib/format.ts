@@ -55,6 +55,26 @@ export function initials(name: string | null | undefined): string {
     .join("");
 }
 
+/**
+ * How much a subscription saves against buying the next shorter one repeatedly
+ * (monthly vs 4 weeks, yearly vs 12 months). Null when there is no saving.
+ */
+export function planSavings(
+  plan: { type: string; price: number; duration_days: number | null },
+  all: { type: string; price: number; duration_days: number | null; is_active?: boolean }[],
+): number | null {
+  const days = plan.duration_days ?? 0;
+  if (!["weekly", "monthly", "yearly"].includes(plan.type) || days <= 0) return null;
+  const shorter = all
+    .filter((p) => ["weekly", "monthly", "yearly"].includes(p.type) && p.is_active !== false)
+    .filter((p) => (p.duration_days ?? 0) > 0 && (p.duration_days ?? 0) < days)
+    .sort((a, b) => (b.duration_days ?? 0) - (a.duration_days ?? 0))[0];
+  if (!shorter) return null;
+  const units = Math.round(days / (shorter.duration_days ?? 1));
+  const save = units * shorter.price - plan.price;
+  return units > 1 && save > 0 ? save : null;
+}
+
 export function planSummary(
   plan: {
     type: string;

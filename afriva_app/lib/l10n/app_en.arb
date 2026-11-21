@@ -101,8 +101,8 @@
   "validateEmailRequired": "Enter your email",
   "validateEmailInvalid": "Enter a valid email",
   "validatePhoneInvalid": "Enter a valid phone number",
-  "passwordHelper": "At least 8 characters",
-  "validatePasswordLength": "Use at least 8 characters",
+  "passwordHelper": "At least 6 characters",
+  "validatePasswordLength": "Use at least 6 characters",
   "registerAgree": "By continuing you agree to the Afriva Terms and Privacy Policy.",
   "registerHaveAccount": "Already have an account?",
   "posterEpisodeCount": "EP {count}",
@@ -426,6 +426,12 @@
     }
   },
   "vipMostPopular": "Most popular",
+  "vipSave": "Save TZS {amount}",
+  "@vipSave": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
   "vipPackDescription": "{count, plural, =1{Unlock 1 episode of any drama} other{Unlock {count} episodes of any drama}}",
   "@vipPackDescription": {
     "placeholders": {
@@ -622,9 +628,9 @@
   "cardName": "Name on card",
   "cardNameRequired": "Enter the name on the card",
   "cardHolderPlaceholder": "CARDHOLDER NAME",
-  "videoComingSoonTitle": "Coming soon",
-  "videoComingSoonMessage": "This episode is still being prepared. Check back shortly.",
-  "videoComingSoonBadge": "Coming soon",
+  "videoComingSoonTitle": "Production in progress",
+  "videoComingSoonMessage": "Our crew is filming this episode right now. It will be here soon.",
+  "videoComingSoonBadge": "Production in progress",
   "settingsAppearance": "Appearance",
   "themeDark": "Dark",
   "themeLight": "Light",
@@ -910,5 +916,11 @@
   "authOr": "or",
   "actionContinueWithGoogle": "Continue with Google",
   "googleSignInFailed": "Google sign-in didn't finish. Please try again.",
-  "googleSignInUnavailable": "Google sign-in isn't available on this device right now. Use your email or phone instead."
+  "googleSignInUnavailable": "Google sign-in isn't available on this device right now. Use your email or phone instead.",
+  "actionContinueWithFacebook": "Continue with Facebook",
+  "facebookSignInFailed": "Facebook sign-in didn't finish. Please try again.",
+  "facebookSignInUnavailable": "Facebook sign-in isn't available on this device right now. Use Google or your phone number instead.",
+  "actionContinueWithPhone": "Continue with phone number",
+  "registerWithEmail": "Sign up with email instead",
+  "registerWithPhone": "Sign up with phone number instead"
 }

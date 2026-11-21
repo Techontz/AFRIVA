@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { useLocale, useT } from "@/i18n/client";
 import { fmt } from "@/i18n/format";
 import { isVip, useAuth } from "@/lib/auth";
-import { cn, formatDate, formatMoney, formatNumber, planSummary } from "@/lib/format";
+import { cn, formatDate, formatMoney, formatNumber, planSavings, planSummary } from "@/lib/format";
 import type { CheckoutOptions, PaymentReturn } from "@/lib/payments";
 import type { Plan } from "@/lib/types";
 import { Icon } from "../ui/Icon";
@@ -80,6 +80,7 @@ export function VipCheckout({
               <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 xl:grid-cols-3">
                 {list.map((p) => {
                   const selected = p.id === planId;
+                  const save = planSavings(p, list);
                   return (
                     <button
                       key={p.id}
@@ -113,6 +114,12 @@ export function VipCheckout({
                         <span className="ml-1 text-sm font-semibold text-text-muted">{p.currency}</span>
                       </span>
                       <span className="mt-1 text-xs font-semibold text-text-muted">{planSummary(p, tc.plan)}</span>
+                      {save && (
+                        <span className="mt-2.5 inline-flex w-fit items-center gap-1 rounded-full bg-success/15 px-2.5 py-1 text-[11px] font-extrabold text-success">
+                          <Icon name="check" size={12} strokeWidth={3} />
+                          {fmt(t.save, { amount: formatNumber(save) })}
+                        </span>
+                      )}
                       {p.features && p.features.length > 0 && (
                         <ul className="mt-4 space-y-1.5">
                           {p.features.slice(0, 4).map((f) => (

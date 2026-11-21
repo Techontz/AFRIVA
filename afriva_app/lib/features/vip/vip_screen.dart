@@ -181,7 +181,7 @@ class _VipScreenState extends State<VipScreen> {
         for (final p in items)
           Padding(
             padding: const EdgeInsets.only(bottom: 10),
-            child: _PlanCard(plan: p, selected: _selected?.id == p.id, onTap: () => _select(p)),
+            child: _PlanCard(plan: p, savings: p.savingsAgainst(items), selected: _selected?.id == p.id, onTap: () => _select(p)),
           ),
     ];
   }
@@ -233,8 +233,9 @@ class _StatusHeader extends StatelessWidget {
 }
 
 class _PlanCard extends StatelessWidget {
-  const _PlanCard({required this.plan, required this.selected, required this.onTap});
+  const _PlanCard({required this.plan, required this.selected, required this.onTap, this.savings});
   final Plan plan;
+  final int? savings;
   final bool selected;
   final VoidCallback onTap;
 
@@ -286,6 +287,10 @@ class _PlanCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: text.labelSmall,
                   ),
+                  if (savings != null) ...[
+                    const SizedBox(height: 8),
+                    _SaveBadge(l.vipSave(Fmt.grouped(savings!))),
+                  ],
                   if (plan.features.isNotEmpty) ...[
                     const SizedBox(height: 6),
                     for (final f in plan.features.take(3))
@@ -319,6 +324,30 @@ class _PlanCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Green "Save TZS 2,000" pill on subscriptions that beat the shorter plan.
+class _SaveBadge extends StatelessWidget {
+  const _SaveBadge(this.label);
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+        decoration: BoxDecoration(
+          color: AppColors.success.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(AppRadii.pill),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.savings_outlined, size: 13, color: AppColors.success),
+            const SizedBox(width: 4),
+            Text(label,
+                style: TextStyle(color: AppColors.success, fontSize: 11.5, fontWeight: FontWeight.w800)),
+          ],
+        ),
+      );
 }
 
 class _CoinPlanCard extends StatelessWidget {

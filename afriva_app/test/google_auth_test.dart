@@ -9,6 +9,7 @@ import 'package:afriva_app/features/auth/login_screen.dart';
 import 'package:afriva_app/features/auth/register_screen.dart';
 import 'package:afriva_app/l10n/l10n.dart';
 import 'package:afriva_app/services/auth_service.dart';
+import 'package:afriva_app/services/facebook_auth.dart';
 import 'package:afriva_app/services/google_auth.dart';
 import 'package:afriva_app/services/me_service.dart';
 import 'package:afriva_app/services/token_storage.dart';
@@ -37,6 +38,21 @@ class _FakeAdapter implements HttpClientAdapter {
 
   @override
   void close({bool force = false}) {}
+}
+
+class _FakeFacebook implements FacebookAuth {
+  _FakeFacebook(this.token);
+  final String? token;
+  int calls = 0;
+
+  @override
+  bool get isAvailable => true;
+
+  @override
+  Future<String?> accessToken() async {
+    calls++;
+    return token;
+  }
 }
 
 class _FakeGoogle implements GoogleAuth {
@@ -71,7 +87,7 @@ class _Harness {
   late final ApiClient api;
   late final AuthState auth;
 
-  Widget app({GoogleAuth? google, String initial = '/login'}) {
+  Widget app({GoogleAuth? google, FacebookAuth? facebook, String initial = '/login'}) {
     AppTheme.init(useGoogleFonts: false);
     final router = GoRouter(initialLocation: initial, routes: [
       GoRoute(path: '/home', builder: (_, _) => const Scaffold(body: Text('home'))),
@@ -81,6 +97,7 @@ class _Harness {
     return MultiProvider(
       providers: [
         if (google != null) Provider<GoogleAuth>.value(value: google),
+        if (facebook != null) Provider<FacebookAuth>.value(value: facebook),
         ChangeNotifierProvider.value(value: auth),
         ChangeNotifierProvider(create: (_) => FavoritesState(MeService(api))),
       ],
@@ -224,5 +241,67 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining("Google sign-in isn't available"), findsOneWidget);
     expect(h.adapter.requests, isEmpty);
+  });
+
+  test('Facebook sign-in needs FACEBOOK_APP_ID and runs on Android only', () {
+    expect(PluginFacebookAuth().isAvailable, isFalse);
+    expect(PluginFacebookAuth(appId: '123', platform: TargetPlatform.android).isAvailable, isTrue);
+    expect(PluginFacebookAuth(appId: '123', platform: TargetPlatform.iOS).isAvailable, isFalse);
+    expect(PluginFacebookAuth(appId: '123', isWeb: true).isAvailable, isFalse);
+  });
+
+  testWidgets('Facebook sign-in posts the access token to /auth/facebook', (tester) async {
+    _phone(tester);
+    final h = _Harness({
+      '/auth/facebook': (200, {
+        'data': {'token': '44|fb-session', 'user': _user},
+      }),
+      '/me/favorites': (200, {'data': []}),
+    });
+    final facebook = _FakeFacebook('fb-access-token');
+    await tester.pumpWidget(h.app(google: _FakeGoogle('g'), facebook: facebook, initial: '/register'));
+    await tester.pumpAndSettle();
+
+    final button = find.text('Continue with Facebook');
+    expect(find.text('Continue with Google'), findsOneWidget);
+    expect(find.text('Continue with phone number'), findsOneWidget);
+    await tester.tap(button);
+    await tester.pumpAndSettle();
+
+    expect(facebook.calls, 1);
+    final req = h.adapter.requests.firstWhere((r) => r.path == '/auth/facebook');
+    expect(req.data['access_token'], 'fb-access-token');
+    expect(h.auth.isLoggedIn, isTrue);
+    expect(find.text('home'), findsOneWidget);
+  });
+
+  testWidgets('Sign up with a phone number: no email and no verification code', (tester) async {
+    _phone(tester);
+    final h = _Harness({
+      '/auth/register': (201, {
+        'data': {'token': '45|phone', 'user': _user},
+      }),
+      '/me/favorites': (200, {'data': []}),
+    });
+    await tester.pumpWidget(h.app(google: _FakeGoogle('g'), facebook: _FakeFacebook('f'), initial: '/register'));
+    await tester.pumpAndSettle();
+    expect(find.byType(TextFormField), findsNothing);
+
+    await tester.tap(find.text('Continue with phone number'));
+    await tester.pumpAndSettle();
+    final fields = find.byType(TextFormField);
+    expect(fields, findsNWidgets(3));
+    await tester.enterText(fields.at(0), '0712 345 678');
+    await tester.enterText(fields.at(1), 'Asha Juma');
+    await tester.enterText(fields.at(2), 'secret1');
+    await tester.ensureVisible(find.text('Create account'));
+    await tester.tap(find.text('Create account'));
+    await tester.pumpAndSettle();
+
+    final req = h.adapter.requests.firstWhere((r) => r.path == '/auth/register');
+    expect(req.data['phone'], '0712 345 678');
+    expect(req.data['email'], isNull);
+    expect(h.auth.isLoggedIn, isTrue);
+    expect(find.text('home'), findsOneWidget);
   });
 }

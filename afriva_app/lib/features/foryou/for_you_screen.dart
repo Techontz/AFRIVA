@@ -96,6 +96,8 @@ class _ForYouScreenState extends State<ForYouScreen> {
         child: PageView.builder(
           controller: _pc,
           scrollDirection: Axis.vertical,
+          // Keeps the next page built so its video can load before the swipe.
+          allowImplicitScrolling: true,
           itemCount: items.length,
           onPageChanged: (i) {
             Haptics.light();
@@ -105,6 +107,7 @@ class _ForYouScreenState extends State<ForYouScreen> {
             key: ValueKey('feed-${items[i].drama.id}-${items[i].episode.id}'),
             item: items[i],
             active: _visible && i == _index,
+            preload: _visible && i == _index + 1,
           ),
         ),
       );
@@ -139,9 +142,12 @@ class _ForYouScreenState extends State<ForYouScreen> {
 }
 
 class _FeedPage extends StatefulWidget {
-  const _FeedPage({super.key, required this.item, required this.active});
+  const _FeedPage({super.key, required this.item, required this.active, this.preload = false});
   final FeedItem item;
   final bool active;
+
+  /// The next page: load the video paused so it starts instantly when swiped to.
+  final bool preload;
 
   @override
   State<_FeedPage> createState() => _FeedPageState();
@@ -158,7 +164,7 @@ class _FeedPageState extends State<_FeedPage> {
   void initState() {
     super.initState();
     _lifecycle = AppLifecycleListener(onInactive: () => _c?.pause(), onHide: () => _c?.pause());
-    if (widget.active) _start();
+    if (widget.active || widget.preload) _start();
   }
 
   @override
@@ -170,6 +176,8 @@ class _FeedPageState extends State<_FeedPage> {
       } else {
         _c?.pause();
       }
+    } else if (widget.preload && !old.preload) {
+      _start();
     }
   }
 
@@ -186,7 +194,7 @@ class _FeedPageState extends State<_FeedPage> {
 
   Future<void> _start() async {
     if (_c != null) {
-      if (_c!.value.isInitialized) _c!.play();
+      if (_c!.value.isInitialized && widget.active) _c!.play();
       return;
     }
     final master = AppConfig.resolveUrl(widget.item.episode.videoUrl);
@@ -207,6 +215,7 @@ class _FeedPageState extends State<_FeedPage> {
       if (!mounted || !identical(_c, c)) return;
       await c.setLooping(true);
       if (!mounted || !identical(_c, c)) return;
+      // Swiped here while it was loading in the background: play now.
       if (widget.active) await c.play();
       if (!mounted) return;
       setState(() => _loading = false);
@@ -274,7 +283,7 @@ class _FeedPageState extends State<_FeedPage> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.schedule_rounded, color: AppColors.primary, size: 18),
+                  const Icon(Icons.movie_creation_outlined, color: AppColors.primary, size: 18),
                   const SizedBox(width: 6),
                   Text(
                     context.l10n.videoComingSoonBadge,

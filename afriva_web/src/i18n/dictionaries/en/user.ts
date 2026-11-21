@@ -99,6 +99,7 @@ const user = {
     until: " until {date}",
     extend: ". Buying again extends your access.",
     mostPopular: "Most popular",
+    save: "Save TZS {amount}",
     checkout: "Checkout",
     choosePlan: "Choose a plan to continue.",
     loginToSubscribe: "Log in to subscribe",
@@ -241,8 +242,8 @@ const user = {
     qualityCurrent: "Video quality: {q}",
     autoplay: "Autoplay next episode",
     total: "{n} total",
-    comingSoon: "Coming soon",
-    comingSoonHint: "Episode {n} is still being prepared. Check back shortly.",
+    comingSoon: "Production in progress",
+    comingSoonHint: "Our crew is filming episode {n} right now. It will be here soon.",
     playbackError: "This video is temporarily unavailable. Please try again later.",
   },
   feed: {
@@ -263,7 +264,7 @@ const user = {
     watchFull: "Watch full series",
     prevDrama: "Previous drama",
     nextDrama: "Next drama",
-    comingSoon: "Coming soon",
+    comingSoon: "Production in progress",
   },
 };
 

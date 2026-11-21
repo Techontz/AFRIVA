@@ -2,6 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
 import 'app.dart';
+import 'core/disk_cache.dart';
 import 'core/theme.dart';
 import 'state/settings_state.dart';
 
@@ -15,6 +16,7 @@ Future<void> main() async {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge),
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]),
     settings.load(),
+    DiskCache.init(),
   ]);
   runApp(AfrivaApp(settings: settings));
 }

@@ -64,6 +64,11 @@ class AppConfig {
   static const String googleServerClientId = String.fromEnvironment('GOOGLE_SERVER_CLIENT_ID');
   static const String googleIosClientId = String.fromEnvironment('GOOGLE_IOS_CLIENT_ID');
 
+  /// Facebook Login, set at build time with `--dart-define=FACEBOOK_APP_ID=...`
+  /// and `--dart-define=FACEBOOK_CLIENT_TOKEN=...` (both from developers.facebook.com).
+  /// While the app id is empty the "Continue with Facebook" button is hidden.
+  static const String facebookAppId = String.fromEnvironment('FACEBOOK_APP_ID');
+
   static const Duration connectTimeout = Duration(seconds: 10);
   static const Duration receiveTimeout = Duration(seconds: 20);
   static const Duration paymentPollInterval = Duration(seconds: 3);

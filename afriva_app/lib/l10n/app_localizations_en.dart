@@ -231,10 +231,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get validatePhoneInvalid => 'Enter a valid phone number';
 
   @override
-  String get passwordHelper => 'At least 8 characters';
+  String get passwordHelper => 'At least 6 characters';
 
   @override
-  String get validatePasswordLength => 'Use at least 8 characters';
+  String get validatePasswordLength => 'Use at least 6 characters';
 
   @override
   String get registerAgree =>
@@ -761,6 +761,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get vipMostPopular => 'Most popular';
 
   @override
+  String vipSave(String amount) {
+    return 'Save TZS $amount';
+  }
+
+  @override
   String vipPackDescription(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -1012,14 +1017,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cardHolderPlaceholder => 'CARDHOLDER NAME';
 
   @override
-  String get videoComingSoonTitle => 'Coming soon';
+  String get videoComingSoonTitle => 'Production in progress';
 
   @override
   String get videoComingSoonMessage =>
-      'This episode is still being prepared. Check back shortly.';
+      'Our crew is filming this episode right now. It will be here soon.';
 
   @override
-  String get videoComingSoonBadge => 'Coming soon';
+  String get videoComingSoonBadge => 'Production in progress';
 
   @override
   String get settingsAppearance => 'Appearance';
@@ -1594,4 +1599,24 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get googleSignInUnavailable =>
       'Google sign-in isn\'t available on this device right now. Use your email or phone instead.';
+
+  @override
+  String get actionContinueWithFacebook => 'Continue with Facebook';
+
+  @override
+  String get facebookSignInFailed =>
+      'Facebook sign-in didn\'t finish. Please try again.';
+
+  @override
+  String get facebookSignInUnavailable =>
+      'Facebook sign-in isn\'t available on this device right now. Use Google or your phone number instead.';
+
+  @override
+  String get actionContinueWithPhone => 'Continue with phone number';
+
+  @override
+  String get registerWithEmail => 'Sign up with email instead';
+
+  @override
+  String get registerWithPhone => 'Sign up with phone number instead';
 }

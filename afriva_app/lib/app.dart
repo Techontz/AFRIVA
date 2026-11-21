@@ -10,6 +10,7 @@ import 'l10n/l10n.dart';
 import 'services/auth_service.dart';
 import 'services/catalog_service.dart';
 import 'services/commerce_service.dart';
+import 'services/facebook_auth.dart';
 import 'services/google_auth.dart';
 import 'services/me_service.dart';
 import 'services/player_service.dart';
@@ -29,6 +30,7 @@ class AfrivaApp extends StatefulWidget {
     this.useGoogleFonts = true,
     this.initialLocation = '/splash',
     this.googleAuth,
+    this.facebookAuth,
   });
 
   final ApiClient? api;
@@ -40,6 +42,9 @@ class AfrivaApp extends StatefulWidget {
   /// Google ID token source; tests inject a fake.
   final GoogleAuth? googleAuth;
 
+  /// Facebook access token source; tests inject a fake.
+  final FacebookAuth? facebookAuth;
+
   @override
   State<AfrivaApp> createState() => _AfrivaAppState();
 }
@@ -47,6 +52,7 @@ class AfrivaApp extends StatefulWidget {
 class _AfrivaAppState extends State<AfrivaApp> {
   late final ApiClient _api = widget.api ?? ApiClient();
   late final GoogleAuth _google = widget.googleAuth ?? PluginGoogleAuth();
+  late final FacebookAuth _facebook = widget.facebookAuth ?? PluginFacebookAuth();
   late final GoRouter _router = buildRouter(initialLocation: widget.initialLocation);
   late final ThemeData _light = () {
     AppTheme.init(useGoogleFonts: widget.useGoogleFonts);
@@ -85,6 +91,7 @@ class _AfrivaAppState extends State<AfrivaApp> {
         Provider(create: (_) => MeService(_api)),
         Provider(create: (_) => StudioService(_api)),
         Provider<GoogleAuth>.value(value: _google),
+        Provider<FacebookAuth>.value(value: _facebook),
         ChangeNotifierProvider(
           create: (c) => AuthState(
             api: _api,

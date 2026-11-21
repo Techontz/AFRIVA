@@ -4,6 +4,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/api_client.dart';
+import '../../core/payments.dart';
 import '../../core/haptics.dart';
 import '../../core/theme.dart';
 import '../../l10n/l10n.dart';
@@ -15,14 +16,20 @@ import '../auth/auth_scaffold.dart';
 import 'creator_guidelines_sheet.dart';
 import 'studio_widgets.dart';
 
-/// Mobile money providers accepted by the API, with display labels.
-const studioPayoutProviders = <(String, String)>[
-  ('mpesa', 'M-Pesa'),
-  ('mixx', 'Mixx by Yas (Tigo Pesa)'),
-  ('airtel', 'Airtel Money'),
-  ('halopesa', 'HaloPesa'),
-  ('tpesa', 'T-Pesa'),
-];
+/// Payout provider code the API expects for a network detected from the wallet number.
+const _payoutProviderFor = <String, String>{
+  'mpesa': 'mpesa',
+  'tigopesa': 'mixx',
+  'airtelmoney': 'airtel',
+  'halopesa': 'halopesa',
+  'tpesa': 'tpesa',
+};
+
+/// The API's payout provider for a wallet number, worked out from its prefix (null when unknown).
+String? payoutProviderForNumber(String number) {
+  final network = TzPhone.detect(number);
+  return network == null ? null : _payoutProviderFor[network.code];
+}
 
 /// Client-side checks mirroring the API rules.
 class StudioValidators {
@@ -59,7 +66,6 @@ class _StudioApplicationScreenState extends State<StudioApplicationScreen> {
 
   String _idType = 'nida';
   String _payoutMethod = 'mobile_money';
-  String? _provider;
   bool _accepted = false;
   bool _obscure = true;
   bool _busy = false;
@@ -111,7 +117,7 @@ class _StudioApplicationScreenState extends State<StudioApplicationScreen> {
             idNumber: _idNumber.text,
             phone: _phone.text,
             payoutMethod: _payoutMethod,
-            payoutProvider: _mobile ? _provider : null,
+            payoutProvider: _mobile ? payoutProviderForNumber(_accountNumber.text) : null,
             payoutBankName: _mobile ? null : _bankName.text,
             payoutAccountName: _accountName.text,
             payoutAccountNumber: _accountNumber.text,
@@ -270,25 +276,7 @@ class _StudioApplicationScreenState extends State<StudioApplicationScreen> {
           ),
           if (_fieldErrors['payout_method'] != null) _InlineError(_fieldErrors['payout_method']!),
           const SizedBox(height: 14),
-          if (_mobile)
-            DropdownButtonFormField<String>(
-              key: const ValueKey('payout_provider'),
-              initialValue: _provider,
-              isExpanded: true,
-              dropdownColor: AppColors.surface,
-              decoration: InputDecoration(
-                labelText: l.studioPayoutProvider,
-                prefixIcon: const Icon(Icons.account_balance_wallet_outlined),
-                errorText: _fieldErrors['payout_provider'],
-              ),
-              items: [
-                for (final (value, label) in studioPayoutProviders)
-                  DropdownMenuItem(value: value, child: Text(label)),
-              ],
-              onChanged: (v) => setState(() => _provider = v),
-              validator: (v) => v == null ? l.studioValidateProvider : null,
-            )
-          else
+          if (!_mobile)
             TextFormField(
               controller: _bankName,
               textCapitalization: TextCapitalization.words,
@@ -300,7 +288,7 @@ class _StudioApplicationScreenState extends State<StudioApplicationScreen> {
               ),
               validator: required,
             ),
-          const SizedBox(height: 14),
+          if (!_mobile) const SizedBox(height: 14),
           TextFormField(
             controller: _accountName,
             textCapitalization: TextCapitalization.words,
@@ -317,13 +305,22 @@ class _StudioApplicationScreenState extends State<StudioApplicationScreen> {
             controller: _accountNumber,
             keyboardType: _mobile ? TextInputType.phone : TextInputType.text,
             textInputAction: TextInputAction.next,
+            // Rebuild so the detected network shows as soon as the prefix is typed.
+            onChanged: _mobile ? (_) => setState(() {}) : null,
             decoration: InputDecoration(
               labelText: _mobile ? l.studioWalletNumber : l.studioAccountNumber,
               hintText: _mobile ? '0712 345 678' : null,
               prefixIcon: const Icon(Icons.numbers_rounded),
-              errorText: _fieldErrors['payout_account_number'],
+              helperText: _mobile ? (TzPhone.detect(_accountNumber.text)?.name ?? l.payPhoneHelper) : null,
+              errorText: _fieldErrors['payout_account_number'] ?? (_mobile ? _fieldErrors['payout_provider'] : null),
             ),
-            validator: required,
+            validator: (v) {
+              final base = required(v);
+              if (base != null || !_mobile) return base;
+              if (TzPhone.normalize(v!) == null) return l.payPhoneInvalid;
+              if (payoutProviderForNumber(v) == null) return l.payNetworkUnknown;
+              return null;
+            },
           ),
 
           StudioSectionLabel(l.studioSectionStudio),

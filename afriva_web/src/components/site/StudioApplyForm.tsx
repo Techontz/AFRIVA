@@ -8,9 +8,9 @@ import { useT } from "@/i18n/client";
 import { fmt } from "@/i18n/format";
 import { ApiError, api, errorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { PAYOUT_PROVIDERS } from "@/lib/creator";
+import { NETWORKS, type NetworkCode, detectNetwork, normalizePhone } from "@/lib/payments";
 import { Button } from "../ui/Button";
-import { Field, Input, Select } from "../ui/Form";
+import { Field, Input } from "../ui/Form";
 import { LogoMark } from "../ui/Logo";
 import { CreatorGuidelinesModal } from "./CreatorGuidelines";
 
@@ -67,6 +67,20 @@ function Choice<T extends string>({ value, options, onChange }: { value: T; opti
 }
 
 /** "Request to post": short form for viewers (logged in) and guests. */
+/** API payout provider for a mobile money number, from its prefix (null when unknown). */
+const PAYOUT_PROVIDER_FOR: Record<NetworkCode, string> = {
+  mpesa: "mpesa",
+  tigopesa: "mixx",
+  airtelmoney: "airtel",
+  halopesa: "halopesa",
+  tpesa: "tpesa",
+};
+
+function payoutProviderFor(number: string): string | null {
+  const n = detectNetwork(number);
+  return n ? PAYOUT_PROVIDER_FOR[n] : null;
+}
+
 export function StudioApplyForm() {
   const t = useT().creator.form;
   const { user, loading } = useAuth();
@@ -111,15 +125,22 @@ export function StudioApplyForm() {
     if (!form.id_number.trim() && !file) errs.id_number = t.idRequired;
     if (guest && form.email && !/^\S+@\S+\.\S+$/.test(form.email)) errs.email = t.invalidEmail;
     if (guest && form.password.length < 8) errs.password = t.passwordMin;
+    // The mobile money network is worked out from the wallet number (no picker).
+    const payoutProvider = form.payout_method === "mobile_money" ? payoutProviderFor(form.payout_account_number) : null;
+    if (form.payout_method === "mobile_money" && form.payout_account_number.trim() && !errs.payout_account_number) {
+      if (!normalizePhone(form.payout_account_number)) errs.payout_account_number = t.walletInvalid;
+      else if (!payoutProvider) errs.payout_account_number = t.walletUnknownNetwork;
+    }
     if (!accepted) errs.guidelines_accepted = t.mustAccept;
     setErrors(errs);
     if (Object.keys(errs).length) return;
 
     const body = new FormData();
     const fields: (keyof Form)[] = ["full_name", "phone", "id_type", "id_number", "payout_method", "payout_account_name", "payout_account_number", "studio_name"];
-    fields.push(form.payout_method === "bank" ? "payout_bank_name" : "payout_provider");
+    if (form.payout_method === "bank") fields.push("payout_bank_name");
     if (guest) fields.push("email", "password");
     for (const k of fields) if (String(form[k]).trim()) body.set(k, String(form[k]).trim());
+    if (payoutProvider) body.set("payout_provider", payoutProvider);
     if (file) body.set("id_document", file);
     body.set("guidelines_accepted", "1");
 
@@ -228,17 +249,7 @@ export function StudioApplyForm() {
                   { value: "bank", label: t.bank },
                 ]}
               />
-              {form.payout_method === "mobile_money" ? (
-                <Field label={t.provider} htmlFor="payout_provider" error={errors.payout_provider}>
-                  <Select id="payout_provider" value={form.payout_provider} onChange={set("payout_provider")}>
-                    {PAYOUT_PROVIDERS.map((p) => (
-                      <option key={p} value={p}>
-                        {t.providers[p]}
-                      </option>
-                    ))}
-                  </Select>
-                </Field>
-              ) : (
+              {form.payout_method === "bank" && (
                 <Field label={t.bankName} htmlFor="payout_bank_name" error={errors.payout_bank_name}>
                   <Input id="payout_bank_name" value={form.payout_bank_name} onChange={set("payout_bank_name")} />
                 </Field>
@@ -250,7 +261,15 @@ export function StudioApplyForm() {
                 <Field
                   label={form.payout_method === "mobile_money" ? t.walletNumber : t.accountNumber}
                   htmlFor="payout_account_number"
-                  error={errors.payout_account_number}
+                  error={errors.payout_account_number ?? errors.payout_provider}
+                  hint={
+                    form.payout_method === "mobile_money"
+                      ? (() => {
+                          const n = detectNetwork(form.payout_account_number);
+                          return n ? NETWORKS[n].name : t.walletHint;
+                        })()
+                      : undefined
+                  }
                 >
                   <Input
                     id="payout_account_number"

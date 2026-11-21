@@ -90,6 +90,15 @@ void main() {
     expect(split.platformLabel, '30');
   });
 
+  test('payout provider is detected from the wallet number', () {
+    expect(payoutProviderForNumber('0754 123 456'), 'mpesa');
+    expect(payoutProviderForNumber('+255 712 345 678'), 'mixx');
+    expect(payoutProviderForNumber('0688123456'), 'airtel');
+    expect(payoutProviderForNumber('0621123456'), 'halopesa');
+    expect(payoutProviderForNumber('0731123456'), 'tpesa');
+    expect(payoutProviderForNumber('0721123456'), isNull);
+  });
+
   test('validators mirror the API rules', () {
     expect(StudioValidators.idNumber('AB-12 34'), isTrue);
     expect(StudioValidators.idNumber('123'), isFalse);
@@ -193,7 +202,8 @@ void main() {
     await tester.tap(find.text('Submit request'));
     await tester.pump();
     expect(find.text('This field is required'), findsWidgets);
-    expect(find.text('Choose a provider'), findsOneWidget);
+    // No network picker: the provider is worked out from the wallet number.
+    expect(find.text('Mobile money provider'), findsNothing);
 
     // Bank payout swaps the provider for a bank name field.
     await tester.tap(find.text('Bank'));

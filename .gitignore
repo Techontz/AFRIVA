@@ -13,3 +13,4 @@ _screenshots/
 
 # local build outputs
 afriva_app/_saved_builds/
+afriva_app/android/build/

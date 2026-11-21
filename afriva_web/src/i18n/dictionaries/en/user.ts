@@ -32,6 +32,9 @@ const user = {
     studioCta: "Want to publish your dramas on Afriva? ",
     studioApply: "Request to post",
     adminHint: "Admin accounts are created by Afriva.",
+    or: "or",
+    googleFailed: "Google sign-in failed. Please try again.",
+    googleBusy: "Signing in with Google",
   },
   apply: {
     title: "Apply for a studio account",

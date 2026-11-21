@@ -10,6 +10,8 @@ interface AuthContextValue {
   /** True until the stored token has been checked against /auth/me. */
   loading: boolean;
   login: (login: string, password: string) => Promise<User>;
+  /** Signs in (or up) with a Google ID token from Google Identity Services. */
+  loginWithGoogle: (idToken: string) => Promise<User>;
   register: (data: { name: string; email?: string; phone?: string; password: string }) => Promise<User>;
   logout: () => Promise<void>;
   refresh: () => Promise<User | null>;
@@ -89,6 +91,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [finishAuth],
   );
 
+  const loginWithGoogle = useCallback(
+    async (idToken: string) =>
+      finishAuth(await api.post<AuthPayload>("/auth/google", { id_token: idToken, device_name: "web" })),
+    [finishAuth],
+  );
+
   const register = useCallback(
     async (data: { name: string; email?: string; phone?: string; password: string }) =>
       finishAuth(await api.post<AuthPayload>("/auth/register", data)),
@@ -108,8 +116,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const setUser = useCallback((updater: (u: User | null) => User | null) => setUserState(updater), []);
 
   const value = useMemo(
-    () => ({ user, loading, login, register, logout, refresh, setUser }),
-    [user, loading, login, register, logout, refresh, setUser],
+    () => ({ user, loading, login, loginWithGoogle, register, logout, refresh, setUser }),
+    [user, loading, login, loginWithGoogle, register, logout, refresh, setUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

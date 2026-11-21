@@ -15,6 +15,7 @@ return [
 
     // Kuingia na majukumu
     'invalid_credentials' => 'Taarifa hizi za kuingia hazilingani na kumbukumbu zetu.',
+    'google_failed' => 'Kuingia kwa Google hakukuthibitishwa. Tafadhali jaribu tena.',
     'account_suspended' => 'Akaunti yako imesimamishwa.',
     'account_pending' => 'Ombi lako la kupost linasubiri kukaguliwa. Utaweza kupost likishaidhinishwa.',
     'studio_application_received' => 'Ombi limepokelewa. Sasa pakia video zako 10 za mfano ili tulikague.',

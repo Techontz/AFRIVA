@@ -14,12 +14,13 @@ import type { User } from "@/lib/types";
 import { Button } from "../ui/Button";
 import { Field, Input } from "../ui/Form";
 import { Icon } from "../ui/Icon";
+import { GOOGLE_CLIENT_ID, GoogleSignIn } from "./GoogleSignIn";
 import { LogoMark } from "../ui/Logo";
 
 const noSubscribe = () => () => {};
 
 export function AuthForm({ mode }: { mode: "login" | "register" }) {
-  const { user, loading, login, register } = useAuth();
+  const { user, loading, login, loginWithGoogle, register } = useAuth();
   const t = useT().user.auth;
   const router = useRouter();
   const params = useSearchParams();
@@ -30,6 +31,8 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const [showPw, setShowPw] = useState(false);
   const [busy, setBusy] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [googleBusy, setGoogleBusy] = useState(false);
+  const [googleError, setGoogleError] = useState("");
   // Studio/admin hosts have no viewer sign-up: studios apply instead, admins are created by Afriva.
   const portal = useSyncExternalStore<Portal | null>(noSubscribe, () => portalForHost(window.location.host), () => null);
 
@@ -87,6 +90,28 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
     }
   };
 
+  const onGoogle = async (idToken: string) => {
+    if (googleBusy || busy) return;
+    setGoogleError("");
+    setGoogleBusy(true);
+    try {
+      const u = await loginWithGoogle(idToken);
+      toast.success(fmt(t.welcomeBack, { name: u.name.split(" ")[0] ?? "" }));
+      router.replace(destination(u));
+    } catch (err) {
+      // 403 carries a localized account_rejected / account_suspended message from the API.
+      const msg =
+        err instanceof ApiError && err.status === 403 && err.message
+          ? err.message
+          : err instanceof ApiError && err.status === 0
+            ? err.message
+            : t.googleFailed;
+      setGoogleError(msg);
+    } finally {
+      setGoogleBusy(false);
+    }
+  };
+
   const isLogin = mode === "login";
   const q = next ? `?next=${encodeURIComponent(next)}` : "";
 
@@ -101,6 +126,21 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
           </p>
         </div>
         <form onSubmit={submit} noValidate className="space-y-4 rounded-[28px] bg-surface p-6 sm:p-7">
+          {GOOGLE_CLIENT_ID && (
+            <>
+              <GoogleSignIn onCredential={onGoogle} busy={googleBusy} busyLabel={t.googleBusy} />
+              {googleError && (
+                <p role="alert" className="text-center text-sm font-medium text-danger">
+                  {googleError}
+                </p>
+              )}
+              <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-wider text-text-dim" aria-hidden="true">
+                <span className="h-px flex-1 bg-border" />
+                {t.or}
+                <span className="h-px flex-1 bg-border" />
+              </div>
+            </>
+          )}
           {!isLogin && (
             <Field label={t.fullName} htmlFor="name" error={errors.name}>
               <Input id="name" autoComplete="name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
@@ -165,7 +205,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
               />
             </Field>
           )}
-          <Button type="submit" loading={busy} size="lg" className="w-full">
+          <Button type="submit" loading={busy} disabled={googleBusy} size="lg" className="w-full">
             {isLogin ? t.logIn : t.createAccount}
           </Button>
           {portal === "studio" ? (

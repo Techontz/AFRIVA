@@ -1560,4 +1560,18 @@ class AppLocalizationsSw extends AppLocalizations {
   @override
   String get paymentMethodsCardHostedNote =>
       'Kadi huwekwa kwenye ukurasa salama wa mshirika wetu wa malipo kila unapolipa.';
+
+  @override
+  String get authOr => 'au';
+
+  @override
+  String get actionContinueWithGoogle => 'Endelea na Google';
+
+  @override
+  String get googleSignInFailed =>
+      'Kuingia kwa Google hakukukamilika. Tafadhali jaribu tena.';
+
+  @override
+  String get googleSignInUnavailable =>
+      'Kuingia kwa Google hakupatikani kwenye kifaa hiki kwa sasa. Tumia barua pepe au simu yako badala yake.';
 }

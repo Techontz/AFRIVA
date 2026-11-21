@@ -9,6 +9,8 @@ use App\Http\Requests\RegisterRequest;
 use App\Http\Resources\UserResource;
 use App\Models\StudioApplication;
 use App\Models\User;
+use App\Services\GoogleIdToken;
+use Illuminate\Support\Str;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -33,6 +35,58 @@ class AuthController extends Controller
             'token' => $user->createToken($request->input('device_name', 'api'))->plainTextToken,
             'user' => new UserResource($user->load('company')),
         ], null, 201);
+    }
+
+        /**
+     * POST /auth/google {id_token, device_name?}: sign in or sign up with Google. The ID token is checked with
+     * Google; an existing account with the same verified email is linked, otherwise a viewer account is created.
+     */
+    public function google(Request $request, GoogleIdToken $google): JsonResponse
+    {
+        $request->validate(['id_token' => ['required', 'string', 'max:4096'], 'device_name' => ['nullable', 'string', 'max:100']]);
+
+        $claims = $google->verify($request->input('id_token'));
+        if (! $claims) {
+            throw new ApiException(__('api.google_failed'), 'google_failed', 401);
+        }
+
+        $email = strtolower((string) $claims['email']);
+        $user = User::where('google_id', $claims['sub'])->first()
+            ?? User::whereRaw('LOWER(email) = ?', [$email])->first();
+
+        if (! $user) {
+            $user = User::create([
+                'name' => (string) ($claims['name'] ?? Str::before($email, '@')),
+                'email' => $email,
+                'google_id' => (string) $claims['sub'],
+                // Google accounts have no Afriva password; this random one can never be guessed or used.
+                'password' => Hash::make(Str::random(48)),
+                'role' => User::ROLE_VIEWER,
+                'avatar_url' => $claims['picture'] ?? null,
+                'status' => 'active',
+            ]);
+            $user->forceFill(['email_verified_at' => now()])->save();
+        } elseif (! $user->google_id) {
+            $user->forceFill(['google_id' => (string) $claims['sub'], 'email_verified_at' => $user->email_verified_at ?? now()])->save();
+        }
+
+        $this->ensureCanSignIn($user);
+
+        return $this->ok([
+            'token' => $user->createToken($request->input('device_name', 'google'))->plainTextToken,
+            'user' => new UserResource($user->load('company')),
+        ]);
+    }
+
+    protected function ensureCanSignIn(User $user): void
+    {
+        if ($user->status === 'rejected') {
+            $reason = StudioApplication::where('user_id', $user->id)->latest('id')->value('rejection_reason');
+            throw new ApiException($reason ? __('api.account_rejected_reason', ['reason' => $reason]) : __('api.account_rejected'), 'account_rejected', 403, ['reason' => $reason]);
+        }
+        if (! in_array($user->status, ['active', 'pending'], true)) {
+            throw new ApiException(__('api.account_suspended'), 'account_suspended', 403);
+        }
     }
 
     public function login(LoginRequest $request): JsonResponse

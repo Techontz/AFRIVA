@@ -15,6 +15,7 @@ return [
 
     // Auth and roles
     'invalid_credentials' => 'These credentials do not match our records.',
+    'google_failed' => 'Google sign-in could not be verified. Please try again.',
     'account_suspended' => 'Your account is suspended.',
     'account_pending' => 'Your request to post is waiting for review. You can post once it is approved.',
     'studio_application_received' => 'Request received. Now upload your 10 sample videos so we can review it.',

@@ -433,5 +433,9 @@
   "promptHostedPaid": "Nimelipa, angalia tena",
   "promptHostedTimeoutBody": "Bado hakuna uthibitisho. Kama umemaliza kulipa, angalia tena. La sivyo, jaribu tena.",
   "promptHostedFailedBody": "Hakuna pesa iliyokatwa. Angalia taarifa za kadi yako kisha jaribu tena.",
-  "paymentMethodsCardHostedNote": "Kadi huwekwa kwenye ukurasa salama wa mshirika wetu wa malipo kila unapolipa."
+  "paymentMethodsCardHostedNote": "Kadi huwekwa kwenye ukurasa salama wa mshirika wetu wa malipo kila unapolipa.",
+  "authOr": "au",
+  "actionContinueWithGoogle": "Endelea na Google",
+  "googleSignInFailed": "Kuingia kwa Google hakukukamilika. Tafadhali jaribu tena.",
+  "googleSignInUnavailable": "Kuingia kwa Google hakupatikani kwenye kifaa hiki kwa sasa. Tumia barua pepe au simu yako badala yake."
 }

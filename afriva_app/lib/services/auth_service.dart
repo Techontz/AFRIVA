@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../core/api_client.dart';
 import '../models/json.dart';
 import '../models/user.dart';
@@ -8,6 +10,15 @@ class AuthService {
 
   Future<AuthResult> login({required String login, required String password}) async {
     final data = await _api.post('/auth/login', body: {'login': login.trim(), 'password': password});
+    return AuthResult.fromJson(asMap(data));
+  }
+
+  /// Exchanges a Google ID token for an Afriva session (same payload as login).
+  Future<AuthResult> google({required String idToken}) async {
+    final data = await _api.post('/auth/google', body: {
+      'id_token': idToken,
+      'device_name': defaultTargetPlatform == TargetPlatform.iOS ? 'ios' : 'android',
+    });
     return AuthResult.fromJson(asMap(data));
   }
 

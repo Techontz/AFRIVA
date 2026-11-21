@@ -1,0 +1,12 @@
+// Google Sign-In URL scheme for iOS (used by Runner/Info.plist CFBundleURLTypes).
+//
+// Set this to the REVERSED iOS OAuth client id from Google Cloud Console:
+//   iOS client id:   1234567890-abcdefg.apps.googleusercontent.com
+//   reversed value:  com.googleusercontent.apps.1234567890-abcdefg
+// and build with the matching ids:
+//   --dart-define=GOOGLE_IOS_CLIENT_ID=1234567890-abcdefg.apps.googleusercontent.com
+//   --dart-define=GOOGLE_SERVER_CLIENT_ID=<web client id>
+//
+// The placeholder below is a harmless scheme so iOS builds work while Google
+// sign-in is not configured (the app hides the button until both ids are set).
+GOOGLE_REVERSED_CLIENT_ID = com.afriva.afriva-app.google-signin-unset

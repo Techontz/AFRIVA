@@ -1580,4 +1580,18 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get paymentMethodsCardHostedNote =>
       'Cards are entered on our payment partner\'s secure page each time you pay.';
+
+  @override
+  String get authOr => 'or';
+
+  @override
+  String get actionContinueWithGoogle => 'Continue with Google';
+
+  @override
+  String get googleSignInFailed =>
+      'Google sign-in didn\'t finish. Please try again.';
+
+  @override
+  String get googleSignInUnavailable =>
+      'Google sign-in isn\'t available on this device right now. Use your email or phone instead.';
 }

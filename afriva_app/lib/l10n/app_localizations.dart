@@ -2701,6 +2701,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cards are entered on our payment partner\'s secure page each time you pay.'**
   String get paymentMethodsCardHostedNote;
+
+  /// No description provided for @authOr.
+  ///
+  /// In en, this message translates to:
+  /// **'or'**
+  String get authOr;
+
+  /// No description provided for @actionContinueWithGoogle.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Google'**
+  String get actionContinueWithGoogle;
+
+  /// No description provided for @googleSignInFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Google sign-in didn\'t finish. Please try again.'**
+  String get googleSignInFailed;
+
+  /// No description provided for @googleSignInUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Google sign-in isn\'t available on this device right now. Use your email or phone instead.'**
+  String get googleSignInUnavailable;
 }
 
 class _AppLocalizationsDelegate

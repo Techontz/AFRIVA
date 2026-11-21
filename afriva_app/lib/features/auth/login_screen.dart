@@ -11,6 +11,7 @@ import '../../state/auth_state.dart';
 import '../../state/favorites_state.dart';
 import '../../widgets/buttons.dart';
 import 'auth_scaffold.dart';
+import 'google_sign_in.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -44,17 +45,10 @@ class _LoginScreenState extends State<LoginScreen> {
       _fieldErrors = {};
     });
     final auth = context.read<AuthState>();
-    final favs = context.read<FavoritesState>();
     try {
       await auth.login(_login.text, _password.text);
       Haptics.success();
-      favs.load().catchError((_) {});
-      if (!mounted) return;
-      if (context.canPop()) {
-        context.pop(true);
-      } else {
-        context.go('/home');
-      }
+      _onSignedIn();
     } on ApiException catch (e) {
       if (!mounted) return;
       Haptics.medium();
@@ -66,6 +60,17 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) setState(() => _error = errorMessage(e));
     } finally {
       if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  /// Shared by password and Google sign-in.
+  void _onSignedIn() {
+    if (!mounted) return;
+    context.read<FavoritesState>().load().catchError((_) {});
+    if (context.canPop()) {
+      context.pop(true);
+    } else {
+      context.go('/home');
     }
   }
 
@@ -115,9 +120,19 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 24),
                 PillButton(label: l.actionLogIn, expand: true, loading: _busy, onPressed: _submit),
+                GoogleAuthSection(
+                  enabled: !_busy,
+                  onStart: () => setState(() {
+                    _error = null;
+                    _fieldErrors = {};
+                  }),
+                  onSignedIn: _onSignedIn,
+                  onError: (m) => setState(() => _error = m),
+                ),
                 const SizedBox(height: 18),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     Text(l.loginNewTo, style: text.bodyMedium),
                     TextButton(

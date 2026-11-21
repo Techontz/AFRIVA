@@ -34,6 +34,9 @@ const user: typeof en = {
     studioCta: "Unataka kuchapisha tamthilia zako kwenye Afriva? ",
     studioApply: "Omba kupost",
     adminHint: "Akaunti za msimamizi hufunguliwa na Afriva.",
+    or: "au",
+    googleFailed: "Kuingia kwa Google kumeshindikana. Tafadhali jaribu tena.",
+    googleBusy: "Inaingia kwa Google",
   },
   apply: {
     title: "Omba akaunti ya studio",

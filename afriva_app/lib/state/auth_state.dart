@@ -59,6 +59,11 @@ class AuthState extends ChangeNotifier {
     await _accept(res);
   }
 
+  Future<void> loginWithGoogle(String idToken) async {
+    final res = await service.google(idToken: idToken);
+    await _accept(res);
+  }
+
   Future<void> register({
     required String name,
     String? email,

@@ -7,8 +7,10 @@ import '../../core/haptics.dart';
 import '../../core/theme.dart';
 import '../../l10n/l10n.dart';
 import '../../state/auth_state.dart';
+import '../../state/favorites_state.dart';
 import '../../widgets/buttons.dart';
 import 'auth_scaffold.dart';
+import 'google_sign_in.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -52,12 +54,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             password: _password.text,
           );
       Haptics.success();
-      if (!mounted) return;
-      if (context.canPop()) {
-        context.pop(true);
-      } else {
-        context.go('/home');
-      }
+      _onSignedIn();
     } on ApiException catch (e) {
       if (!mounted) return;
       Haptics.medium();
@@ -73,6 +70,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (mounted) setState(() => _error = errorMessage(e));
     } finally {
       if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  /// Shared by the form and Google sign-in.
+  void _onSignedIn() {
+    if (!mounted) return;
+    context.read<FavoritesState>().load().catchError((_) {});
+    if (context.canPop()) {
+      context.pop(true);
+    } else {
+      context.go('/home');
     }
   }
 
@@ -172,6 +180,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               const SizedBox(height: 24),
               PillButton(label: l.actionCreateAccount, expand: true, loading: _busy, onPressed: _submit),
+              GoogleAuthSection(
+                enabled: !_busy,
+                onStart: () => setState(() {
+                  _error = null;
+                  _fieldErrors = {};
+                }),
+                onSignedIn: _onSignedIn,
+                onError: (m) => setState(() => _error = m),
+              ),
               const SizedBox(height: 12),
               Text(
                 l.registerAgree,
@@ -179,8 +196,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 style: text.labelSmall,
               ),
               const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              Wrap(
+                alignment: WrapAlignment.center,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   Text(l.registerHaveAccount, style: text.bodyMedium),
                   TextButton(

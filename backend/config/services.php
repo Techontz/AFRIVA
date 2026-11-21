@@ -41,6 +41,11 @@ return [
     | CDN hostname are all set. token_auth_key is the library's CDN token authentication key: when it is
     | empty, playback URLs are returned unsigned.
     */
+        // Google Sign-In: every OAuth client ID whose ID tokens we accept (web, Android, iOS), comma separated.
+    'google' => [
+        'client_ids' => array_values(array_filter(array_map('trim', explode(',', (string) env('GOOGLE_CLIENT_IDS', ''))))),
+    ],
+
     'bunny' => [
         'library_id' => env('BUNNY_STREAM_LIBRARY_ID'),
         'api_key' => env('BUNNY_STREAM_API_KEY'),

@@ -906,5 +906,9 @@
   "promptHostedPaid": "I've paid, check again",
   "promptHostedTimeoutBody": "No confirmation yet. If you finished paying, check again. Otherwise, try once more.",
   "promptHostedFailedBody": "No money was taken. Check your card details and try again.",
-  "paymentMethodsCardHostedNote": "Cards are entered on our payment partner's secure page each time you pay."
+  "paymentMethodsCardHostedNote": "Cards are entered on our payment partner's secure page each time you pay.",
+  "authOr": "or",
+  "actionContinueWithGoogle": "Continue with Google",
+  "googleSignInFailed": "Google sign-in didn't finish. Please try again.",
+  "googleSignInUnavailable": "Google sign-in isn't available on this device right now. Use your email or phone instead."
 }

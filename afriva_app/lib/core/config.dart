@@ -56,6 +56,14 @@ class AppConfig {
     return '$apiOrigin${url.startsWith('/') ? '' : '/'}$url';
   }
 
+  /// Google Sign-In, set at build time:
+  /// `--dart-define=GOOGLE_SERVER_CLIENT_ID=<web client id>` (required: Android
+  /// only returns an ID token for a web client, and the API verifies it) and
+  /// `--dart-define=GOOGLE_IOS_CLIENT_ID=<iOS client id>` (required on iOS).
+  /// While the server id is empty the "Continue with Google" button is hidden.
+  static const String googleServerClientId = String.fromEnvironment('GOOGLE_SERVER_CLIENT_ID');
+  static const String googleIosClientId = String.fromEnvironment('GOOGLE_IOS_CLIENT_ID');
+
   static const Duration connectTimeout = Duration(seconds: 10);
   static const Duration receiveTimeout = Duration(seconds: 20);
   static const Duration paymentPollInterval = Duration(seconds: 3);

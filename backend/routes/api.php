@@ -24,7 +24,8 @@ Route::prefix('v1')->group(function () {
 
     // ---- Auth -------------------------------------------------------------
     Route::post('auth/register', [AuthController::class, 'register'])->middleware('throttle:20,1');
-    Route::post('auth/login', [AuthController::class, 'login'])->middleware('throttle:30,1');
+        Route::post('auth/login', [AuthController::class, 'login'])->middleware('throttle:30,1');
+    Route::post('auth/google', [AuthController::class, 'google'])->middleware('throttle:30,1');
     // "Request to post": guests or logged-in viewers (bearer token optional).
     Route::post('auth/studio-application', [StudioApplicationController::class, 'store'])->middleware('throttle:5,1');
     Route::get('creator-guidelines', [StudioApplicationController::class, 'guidelines']);

@@ -19,4 +19,7 @@ return [
     'card_expired' => 'This card has expired.',
     'card_needs_details' => 'Please enter this card\'s details again to pay.',
     'saved_not_found' => 'That saved payment method was not found.',
+    'provider_error' => 'The payment provider could not start this payment. Please try again.',
+    'redirecting' => 'Continue on the secure card page.',
+    'card_phone_required' => 'Enter your phone number to pay by card.',
 ];

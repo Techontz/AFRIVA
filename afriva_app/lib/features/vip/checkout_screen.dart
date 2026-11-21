@@ -6,6 +6,7 @@ import '../../core/format.dart';
 import '../../core/haptics.dart';
 import '../../core/payments.dart';
 import '../../core/theme.dart';
+import '../../core/url_opener.dart';
 import '../../l10n/l10n.dart';
 import '../../models/commerce.dart';
 import '../../services/commerce_service.dart';
@@ -20,9 +21,16 @@ import 'phone_field.dart';
 
 /// Checkout: saved methods first (default preselected, one tap), then a new
 /// mobile money number or card. Pops with `true` once the payment succeeds.
+///
+/// When cards are hosted (`card.hosted` from `/checkout/options`) the card is
+/// typed on the payment partner's secure page: the app only asks for a phone,
+/// opens `redirect_url` with [openUrl] and polls the payment.
 class CheckoutScreen extends StatefulWidget {
-  const CheckoutScreen({super.key, required this.plan});
+  const CheckoutScreen({super.key, required this.plan, this.openUrl = openSecureWebPage});
   final Plan plan;
+
+  /// Opens the hosted card page. Injectable for tests.
+  final UrlOpener openUrl;
 
   @override
   State<CheckoutScreen> createState() => _CheckoutScreenState();
@@ -40,6 +48,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   final _formKey = GlobalKey<FormState>();
   final _phone = TextEditingController();
+
+  /// Receipt phone for a hosted card payment.
+  final _cardPhone = TextEditingController();
   final _cardForm = CardFormController();
 
   bool _busy = false;
@@ -60,6 +71,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   @override
   void dispose() {
     _phone.dispose();
+    _cardPhone.dispose();
     _cardForm.dispose();
     super.dispose();
   }
@@ -83,16 +95,21 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         _savedId = pick?.id;
         _card = !options.mobileMoney.available && options.card.available;
       });
-      if (pick == null && _phone.text.isEmpty) {
-        final phone = context.read<AuthState>().user?.phone;
-        if (phone != null && TzPhone.normalize(phone) != null) _phone.text = TzPhoneFormatter.format(phone);
-      }
+      final phone = context.read<AuthState>().user?.phone;
+      final validPhone = phone != null && TzPhone.normalize(phone) != null;
+      if (pick == null && _phone.text.isEmpty && validPhone) _phone.text = TzPhoneFormatter.format(phone);
+      if (_cardPhone.text.isEmpty && validPhone) _cardPhone.text = TzPhoneFormatter.format(phone);
     } catch (e) {
       if (mounted) setState(() => _loadError = e);
     }
   }
 
-  bool _channelOpen(CheckoutOptions o, SavedMethod m) => m.isCard ? o.card.available : o.mobileMoney.available;
+  /// Saved cards cannot be charged with one tap when cards are hosted, so
+  /// they are left out of checkout then.
+  bool _channelOpen(CheckoutOptions o, SavedMethod m) =>
+      m.isCard ? o.card.available && !o.card.hosted : o.mobileMoney.available;
+
+  bool get _hosted => _options?.hostedCards ?? false;
 
   SavedMethod? get _selectedSaved => _saved.where((m) => m.id == _savedId).firstOrNull;
 
@@ -119,6 +136,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     MobileNetwork? network;
     String? networkName;
     var mobile = true;
+    var hosted = false;
     String paidWith;
     try {
       final CheckoutResult res;
@@ -134,6 +152,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         network = TzPhone.detect(phone);
         paidWith = '${network?.name ?? ''} ${TzPhone.pretty(phone)}'.trim();
         res = await commerce.payWithMobileMoney(planId: plan.id, phone: phone, save: _save);
+      } else if (_hosted) {
+        // No card details in the app at all: they go on the partner's page.
+        mobile = false;
+        hosted = true;
+        phone = TzPhone.normalize(_cardPhone.text)!;
+        paidWith = context.l10n.payCard;
+        res = await commerce.payWithHostedCard(planId: plan.id, phone: phone);
       } else {
         mobile = false;
         final card = _cardForm.payload();
@@ -159,6 +184,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         return;
       }
       Haptics.light();
+      final redirect = res.nextAction == 'redirect' ? res.redirectUrl : null;
+      final hostedPage = hosted && redirect != null;
+      var opened = true;
+      if (hostedPage) opened = await widget.openUrl(Uri.parse(redirect));
+      if (!mounted) return;
       final (outcome, payment) = await showPaymentPrompt(
         context,
         payment: res.payment,
@@ -166,7 +196,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         network: network,
         networkName: networkName,
         mobileMoney: mobile,
-        redirectUrl: res.nextAction == 'redirect' ? res.redirectUrl : null,
+        redirectUrl: redirect,
+        hostedCard: hostedPage,
+        openFailed: !opened,
+        openUrl: widget.openUrl,
       );
       if (!mounted) return;
       switch (outcome) {
@@ -365,7 +398,26 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               opacity: a,
               child: SlideTransition(position: Tween(begin: const Offset(0, 0.03), end: Offset.zero).animate(a), child: child),
             ),
-            child: _card
+            child: _card && o.hostedCards
+                ? HostedCardPanel(
+                    key: const ValueKey('hosted-card'),
+                    brands: [
+                      for (final b in CardBrand.values)
+                        if (o.card.isAvailable(b.code)) b,
+                    ],
+                    phone: MobileMoneyField(
+                      controller: _cardPhone,
+                      fieldKey: const ValueKey('card-phone'),
+                      labelText: l.payHostedPhoneLabel,
+                      helperText: l.payHostedPhoneHelper,
+                      requireKnownNetwork: false,
+                      serverError: _phoneError,
+                      onChanged: (_) {
+                        if (_phoneError != null) setState(() => _phoneError = null);
+                      },
+                    ),
+                  )
+                : _card
                 ? CardForm(
                     key: const ValueKey('card'),
                     controller: _cardForm,
@@ -382,37 +434,40 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     },
                   ),
           ),
-          const SizedBox(height: 14),
-          Container(
-            padding: const EdgeInsets.fromLTRB(14, 6, 6, 6),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.bolt_rounded, size: 20, color: AppColors.primary),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(l.paySave, style: text.titleSmall!.copyWith(fontSize: 14)),
-                      Text(l.paySaveSub, style: text.labelSmall),
-                    ],
+          // Hosted cards cannot be saved for one tap.
+          if (!(_card && o.hostedCards)) ...[
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.fromLTRB(14, 6, 6, 6),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.bolt_rounded, size: 20, color: AppColors.primary),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(l.paySave, style: text.titleSmall!.copyWith(fontSize: 14)),
+                        Text(l.paySaveSub, style: text.labelSmall),
+                      ],
+                    ),
                   ),
-                ),
-                Switch(
-                  key: const ValueKey('save-switch'),
-                  value: _save,
-                  onChanged: (v) {
-                    Haptics.tap();
-                    setState(() => _save = v);
-                  },
-                ),
-              ],
+                  Switch(
+                    key: const ValueKey('save-switch'),
+                    value: _save,
+                    onChanged: (v) {
+                      Haptics.tap();
+                      setState(() => _save = v);
+                    },
+                  ),
+                ],
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );
@@ -434,7 +489,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         children: [
           PillButton(
             key: const ValueKey('pay'),
-            label: l.checkoutPay(Fmt.money(widget.plan.price, widget.plan.currency)),
+            label: _selectedSaved == null && _card && o.hostedCards
+                ? l.payHostedContinue(Fmt.money(widget.plan.price, widget.plan.currency))
+                : l.checkoutPay(Fmt.money(widget.plan.price, widget.plan.currency)),
             icon: Icons.lock_rounded,
             expand: true,
             height: 54,

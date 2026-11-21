@@ -119,6 +119,16 @@ class PaymentController extends Controller
             return [$code, $phone, ['card' => null], $meta];
         }
 
+                if ($this->manager->hostedCards('card')) {
+            // Card details are typed on the provider's secure page; we only need a phone number for the receipt.
+            $phone = MobileNetwork::normalize($request->input('phone') ?: $user->phone);
+            if (! $phone) {
+                throw ValidationException::withMessages(['phone' => [__('payments.card_phone_required')]]);
+            }
+
+            return ['card', $phone, ['card' => null], []];
+        }
+
         $card = $request->input('card');
         if (! is_array($card)) {
             throw ValidationException::withMessages(['card' => [__('payments.card_required')]]);

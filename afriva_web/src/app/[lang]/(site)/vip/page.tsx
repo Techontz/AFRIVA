@@ -7,7 +7,7 @@ import { getDict } from "@/i18n/server";
 import { asArray } from "@/lib/api";
 import { safeNextPath } from "@/lib/format";
 import { serverGet } from "@/lib/server-api";
-import type { CheckoutOptions } from "@/lib/payments";
+import { parsePaymentReturn, type CheckoutOptions } from "@/lib/payments";
 import type { Plan } from "@/lib/types";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -61,6 +61,8 @@ export default async function VipPage({ searchParams }: PageProps<"/[lang]/vip">
 async function VipContent({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const sp = await searchParams;
   const nextParam = (typeof sp.next === "string" && safeNextPath(sp.next)) || undefined;
+  // Back from the card provider's hosted page: /vip?payment=AFV-...(&cancelled=1).
+  const paymentReturn = parsePaymentReturn(sp.payment, sp.cancelled);
   const [plans, options] = await Promise.all([
     serverGet<unknown>("/plans", undefined, 120),
     serverGet<CheckoutOptions>("/checkout/options", undefined, 60),
@@ -70,7 +72,7 @@ async function VipContent({ searchParams }: { searchParams: Promise<Record<strin
     .filter((p) => p.is_active !== false)
     .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
   // Options load in the browser when the server could not fetch them.
-  return <VipCheckout plans={planList} options={options} next={nextParam} />;
+  return <VipCheckout plans={planList} options={options} next={nextParam} paymentReturn={paymentReturn} />;
 }
 
 function VipSkeleton() {

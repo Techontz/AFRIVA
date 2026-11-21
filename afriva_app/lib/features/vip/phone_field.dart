@@ -17,6 +17,10 @@ class MobileMoneyField extends StatefulWidget {
     this.onChanged,
     this.autofocus = false,
     this.showHelper = true,
+    this.fieldKey = const ValueKey('mm-phone'),
+    this.labelText,
+    this.helperText,
+    this.requireKnownNetwork = true,
   });
 
   final TextEditingController controller;
@@ -25,12 +29,25 @@ class MobileMoneyField extends StatefulWidget {
   final ValueChanged<String>? onChanged;
   final bool autofocus;
   final bool showHelper;
+  final Key fieldKey;
+
+  /// Overrides for uses other than mobile money (the hosted card receipt phone).
+  final String? labelText;
+  final String? helperText;
+
+  /// Mobile money needs a known network; a receipt phone only needs to be valid.
+  final bool requireKnownNetwork;
 
   /// Validation shared with the add-number sheet.
-  static String? validate(BuildContext context, String raw, {bool Function(MobileNetwork)? isAvailable}) {
+  static String? validate(
+    BuildContext context,
+    String raw, {
+    bool Function(MobileNetwork)? isAvailable,
+    bool requireKnownNetwork = true,
+  }) {
     final l = context.l10n;
     final network = TzPhone.detect(raw);
-    if (TzPhone.national(raw).length >= 2 && network == null) return l.payNetworkUnknown;
+    if (requireKnownNetwork && TzPhone.national(raw).length >= 2 && network == null) return l.payNetworkUnknown;
     if (TzPhone.normalize(raw) == null) return l.payPhoneInvalid;
     if (network != null && isAvailable != null && !isAvailable(network)) {
       return l.payNetworkUnavailable(network.name);
@@ -57,9 +74,9 @@ class _MobileMoneyFieldState extends State<MobileMoneyField> {
     final text = Theme.of(context).textTheme;
     final raw = widget.controller.text;
     final network = TzPhone.detect(raw);
-    final unknown = TzPhone.national(raw).length >= 2 && network == null;
+    final unknown = widget.requireKnownNetwork && TzPhone.national(raw).length >= 2 && network == null;
     return TextFormField(
-      key: const ValueKey('mm-phone'),
+      key: widget.fieldKey,
       controller: widget.controller,
       autofocus: widget.autofocus,
       keyboardType: TextInputType.phone,
@@ -68,9 +85,9 @@ class _MobileMoneyFieldState extends State<MobileMoneyField> {
       inputFormatters: [TzPhoneFormatter()],
       style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600, letterSpacing: 0.6),
       decoration: InputDecoration(
-        labelText: l.payPhoneLabel,
+        labelText: widget.labelText ?? l.payPhoneLabel,
         hintText: '754 123 456',
-        helperText: widget.showHelper && !unknown ? l.payPhoneHelper : null,
+        helperText: widget.showHelper && !unknown ? (widget.helperText ?? l.payPhoneHelper) : null,
         helperMaxLines: 2,
         errorText: widget.serverError ?? (unknown ? l.payNetworkUnknown : null),
         errorMaxLines: 2,
@@ -105,7 +122,12 @@ class _MobileMoneyFieldState extends State<MobileMoneyField> {
         setState(() {});
         widget.onChanged?.call(v);
       },
-      validator: (v) => MobileMoneyField.validate(context, v ?? '', isAvailable: widget.isNetworkAvailable),
+      validator: (v) => MobileMoneyField.validate(
+        context,
+        v ?? '',
+        isAvailable: widget.isNetworkAvailable,
+        requireKnownNetwork: widget.requireKnownNetwork,
+      ),
     );
   }
 }

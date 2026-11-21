@@ -51,7 +51,7 @@ class _NoStorage implements TokenStorage {
 
 const _plan = Plan(id: 3, name: 'VIP Monthly', type: 'monthly', price: 9900, durationDays: 30);
 
-Map<String, dynamic> _options({bool mm = true, bool card = true}) => {
+Map<String, dynamic> _options({bool mm = true, bool card = true, bool hosted = false}) => {
       'data': {
         'mobile_money': {
           'available': mm,
@@ -62,6 +62,7 @@ Map<String, dynamic> _options({bool mm = true, bool card = true}) => {
         },
         'card': {
           'available': card,
+          'hosted': hosted,
           'brands': [
             {'code': 'visa', 'name': 'Visa', 'available': card},
             {'code': 'mastercard', 'name': 'Mastercard', 'available': card},
@@ -79,6 +80,8 @@ Map<String, dynamic> _payment(String status, {String method = 'visa', String? ph
       'payment_method': method,
       'phone': phone,
     };
+
+const _redirect = 'https://pay.snippe.example/checkout/AFR-TEST1';
 
 Widget _app(_Adapter adapter, Widget home) {
   AppTheme.init(useGoogleFonts: false);
@@ -337,6 +340,164 @@ void main() {
       await tester.pumpAndSettle();
       expect(adapter.posts('/checkout').single.data, {'plan_id': 3, 'saved_method_id': 7});
       expect(find.text('Welcome to VIP!'), findsOneWidget);
+    });
+  });
+
+  group('hosted card checkout (Snippe)', () {
+    final savedBoth = {
+      'data': [
+        {
+          'id': 7, 'type': 'mobile_money', 'method_code': 'mpesa', 'network': 'M-Pesa',
+          'phone': '255754000111', 'is_default': true, 'is_expired': false, 'one_tap': true,
+        },
+        {
+          'id': 8, 'type': 'card', 'method_code': 'visa', 'card_brand': 'visa', 'card_last4': '4242',
+          'card_exp_month': 12, 'card_exp_year': 2030, 'is_default': false, 'is_expired': false, 'one_tap': true,
+        },
+      ],
+    };
+
+    test('options parse card.hosted', () {
+      final o = CheckoutOptions.fromJson(_options(hosted: true)['data'] as Map<String, dynamic>);
+      expect(o.card.hosted, isTrue);
+      expect(o.hostedCards, isTrue);
+      expect(CheckoutOptions.fromJson(_options()['data'] as Map<String, dynamic>).hostedCards, isFalse);
+    });
+
+    testWidgets('hosted mode shows no card fields, no save toggle and no saved cards', (tester) async {
+      _phone(tester);
+      final adapter = _Adapter((o) => switch (o.path) {
+            '/checkout/options' => (200, _options(hosted: true)),
+            '/me/payment-methods' => (200, savedBoth),
+            _ => (404, {'message': 'Not found'}),
+          });
+      await tester.pumpWidget(_app(adapter, const CheckoutScreen(plan: _plan)));
+      await tester.pumpAndSettle();
+
+      // Saved mobile money stays; the saved card cannot be charged on a hosted page.
+      expect(find.byKey(const ValueKey('saved-7')), findsOneWidget);
+      expect(find.byKey(const ValueKey('saved-8')), findsNothing);
+
+      await tester.tap(find.byKey(const ValueKey('add-new')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Card'));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('hosted-card-panel')), findsOneWidget);
+      for (final k in ['card-number', 'card-month', 'card-year', 'card-cvc']) {
+        expect(find.byKey(ValueKey(k)), findsNothing, reason: k);
+      }
+      expect(find.textContaining("payment partner's secure page"), findsOneWidget);
+      expect(find.byType(BrandMark), findsWidgets);
+      expect(find.byKey(const ValueKey('card-phone')), findsOneWidget);
+      expect(find.byKey(const ValueKey('save-switch')), findsNothing);
+      expect(find.textContaining('Continue to secure card payment'), findsOneWidget);
+    });
+
+    testWidgets('sends channel card + phone only, opens the page and polls to success', (tester) async {
+      _phone(tester);
+      var polls = 0;
+      final opened = <Uri>[];
+      final adapter = _Adapter((o) => switch (o.path) {
+            '/checkout/options' => (200, _options(hosted: true)),
+            '/me/payment-methods' => (200, {'data': []}),
+            '/checkout' => (201, {
+                'data': {
+                  'payment': _payment('pending', method: 'card', phone: '255754123456'),
+                  'message': 'Continue on the secure page',
+                  'next_action': 'redirect',
+                  'redirect_url': _redirect,
+                },
+              }),
+            '/payments/AFR-TEST1' => (200, {'data': _payment(++polls >= 3 ? 'success' : 'pending', method: 'card')}),
+            _ => (404, {'message': 'Not found'}),
+          });
+      await tester.pumpWidget(_app(
+        adapter,
+        CheckoutScreen(
+          plan: _plan,
+          openUrl: (u) async {
+            opened.add(u);
+            return true;
+          },
+        ),
+      ));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Card'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const ValueKey('card-phone')), '0754123456');
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const ValueKey('pay')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+
+      final body = adapter.posts('/checkout').single.data as Map<String, dynamic>;
+      expect(body, {'plan_id': 3, 'channel': 'card', 'phone': '255754123456'});
+      expect(body.containsKey('card'), isFalse);
+      final raw = jsonEncode(body);
+      for (final banned in ['last4', 'exp_month', 'exp_year', 'brand', 'token', 'cvc', 'number']) {
+        expect(raw, isNot(contains(banned)), reason: banned);
+      }
+
+      expect(opened, [Uri.parse(_redirect)]);
+      await tester.pump(const Duration(milliseconds: 400)); // sheet finishes sliding in
+      expect(find.text('Complete your payment'), findsOneWidget);
+      expect(find.text("I've paid, check again"), findsOneWidget);
+      expect(polls, 0);
+
+      // Back from the browser: checks at once, without waiting for the timer.
+      for (final st in [
+        AppLifecycleState.inactive,
+        AppLifecycleState.hidden,
+        AppLifecycleState.paused,
+        AppLifecycleState.hidden,
+        AppLifecycleState.inactive,
+        AppLifecycleState.resumed,
+      ]) {
+        tester.binding.handleAppLifecycleStateChanged(st);
+      }
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(polls, 1);
+      expect(find.text('Complete your payment'), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('hosted-check')));
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(polls, 2);
+
+      await tester.tap(find.byKey(const ValueKey('hosted-reopen')));
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(opened, hasLength(2));
+
+      // The regular 3 s poll then sees the payment go through.
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(polls, 3);
+      expect(find.text('Payment received'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pumpAndSettle();
+      expect(find.text('Welcome to VIP!'), findsOneWidget);
+    });
+
+    testWidgets('a 422 on phone shows under the receipt phone field', (tester) async {
+      _phone(tester);
+      final adapter = _Adapter((o) => switch (o.path) {
+            '/checkout/options' => (200, _options(hosted: true)),
+            '/me/payment-methods' => (200, {'data': []}),
+            '/checkout' => (422, {
+                'message': 'The given data was invalid.',
+                'errors': {'phone': ['Enter the phone number for your card receipt.']},
+              }),
+            _ => (404, {'message': 'Not found'}),
+          });
+      await tester.pumpWidget(_app(adapter, CheckoutScreen(plan: _plan, openUrl: (_) async => true)));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Card'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const ValueKey('card-phone')), '0754123456');
+      await tester.tap(find.byKey(const ValueKey('pay')));
+      await tester.pumpAndSettle();
+      expect(find.text('Enter the phone number for your card receipt.'), findsOneWidget);
     });
   });
 }

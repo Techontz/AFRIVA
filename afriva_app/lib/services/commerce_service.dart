@@ -22,6 +22,11 @@ class CommerceService {
   Future<CheckoutResult> payWithCard({required int planId, required CardPayload card, bool save = true}) =>
       _checkout({'plan_id': planId, 'channel': 'card', 'card': card.toJson(), 'save': save});
 
+  /// Hosted card: no card details at all. The viewer types the card on the
+  /// payment partner's secure page (`redirect_url`); the phone is for the receipt.
+  Future<CheckoutResult> payWithHostedCard({required int planId, required String phone}) =>
+      _checkout({'plan_id': planId, 'channel': 'card', 'phone': phone});
+
   /// One tap with a saved number or card.
   Future<CheckoutResult> payWithSaved({required int planId, required int savedMethodId}) =>
       _checkout({'plan_id': planId, 'saved_method_id': savedMethodId});

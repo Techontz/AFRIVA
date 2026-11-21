@@ -14,7 +14,7 @@ import {
   spaceLocal,
 } from "@/lib/payments";
 import { Icon } from "../../ui/Icon";
-import { CardBrandMark, NetworkMark } from "./PayMarks";
+import { CardBrandMark, MastercardMark, NetworkMark, VisaMark } from "./PayMarks";
 
 const shell =
   "flex items-center rounded-2xl border bg-surface-2/60 transition-[border-color,box-shadow] duration-150 " +
@@ -44,6 +44,7 @@ function Message({ error, hint }: { error?: string | null; hint?: React.ReactNod
 /**
  * Tanzanian mobile number with a fixed +255 prefix. Accepts "0754...", "754..." or "+255 754..."
  * and shows the network as soon as the prefix is known: there is no network picker.
+ * `network={false}` keeps the same field for a plain contact number (no network chip or check).
  */
 export function PhoneField({
   id,
@@ -52,6 +53,8 @@ export function PhoneField({
   error,
   hint,
   autoFocus,
+  label,
+  network: showNetwork = true,
 }: {
   id: string;
   value: string;
@@ -59,14 +62,16 @@ export function PhoneField({
   error?: string | null;
   hint?: React.ReactNode;
   autoFocus?: boolean;
+  label?: string;
+  network?: boolean;
 }) {
   const t = useT().user.pay;
-  const network = detectNetwork(value);
+  const network = showNetwork ? detectNetwork(value) : null;
   const digits = localDigits(value);
-  const unknown = digits.length >= 2 && !network;
+  const unknown = showNetwork && digits.length >= 2 && !network;
   return (
     <div>
-      <Label htmlFor={id}>{t.phoneLabel}</Label>
+      <Label htmlFor={id}>{label ?? t.phoneLabel}</Label>
       <div className={cn(shell, error ? "border-danger" : "border-border")}>
         <span className="flex items-center gap-1.5 self-stretch border-r border-border pl-3.5 pr-3 text-[15px] font-bold text-text-muted">
           <span aria-hidden className="relative h-3.5 w-5 overflow-hidden rounded-[3px]">
@@ -125,6 +130,60 @@ export function PhoneField({
           )
         }
       />
+    </div>
+  );
+}
+
+/**
+ * Card checkout on the payment partner's hosted page: no card fields here, only the brands we
+ * accept, where the card is entered, and a phone number for the receipt.
+ */
+export function HostedCardPanel({
+  phone,
+  onPhoneChange,
+  phoneError,
+}: {
+  phone: string;
+  onPhoneChange: (v: string) => void;
+  phoneError?: string | null;
+}) {
+  const t = useT().user.pay;
+  return (
+    <div className="space-y-4">
+      <div className="relative overflow-hidden rounded-2xl border border-border bg-surface-2/60 p-4">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -right-10 -top-12 h-32 w-32 rounded-full bg-[radial-gradient(circle,rgba(233,2,4,0.18),transparent_70%)]"
+        />
+        <div className="relative flex items-start gap-3">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/12 text-primary">
+            <Icon name="lock" size={18} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-[14px] font-bold">{t.hostedTitle}</p>
+            <p className="mt-0.5 text-xs leading-relaxed text-text-muted">{t.hostedLine}</p>
+          </div>
+        </div>
+        <div className="relative mt-3.5 flex items-center gap-2 border-t border-border pt-3.5">
+          <VisaMark />
+          <MastercardMark />
+          <span className="ml-auto flex items-center gap-1 text-[11px] font-semibold text-text-dim">
+            <Icon name="shield" size={13} className="text-success" /> {t.hostedBadge}
+          </span>
+        </div>
+      </div>
+      <PhoneField
+        id="card-phone"
+        label={t.cardPhoneLabel}
+        network={false}
+        value={phone}
+        onChange={onPhoneChange}
+        error={phoneError}
+        hint={t.cardPhoneHint}
+      />
+      <p className="flex items-start gap-1.5 text-xs leading-relaxed text-text-dim">
+        <Icon name="lock" size={13} className="mt-0.5 shrink-0" /> {t.hostedPrivacy}
+      </p>
     </div>
   );
 }

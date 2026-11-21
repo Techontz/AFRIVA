@@ -396,3 +396,104 @@ class NetworkPill extends StatelessWidget {
     );
   }
 }
+
+/// Card option when cards are paid on the payment partner's secure hosted
+/// page: brand marks and a reassuring line instead of card fields. [phone] is
+/// the receipt phone field shown underneath.
+class HostedCardPanel extends StatelessWidget {
+  const HostedCardPanel({super.key, required this.brands, required this.phone});
+
+  final List<CardBrand> brands;
+  final Widget phone;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    final text = Theme.of(context).textTheme;
+    final marks = brands.isEmpty ? CardBrand.values : brands;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          key: const ValueKey('hosted-card-panel'),
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            gradient: AppColors.vipCardGradient,
+            borderRadius: BorderRadius.circular(AppRadii.card + 2),
+            border: Border.all(
+              color: AppColors.primary.withValues(alpha: 0.18),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: AppColors.brandGradient,
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withValues(alpha: 0.35),
+                          blurRadius: 16,
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.lock_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      l.payHostedTitle,
+                      style: text.titleSmall!.copyWith(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  for (final b in marks) ...[
+                    const SizedBox(width: 6),
+                    BrandMark.card(b, size: 42),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 14),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 1),
+                    child: Icon(
+                      Icons.verified_user_outlined,
+                      size: 17,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      l.payHostedBody,
+                      style: text.bodySmall!.copyWith(
+                        color: AppColors.text,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        phone,
+      ],
+    );
+  }
+}

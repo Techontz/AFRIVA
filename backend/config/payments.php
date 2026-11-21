@@ -19,6 +19,10 @@ use App\Payments\Gateways\CardGateway;
 use App\Payments\Gateways\HaloPesaGateway;
 use App\Payments\Gateways\MpesaGateway;
 use App\Payments\Gateways\SandboxGateway;
+use App\Payments\Gateways\SnippeGateway;
+
+// When a Snippe API key is set, every mobile money network and cards go through Snippe.
+$snippe = filled(env('SNIPPE_API_KEY'));
 use App\Payments\Gateways\TigoPesaGateway;
 
 return [
@@ -30,17 +34,21 @@ return [
         'callbacks' => (bool) env('PAYMENTS_SANDBOX_CALLBACKS', env('APP_ENV', 'production') !== 'production'),
     ],
 
+    // Where Snippe's hosted card page sends the viewer back (a ?payment=REF query is appended).
+    'return_url' => env('PAYMENTS_RETURN_URL', 'https://afriva.co.tz/vip'),
+
     'callback_base_url' => env('PAYMENTS_CALLBACK_URL', env('APP_URL').'/api/v1/payments/callback'),
 
     // payment method code => driver key
     'methods' => [
-        'mpesa' => 'mpesa',
-        'tigopesa' => 'tigopesa',
-        'airtelmoney' => 'airtelmoney',
-        'halopesa' => 'halopesa',
+        'mpesa' => $snippe ? 'snippe' : 'mpesa',
+        'tigopesa' => $snippe ? 'snippe' : 'tigopesa',
+        'airtelmoney' => $snippe ? 'snippe' : 'airtelmoney',
+        'halopesa' => $snippe ? 'snippe' : 'halopesa',
         'tpesa' => 'bank',      // T-Pesa (TTCL) — routed through the generic aggregator driver until a direct API is chosen
-        'visa' => 'card',
-        'mastercard' => 'card',
+        'visa' => $snippe ? 'snippe' : 'card',
+        'mastercard' => $snippe ? 'snippe' : 'card',
+        'card' => $snippe ? 'snippe' : 'card', // hosted card page (any Visa or Mastercard)
         'crdb' => 'bank',
         'nmb' => 'bank',
         'nbc' => 'bank',
@@ -90,6 +98,13 @@ return [
         ],
         'sandbox' => [
             'class' => SandboxGateway::class,
+        ],
+        'snippe' => [
+            'class' => SnippeGateway::class,
+            'api_key' => env('SNIPPE_API_KEY'),
+            'webhook_secret' => env('SNIPPE_WEBHOOK_SECRET'),
+            'base_url' => env('SNIPPE_BASE_URL', 'https://api.snippe.sh'),
+            'api_version' => env('SNIPPE_API_VERSION', '2026-01-25'),
         ],
     ],
 ];

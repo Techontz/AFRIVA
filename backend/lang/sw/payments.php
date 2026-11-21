@@ -19,4 +19,7 @@ return [
     'card_expired' => 'Kadi hii imeisha muda wake.',
     'card_needs_details' => 'Tafadhali weka tena taarifa za kadi hii ili kulipa.',
     'saved_not_found' => 'Njia hiyo ya malipo iliyohifadhiwa haikupatikana.',
+    'provider_error' => 'Mtoa huduma ya malipo ameshindwa kuanzisha malipo haya. Tafadhali jaribu tena.',
+    'redirecting' => 'Endelea kwenye ukurasa salama wa kadi.',
+    'card_phone_required' => 'Weka namba yako ya simu ili kulipa kwa kadi.',
 ];

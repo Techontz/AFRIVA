@@ -63,11 +63,26 @@ class PaymentManager
         if (config('payments.sandbox.auto_approve')) {
             return true;
         }
-        if (! $method->is_integrated || ! config("payments.methods.{$methodCode}")) {
+                if (! config("payments.methods.{$methodCode}")) {
+            return false;
+        }
+        $gateway = $this->forMethod($methodCode);
+        if ($gateway instanceof \App\Payments\Gateways\NotConnectedGateway) {
             return false;
         }
 
-        return ! ($this->forMethod($methodCode) instanceof \App\Payments\Gateways\NotConnectedGateway);
+        return ! method_exists($gateway, 'isConnected') || $gateway->isConnected();
+    }
+
+        /** True when cards for this method are entered on the provider's hosted page (no card details in checkout). */
+    public function hostedCards(string $methodCode): bool
+    {
+        if (config('payments.sandbox.auto_approve')) {
+            return false;
+        }
+        $gateway = $this->forMethod($methodCode);
+
+        return method_exists($gateway, 'hostedCards') && $gateway->hostedCards();
     }
 
     /** Which driver handled a stored payment (sandbox if it was routed there). */

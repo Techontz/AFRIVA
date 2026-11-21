@@ -9,9 +9,10 @@ import { Button } from "../../ui/Button";
 import { Spinner } from "../../ui/Feedback";
 import { Icon } from "../../ui/Icon";
 import { Modal } from "../../ui/Modal";
-import { CardBrandMark, NetworkMark } from "./PayMarks";
+import { CardBrandMark, MastercardMark, NetworkMark, VisaMark } from "./PayMarks";
 
-export type PayStage = "waiting" | "success" | "failed" | "timeout";
+/** redirecting: on the way to the card partner's hosted page. cancelled: back from it without paying. */
+export type PayStage = "waiting" | "success" | "failed" | "timeout" | "redirecting" | "cancelled";
 
 export interface PayStatus {
   stage: PayStage;
@@ -28,6 +29,8 @@ export interface PayStatus {
   planType?: string | null;
   coins?: number | null;
   message?: string | null;
+  /** Back from the card partner's hosted page (confirming a payment made there). */
+  returned?: boolean;
   /** Polling deadline (ms epoch) for the countdown bar. */
   deadline?: number;
   startedAt?: number;
@@ -60,17 +63,60 @@ export function PaymentStatusModal({
 }) {
   const t = useT().user.pay;
   if (!status) return null;
-  const amount = formatMoney(status.amount, status.currency);
+  const amount = status.amount > 0 ? formatMoney(status.amount, status.currency) : "";
+  const redirecting = status.stage === "redirecting";
   return (
-    <Modal open onClose={onClose} hideClose size="sm" className="overflow-x-hidden">
+    <Modal open onClose={redirecting ? () => {} : onClose} hideClose size="sm" className="overflow-x-hidden">
       <div className="relative pt-6 text-center">
-        <button
-          onClick={onClose}
-          className="absolute -top-1 right-0 grid h-9 w-9 place-items-center rounded-full text-text-muted transition hover:bg-surface-2 hover:text-text"
-          aria-label={t.close}
-        >
-          <Icon name="x" size={18} />
-        </button>
+        {!redirecting && (
+          <button
+            onClick={onClose}
+            className="absolute -top-1 right-0 grid h-9 w-9 place-items-center rounded-full text-text-muted transition hover:bg-surface-2 hover:text-text"
+            aria-label={t.close}
+          >
+            <Icon name="x" size={18} />
+          </button>
+        )}
+
+        {redirecting && (
+          <div className="py-4 animate-fade-in" aria-live="polite">
+            <div className="relative mx-auto grid h-24 w-24 place-items-center">
+              <span className="absolute inset-0 rounded-full border-2 border-primary/15" />
+              <span className="absolute inset-0 rounded-full border-2 border-transparent border-t-primary animate-spin" />
+              <span className="grid h-16 w-16 place-items-center rounded-full bg-primary/12 text-primary">
+                <Icon name="lock" size={28} strokeWidth={1.9} />
+              </span>
+            </div>
+            <h2 className="mt-5 text-xl font-extrabold">{t.redirectingTitle}</h2>
+            <p className="mx-auto mt-1.5 max-w-[300px] text-sm text-text-muted">{t.redirectingBody}</p>
+            <div className="mt-5 flex items-center justify-center gap-2">
+              <VisaMark />
+              <MastercardMark />
+            </div>
+            {amount && <p className="mt-4 text-[13px] font-bold tabular-nums text-text-muted">{amount}</p>}
+          </div>
+        )}
+
+        {status.stage === "cancelled" && (
+          <div className="animate-fade-in" aria-live="polite">
+            <div className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-surface-2 text-text-muted animate-scale-in">
+              <Icon name="card" size={32} strokeWidth={1.9} />
+            </div>
+            <h2 className="mt-5 text-xl font-extrabold">{t.cancelledTitle}</h2>
+            <p className="mx-auto mt-1.5 max-w-[320px] text-sm text-text-muted">{t.cancelledBody}</p>
+            <p className="mt-3 text-[11px] text-text-dim">
+              {t.reference} <span className="font-mono">{status.reference}</span>
+            </p>
+            <div className="mt-6 flex flex-col gap-2">
+              <Button size="lg" className="w-full" onClick={onRetry}>
+                <Icon name="refresh" size={16} /> {t.tryAgain}
+              </Button>
+              <Button variant="ghost" className="w-full" onClick={onClose}>
+                {t.close}
+              </Button>
+            </div>
+          </div>
+        )}
 
         {status.stage === "waiting" && status.channel === "mobile_money" && (
           <div className="animate-fade-in" aria-live="polite">
@@ -126,7 +172,7 @@ export function PaymentStatusModal({
               <Spinner size={34} />
             </div>
             <h2 className="mt-5 text-xl font-extrabold">{t.confirming}</h2>
-            <p className="mt-1.5 text-sm text-text-muted">{t.confirmingHint}</p>
+            <p className="mx-auto mt-1.5 max-w-[300px] text-sm text-text-muted">{status.returned ? t.confirmingReturnHint : t.confirmingHint}</p>
             <Countdown status={status} />
           </div>
         )}
@@ -171,7 +217,7 @@ export function PaymentStatusModal({
               status={status}
               rows={[
                 [t.plan, status.planName ?? "-"],
-                [t.amount, amount],
+                [t.amount, amount || "-"],
                 [t.reference, status.reference],
               ]}
             />
@@ -210,7 +256,7 @@ export function PaymentStatusModal({
                 </Button>
               )}
               <Button size="lg" variant={status.stage === "timeout" ? "secondary" : "primary"} className="w-full" onClick={onRetry}>
-                {fmt(t.tryAgainAmount, { amount })}
+                {amount ? fmt(t.tryAgainAmount, { amount }) : t.tryAgain}
               </Button>
               <Button variant="ghost" className="w-full" onClick={onClose}>
                 {t.otherMethod}

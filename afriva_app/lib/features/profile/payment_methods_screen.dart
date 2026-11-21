@@ -28,10 +28,16 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
   List<SavedMethod>? _items;
   Object? _error;
 
+  /// Cards are typed on the payment partner's secure page, so none get saved.
+  bool _hostedCards = false;
+
   @override
   void initState() {
     super.initState();
     _load();
+    context.read<CommerceService>().checkoutOptions().then((o) {
+      if (mounted && o.hostedCards != _hostedCards) setState(() => _hostedCards = o.hostedCards);
+    }).catchError((_) {});
   }
 
   Future<void> _load() async {
@@ -193,7 +199,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                     children: [
                       Icon(Icons.credit_card_rounded, size: 15, color: AppColors.textDim),
                       const SizedBox(width: 6),
-                      Flexible(child: Text(l.paymentMethodsCardNote, style: text.labelSmall, textAlign: TextAlign.center)),
+                      Flexible(child: Text(_hostedCards ? l.paymentMethodsCardHostedNote : l.paymentMethodsCardNote, style: text.labelSmall, textAlign: TextAlign.center)),
                     ],
                   ),
                   const SizedBox(height: 28),

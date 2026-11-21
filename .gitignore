@@ -10,3 +10,6 @@
 # local-only
 _backups/
 _screenshots/
+
+# local build outputs
+afriva_app/_saved_builds/

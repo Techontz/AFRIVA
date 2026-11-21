@@ -13,7 +13,8 @@ export type NetworkCode = "mpesa" | "airtelmoney" | "tigopesa" | "halopesa" | "t
 
 export interface CheckoutOptions {
   mobile_money: { available: boolean; networks: { code: string; name: string; available: boolean }[] };
-  card: { available: boolean; brands: { code: string; name: string; available: boolean }[] };
+  /** hosted: cards are typed on the provider's secure page (redirect), not in Afriva's card fields. */
+  card: { available: boolean; hosted?: boolean; brands: { code: string; name: string; available: boolean }[] };
   demo: boolean;
 }
 
@@ -42,6 +43,18 @@ export interface CheckoutResponse {
   redirect_url?: string | null;
   subscription?: Subscription | null;
   user_coins?: number;
+}
+
+/** Where a hosted card payment came back to (/vip?payment=REF, plus &cancelled=1 on cancel). */
+export interface PaymentReturn {
+  reference: string;
+  cancelled: boolean;
+}
+
+/** Payment references are short slugs such as AFV-...; anything else in ?payment= is ignored. */
+export function parsePaymentReturn(payment: unknown, cancelled: unknown): PaymentReturn | null {
+  if (typeof payment !== "string" || !/^[A-Za-z0-9_-]{4,64}$/.test(payment)) return null;
+  return { reference: payment, cancelled: cancelled === "1" || cancelled === "true" };
 }
 
 /* ---------------------------------------------------------------- Mobile money */

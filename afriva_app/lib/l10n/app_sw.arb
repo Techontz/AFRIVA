@@ -420,5 +420,18 @@
   "paymentMethodsDefaultSet": "Njia kuu ya malipo imesasishwa",
   "paymentMethodsAdded": "Namba imehifadhiwa",
   "paymentMethodsSaveNumber": "Hifadhi namba",
-  "settingsPayments": "Malipo"
+  "settingsPayments": "Malipo",
+  "payHostedTitle": "Lipa kwa kadi kwa usalama",
+  "payHostedBody": "Utaweka kadi yako kwenye ukurasa salama wa mshirika wetu wa malipo. Afriva haioni namba ya kadi yako.",
+  "payHostedPhoneLabel": "Namba ya simu",
+  "payHostedPhoneHelper": "Kwa risiti yako na taarifa za malipo.",
+  "payHostedContinue": "Endelea kulipa kwa kadi kwa usalama · {amount}",
+  "payHostedOpenFailed": "Imeshindikana kufungua ukurasa salama wa malipo. Gusa hapa chini kuufungua tena.",
+  "promptHostedTitle": "Kamilisha malipo yako",
+  "promptHostedBody": "Maliza kulipa kwenye ukurasa salama wa kadi. Skrini hii itajisasisha yenyewe benki yako ikithibitisha.",
+  "promptHostedReopen": "Fungua ukurasa salama tena",
+  "promptHostedPaid": "Nimelipa, angalia tena",
+  "promptHostedTimeoutBody": "Bado hakuna uthibitisho. Kama umemaliza kulipa, angalia tena. La sivyo, jaribu tena.",
+  "promptHostedFailedBody": "Hakuna pesa iliyokatwa. Angalia taarifa za kadi yako kisha jaribu tena.",
+  "paymentMethodsCardHostedNote": "Kadi huwekwa kwenye ukurasa salama wa mshirika wetu wa malipo kila unapolipa."
 }

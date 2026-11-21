@@ -1533,4 +1533,51 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsPayments => 'Payments';
+
+  @override
+  String get payHostedTitle => 'Pay securely by card';
+
+  @override
+  String get payHostedBody =>
+      'You\'ll enter your card on our payment partner\'s secure page. Afriva never sees your card number.';
+
+  @override
+  String get payHostedPhoneLabel => 'Phone number';
+
+  @override
+  String get payHostedPhoneHelper => 'For your receipt and payment updates.';
+
+  @override
+  String payHostedContinue(String amount) {
+    return 'Continue to secure card payment · $amount';
+  }
+
+  @override
+  String get payHostedOpenFailed =>
+      'We couldn\'t open the secure payment page. Tap below to open it again.';
+
+  @override
+  String get promptHostedTitle => 'Complete your payment';
+
+  @override
+  String get promptHostedBody =>
+      'Finish paying on the secure card page. This screen updates by itself once your bank confirms.';
+
+  @override
+  String get promptHostedReopen => 'Open the secure page again';
+
+  @override
+  String get promptHostedPaid => 'I\'ve paid, check again';
+
+  @override
+  String get promptHostedTimeoutBody =>
+      'No confirmation yet. If you finished paying, check again. Otherwise, try once more.';
+
+  @override
+  String get promptHostedFailedBody =>
+      'No money was taken. Check your card details and try again.';
+
+  @override
+  String get paymentMethodsCardHostedNote =>
+      'Cards are entered on our payment partner\'s secure page each time you pay.';
 }

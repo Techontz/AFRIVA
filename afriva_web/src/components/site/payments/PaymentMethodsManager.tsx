@@ -7,7 +7,7 @@ import { fmt } from "@/i18n/format";
 import { ApiError, api, errorMessage } from "@/lib/api";
 import { cn, formatDate } from "@/lib/format";
 import { useApi } from "@/lib/hooks";
-import { normalizePhone, savedLabel, type SavedMethod } from "@/lib/payments";
+import { normalizePhone, savedLabel, type CheckoutOptions, type SavedMethod } from "@/lib/payments";
 import { Button } from "../../ui/Button";
 import { ApiDownState } from "../../ui/Feedback";
 import { Icon } from "../../ui/Icon";
@@ -20,6 +20,8 @@ export function PaymentMethodsManager() {
   const t = useT().user.pay;
   const locale = useLocale();
   const list = useApi<SavedMethod[]>("/me/payment-methods");
+  // Hosted cards are entered on the partner's page each time, so only numbers pay with one tap.
+  const hostedCard = useApi<CheckoutOptions>("/checkout/options").data?.card.hosted === true;
   const [adding, setAdding] = useState(false);
   const [removing, setRemoving] = useState<SavedMethod | null>(null);
   const [busy, setBusy] = useState<number | "remove" | null>(null);
@@ -58,7 +60,7 @@ export function PaymentMethodsManager() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="text-lg font-extrabold tracking-tight">{t.methodsTitle}</h2>
-          <p className="mt-0.5 text-sm text-text-muted">{t.methodsHint}</p>
+          <p className="mt-0.5 text-sm text-text-muted">{hostedCard ? t.methodsHintHosted : t.methodsHint}</p>
         </div>
         <Button size="sm" variant="secondary" onClick={() => setAdding(true)}>
           <Icon name="plus" size={15} /> {t.addNumber}

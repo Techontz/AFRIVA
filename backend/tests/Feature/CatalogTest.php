@@ -49,7 +49,7 @@ class CatalogTest extends ApiTestCase
     {
         $this->getJson('/api/v1/plans')->assertOk()->assertJsonCount(7, 'data')
             ->assertJsonStructure(['data' => [['id', 'name', 'type', 'price', 'currency', 'duration_days', 'episode_quota', 'coins', 'bonus_coins', 'features', 'is_popular']]]);
-        $this->getJson('/api/v1/payment-methods')->assertOk()->assertJsonCount(10, 'data')
+        $this->getJson('/api/v1/payment-methods')->assertOk()->assertJsonCount(11, 'data')
             ->assertJsonPath('data.0.code', 'mpesa')
             ->assertJsonPath('data.0.is_integrated', false);
     }

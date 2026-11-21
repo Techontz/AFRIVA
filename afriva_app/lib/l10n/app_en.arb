@@ -886,5 +886,25 @@
   "paymentMethodsDefaultSet": "Default payment method updated",
   "paymentMethodsAdded": "Number saved",
   "paymentMethodsSaveNumber": "Save number",
-  "settingsPayments": "Payments"
+  "settingsPayments": "Payments",
+  "payHostedTitle": "Pay securely by card",
+  "payHostedBody": "You'll enter your card on our payment partner's secure page. Afriva never sees your card number.",
+  "payHostedPhoneLabel": "Phone number",
+  "payHostedPhoneHelper": "For your receipt and payment updates.",
+  "payHostedContinue": "Continue to secure card payment · {amount}",
+  "@payHostedContinue": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "payHostedOpenFailed": "We couldn't open the secure payment page. Tap below to open it again.",
+  "promptHostedTitle": "Complete your payment",
+  "promptHostedBody": "Finish paying on the secure card page. This screen updates by itself once your bank confirms.",
+  "promptHostedReopen": "Open the secure page again",
+  "promptHostedPaid": "I've paid, check again",
+  "promptHostedTimeoutBody": "No confirmation yet. If you finished paying, check again. Otherwise, try once more.",
+  "promptHostedFailedBody": "No money was taken. Check your card details and try again.",
+  "paymentMethodsCardHostedNote": "Cards are entered on our payment partner's secure page each time you pay."
 }

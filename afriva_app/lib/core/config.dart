@@ -60,4 +60,7 @@ class AppConfig {
   static const Duration receiveTimeout = Duration(seconds: 20);
   static const Duration paymentPollInterval = Duration(seconds: 3);
   static const Duration paymentPollTimeout = Duration(minutes: 2);
+
+  /// Hosted card page: typing a card and passing 3-D Secure takes longer.
+  static const Duration hostedCardPollTimeout = Duration(minutes: 5);
 }

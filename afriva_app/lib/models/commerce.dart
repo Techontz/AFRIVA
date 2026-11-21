@@ -65,8 +65,12 @@ class Plan {
 
 /// One payment channel from `GET /checkout/options`.
 class CheckoutChannel {
-  const CheckoutChannel({required this.available, this.options = const []});
+  const CheckoutChannel({required this.available, this.options = const [], this.hosted = false});
   final bool available;
+
+  /// Card only: true when the card is typed on the payment partner's secure
+  /// hosted page (Snippe) instead of in the app. No card fields, no saved cards.
+  final bool hosted;
 
   /// Networks (mobile money) or brands (card): code, name, available.
   final List<({String code, String name, bool available})> options;
@@ -75,6 +79,7 @@ class CheckoutChannel {
 
   factory CheckoutChannel.fromJson(Json? j, String listKey) => CheckoutChannel(
         available: asBool(j?['available']),
+        hosted: asBool(j?['hosted']),
         options: j == null
             ? const []
             : asList(j[listKey], (o) => (
@@ -91,6 +96,9 @@ class CheckoutOptions {
   final CheckoutChannel mobileMoney;
   final CheckoutChannel card;
   final bool demo;
+
+  /// Cards are paid on the partner's secure hosted page.
+  bool get hostedCards => card.available && card.hosted;
 
   factory CheckoutOptions.fromJson(Json j) => CheckoutOptions(
         mobileMoney: CheckoutChannel.fromJson(asMapOrNull(j['mobile_money']), 'networks'),

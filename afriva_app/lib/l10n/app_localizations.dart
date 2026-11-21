@@ -2623,6 +2623,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Payments'**
   String get settingsPayments;
+
+  /// No description provided for @payHostedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay securely by card'**
+  String get payHostedTitle;
+
+  /// No description provided for @payHostedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ll enter your card on our payment partner\'s secure page. Afriva never sees your card number.'**
+  String get payHostedBody;
+
+  /// No description provided for @payHostedPhoneLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone number'**
+  String get payHostedPhoneLabel;
+
+  /// No description provided for @payHostedPhoneHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'For your receipt and payment updates.'**
+  String get payHostedPhoneHelper;
+
+  /// No description provided for @payHostedContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue to secure card payment · {amount}'**
+  String payHostedContinue(String amount);
+
+  /// No description provided for @payHostedOpenFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t open the secure payment page. Tap below to open it again.'**
+  String get payHostedOpenFailed;
+
+  /// No description provided for @promptHostedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete your payment'**
+  String get promptHostedTitle;
+
+  /// No description provided for @promptHostedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish paying on the secure card page. This screen updates by itself once your bank confirms.'**
+  String get promptHostedBody;
+
+  /// No description provided for @promptHostedReopen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the secure page again'**
+  String get promptHostedReopen;
+
+  /// No description provided for @promptHostedPaid.
+  ///
+  /// In en, this message translates to:
+  /// **'I\'ve paid, check again'**
+  String get promptHostedPaid;
+
+  /// No description provided for @promptHostedTimeoutBody.
+  ///
+  /// In en, this message translates to:
+  /// **'No confirmation yet. If you finished paying, check again. Otherwise, try once more.'**
+  String get promptHostedTimeoutBody;
+
+  /// No description provided for @promptHostedFailedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'No money was taken. Check your card details and try again.'**
+  String get promptHostedFailedBody;
+
+  /// No description provided for @paymentMethodsCardHostedNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Cards are entered on our payment partner\'s secure page each time you pay.'**
+  String get paymentMethodsCardHostedNote;
 }
 
 class _AppLocalizationsDelegate

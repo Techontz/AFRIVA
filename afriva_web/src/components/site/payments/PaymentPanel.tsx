@@ -25,24 +25,41 @@ import {
   type Channel,
   type CheckoutOptions,
   type CheckoutResponse,
+  type PaymentReturn,
   type SavedMethod,
 } from "@/lib/payments";
 import type { Payment, Plan } from "@/lib/types";
 import { Button } from "../../ui/Button";
 import { Toggle } from "../../ui/Form";
 import { Icon } from "../../ui/Icon";
-import { CardFields, PhoneField, type CardDraft, type CardErrors } from "./PayFields";
+import { CardFields, HostedCardPanel, PhoneField, type CardDraft, type CardErrors } from "./PayFields";
 import { SavedMethodIcon } from "./PayMarks";
 import { PaymentStatusModal, type PayStatus } from "./PaymentStatusModal";
 
 const POLL_MS = 3000;
 const POLL_WINDOW_MS = 120_000;
+/** How long the "Redirecting to secure payment" state shows before leaving for the hosted page. */
+const REDIRECT_DELAY_MS = 700;
 const EMPTY_CARD: CardDraft = { number: "", expiry: "", cvc: "" };
 
 type Selection = { kind: "saved"; id: number } | { kind: "new" };
 type Body = Record<string, unknown>;
 /** What the status modal needs to describe the attempt (never card numbers). */
 type Attempt = { channel: Channel; phone?: string | null; methodCode?: string | null; methodName?: string | null };
+
+/** Amount, plan and method from a payment the API returned (the receipt after a hosted card return). */
+function fromPayment(p: Payment): Partial<PayStatus> {
+  const code = typeof p.payment_method === "string" ? p.payment_method : (p.payment_method_code ?? null);
+  const out: Partial<PayStatus> = { amount: p.amount, currency: p.currency };
+  if (code) out.methodCode = code;
+  if (p.phone) out.phone = p.phone;
+  if (p.plan) {
+    out.planName = p.plan.name;
+    out.planType = p.plan.type;
+    out.coins = (p.plan.coins ?? 0) + (p.plan.bonus_coins ?? 0);
+  }
+  return out;
+}
 
 /**
  * The payment step of checkout: saved methods first (one tap), otherwise mobile money or card.
@@ -54,11 +71,17 @@ export function PaymentPanel({
   loginHref,
   next,
   initialOptions,
+  paymentReturn,
+  onRetryCard,
 }: {
   plan: Plan | null;
   loginHref: string;
   next?: string;
   initialOptions: CheckoutOptions | null;
+  /** Back from the card partner's hosted page with ?payment=REF (and &cancelled=1). */
+  paymentReturn?: PaymentReturn | null;
+  /** Bring the checkout back into view when a hosted card payment is tried again. */
+  onRetryCard?: () => void;
 }) {
   const t = useT().user.pay;
   const { user, loading: authLoading, refresh } = useAuth();
@@ -67,10 +90,14 @@ export function PaymentPanel({
   const options = initialOptions ?? optionsReq.data;
   const savedReq = useApi<SavedMethod[]>(user ? "/me/payment-methods" : null);
   const reloadSaved = savedReq.reload;
-  const saved = useMemo(() => (user ? (savedReq.data ?? []) : []), [user, savedReq.data]);
-
   const mmOk = options?.mobile_money.available ?? true;
   const cardOk = options?.card.available ?? true;
+  // Hosted cards: the card is typed on the partner's page, so there is no token for one tap cards.
+  const hostedCard = options?.card.hosted === true;
+  const saved = useMemo(
+    () => (user ? (savedReq.data ?? []).filter((m) => !(hostedCard && m.type === "card")) : []),
+    [user, savedReq.data, hostedCard],
+  );
   const usable = useCallback(
     (m: SavedMethod) => !m.is_expired && m.one_tap && (m.type === "card" ? cardOk : mmOk),
     [cardOk, mmOk],
@@ -134,12 +161,13 @@ export function PaymentPanel({
         try {
           const p = await api.get<Payment>(`/payments/${reference}`);
           if (!state.alive) return;
-          if (p.status === "success") return succeed();
+          if (p.status === "success") return succeed(fromPayment(p));
           if (p.status === "failed" || p.status === "cancelled") {
             stopPolling();
-            setStatus((s) => (s ? { ...s, stage: "failed", message: null } : s));
+            setStatus((s) => (s ? { ...s, ...fromPayment(p), stage: "failed", message: null } : s));
             return;
           }
+          setStatus((s) => (s && s.returned ? { ...s, ...fromPayment(p) } : s));
         } catch {
           /* network blip: keep polling */
         }
@@ -156,6 +184,45 @@ export function PaymentPanel({
     [stopPolling, succeed],
   );
 
+  /* -------------------------------------------------------------- hosted card return */
+  const returnHandled = useRef(false);
+  useEffect(() => {
+    // Wait for the session: a signed out viewer sees the login prompt, and logging in brings them back here.
+    if (!paymentReturn || returnHandled.current || authLoading || !user) return;
+    returnHandled.current = true;
+    const url = new URL(window.location.href);
+    url.searchParams.delete("payment");
+    url.searchParams.delete("cancelled");
+    window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+
+    const { reference, cancelled } = paymentReturn;
+    const base: PayStatus = {
+      stage: cancelled ? "cancelled" : "waiting",
+      channel: "card",
+      reference,
+      amount: 0,
+      currency: plan?.currency ?? "TZS",
+      methodCode: "card",
+      methodName: t.channelHints.card,
+      returned: true,
+    };
+    // Scheduled rather than set during the effect; handled once, so it is not cancelled on re-render.
+    setTimeout(() => {
+      setStatus(base);
+      if (!cancelled) return startPolling(reference);
+      // Cancelled: one quiet check so the receipt has the amount (and in case it was paid after all).
+      api
+        .get<Payment>(`/payments/${reference}`)
+        .then((p) => {
+          if (p.status === "success") {
+            setStatus((s) => (s ? { ...s, ...fromPayment(p), stage: "success" } : s));
+            afterSuccess();
+          } else setStatus((s) => (s && s.stage === "cancelled" ? { ...s, ...fromPayment(p) } : s));
+        })
+        .catch(() => {});
+    }, 0);
+  }, [paymentReturn, authLoading, user, plan?.currency, t.channelHints.card, startPolling, afterSuccess]);
+
   /* -------------------------------------------------------------- submit */
   const send = async (body: Body, attempt: Attempt) => {
     if (!plan) return;
@@ -165,7 +232,18 @@ export function PaymentPanel({
       const res = await api.post<CheckoutResponse>("/checkout", body);
       const pay = res.payment;
       if (res.next_action === "redirect" && res.redirect_url) {
-        window.location.assign(res.redirect_url);
+        const target = res.redirect_url;
+        setStatus({
+          stage: "redirecting",
+          channel: attempt.channel,
+          reference: pay.reference,
+          amount: pay.amount,
+          currency: pay.currency,
+          methodCode: attempt.methodCode ?? null,
+          methodName: attempt.methodName ?? null,
+        });
+        // Same tab: the partner sends the viewer back to /vip?payment=REF when they are done.
+        setTimeout(() => window.location.assign(target), REDIRECT_DELAY_MS);
         return;
       }
       const methodCode = pay.payment_method ?? attempt.methodCode ?? null;
@@ -218,6 +296,16 @@ export function PaymentPanel({
         },
       );
     }
+    if (activeChannel === "card" && hostedCard) {
+      // The card itself is entered on the partner's secure page; Afriva only sends the phone number.
+      const normalized = normalizePhone(phoneValue);
+      if (!normalized) return setPhoneError(t.phoneInvalid);
+      setPhoneError(null);
+      return send(
+        { plan_id: plan.id, channel: "card", phone: normalized },
+        { channel: "card", phone: normalized, methodCode: "card", methodName: t.channelHints.card },
+      );
+    }
     if (activeChannel === "mobile_money") {
       const normalized = normalizePhone(phoneValue);
       if (!normalized) return setPhoneError(t.phoneInvalid);
@@ -258,21 +346,33 @@ export function PaymentPanel({
 
   const closeModal = () => {
     const wasWaiting = status?.stage === "waiting" && status.channel === "mobile_money";
+    const wasConfirming = status?.stage === "waiting" && status.returned;
     stopPolling();
     setStatus(null);
     if (wasWaiting) toast(t.closedWhilePending);
+    else if (wasConfirming) toast(t.closedWhileConfirming);
   };
   const retry = () => {
     stopPolling();
+    const returned = status?.returned;
     setStatus(null);
-    if (lastBody.current) send(lastBody.current.body, lastBody.current.attempt);
+    if (lastBody.current && !returned) return send(lastBody.current.body, lastBody.current.attempt);
+    // Back from the hosted page: start a fresh card checkout from the form.
+    setSelection({ kind: "new" });
+    setChannel("card");
+    onRetryCard?.();
   };
   const checkAgain = () => status && startPolling(status.reference);
 
   /* -------------------------------------------------------------- render */
   const loadingSaved = !!user && savedReq.loading && !savedReq.data;
   const showNew = sel.kind === "new" || !saved.length;
-  const payLabel = plan ? fmt(t.pay, { amount: formatMoney(plan.price, plan.currency) }) : t.payBare;
+  const hostedNow = showNew && sel.kind === "new" && activeChannel === "card" && hostedCard && cardOk;
+  const payLabel = plan
+    ? fmt(hostedNow ? t.payHostedCard : t.pay, { amount: formatMoney(plan.price, plan.currency) })
+    : hostedNow
+      ? t.payHostedCardBare
+      : t.payBare;
   const channelBlocked = sel.kind === "new" && (activeChannel === "mobile_money" ? !mmOk : !cardOk);
 
   return (
@@ -390,6 +490,15 @@ export function PaymentPanel({
               ) : (
                 <ComingSoon all={!cardOk} />
               )
+            ) : cardOk && hostedCard ? (
+              <HostedCardPanel
+                phone={phoneValue}
+                onPhoneChange={(v) => {
+                  setPhone(v);
+                  setPhoneError(null);
+                }}
+                phoneError={phoneError}
+              />
             ) : cardOk ? (
               <>
                 <CardFields
@@ -409,7 +518,7 @@ export function PaymentPanel({
             )}
           </div>
 
-          {user && !channelBlocked && (
+          {user && !channelBlocked && !hostedNow && (
             <div className="mt-4 flex items-center gap-3 rounded-2xl bg-surface-2/60 px-3.5 py-3">
               <span className="min-w-0 flex-1">
                 <span className="block text-[13px] font-bold">{t.save}</span>
@@ -429,9 +538,14 @@ export function PaymentPanel({
           loading={submitting}
           disabled={!plan || loadingSaved || channelBlocked}
           size="lg"
-          className="mt-6 h-[52px] w-full text-base shadow-[0_10px_30px_-10px_rgba(233,2,4,0.8)]"
+          className={cn(
+            "mt-6 w-full text-base shadow-[0_10px_30px_-10px_rgba(233,2,4,0.8)]",
+            // The hosted card label is longer: let it wrap on small phones instead of overflowing.
+            hostedNow ? "h-auto min-h-[52px] px-5 py-2.5 text-[15px] leading-snug" : "h-[52px]",
+          )}
         >
-          {!submitting && <Icon name="lock" size={16} />} {payLabel}
+          {!submitting && <Icon name="lock" size={16} className="shrink-0" />}{" "}
+          <span className={cn(hostedNow && "whitespace-normal text-center")}>{payLabel}</span>
         </Button>
       ) : (
         <Button href={loginHref} size="lg" className="mt-6 h-[52px] w-full text-base">

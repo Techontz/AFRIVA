@@ -9,6 +9,7 @@ import '../../core/config.dart';
 import '../../core/haptics.dart';
 import '../../core/payments.dart';
 import '../../core/theme.dart';
+import '../../core/url_opener.dart';
 import '../../l10n/l10n.dart';
 import '../../models/commerce.dart';
 import '../../services/commerce_service.dart';
@@ -23,6 +24,10 @@ enum PromptOutcome { success, failed, retry, closed }
 /// The viewer approves on the prompt their network sends to the phone. This
 /// sheet never asks for, or has a field for, a PIN. It polls the payment every
 /// few seconds and reports how it ended.
+///
+/// With [hostedCard] it is the "Complete your payment" sheet shown while the
+/// viewer pays on the payment partner's secure card page ([redirectUrl], opened
+/// with [openUrl]). It re-checks as soon as the app comes back to the front.
 Future<(PromptOutcome, Payment?)> showPaymentPrompt(
   BuildContext context, {
   required Payment payment,
@@ -31,6 +36,9 @@ Future<(PromptOutcome, Payment?)> showPaymentPrompt(
   String? networkName,
   bool mobileMoney = true,
   String? redirectUrl,
+  bool hostedCard = false,
+  bool openFailed = false,
+  UrlOpener openUrl = openSecureWebPage,
 }) async {
   final res = await showAfrivaSheet<(PromptOutcome, Payment?)>(
     context,
@@ -42,6 +50,10 @@ Future<(PromptOutcome, Payment?)> showPaymentPrompt(
       networkName: networkName,
       mobileMoney: mobileMoney,
       redirectUrl: redirectUrl,
+      hostedCard: hostedCard,
+      openFailed: openFailed,
+      openUrl: openUrl,
+      timeout: hostedCard ? AppConfig.hostedCardPollTimeout : AppConfig.paymentPollTimeout,
     ),
   );
   return res ?? (PromptOutcome.closed, payment);
@@ -58,6 +70,9 @@ class PaymentPromptSheet extends StatefulWidget {
     this.networkName,
     this.mobileMoney = true,
     this.redirectUrl,
+    this.hostedCard = false,
+    this.openFailed = false,
+    this.openUrl = openSecureWebPage,
     this.pollInterval = AppConfig.paymentPollInterval,
     this.timeout = AppConfig.paymentPollTimeout,
   });
@@ -68,6 +83,13 @@ class PaymentPromptSheet extends StatefulWidget {
   final String? networkName;
   final bool mobileMoney;
   final String? redirectUrl;
+
+  /// Card paid on the partner's hosted page (needs [redirectUrl]).
+  final bool hostedCard;
+
+  /// The hosted page could not be opened automatically.
+  final bool openFailed;
+  final UrlOpener openUrl;
   final Duration pollInterval;
   final Duration timeout;
 
@@ -75,23 +97,46 @@ class PaymentPromptSheet extends StatefulWidget {
   State<PaymentPromptSheet> createState() => _PaymentPromptSheetState();
 }
 
-class _PaymentPromptSheetState extends State<PaymentPromptSheet> {
+class _PaymentPromptSheetState extends State<PaymentPromptSheet> with WidgetsBindingObserver {
   late Payment _payment = widget.payment;
   _State _state = _State.waiting;
   Timer? _timer;
   late DateTime _started;
   bool _checking = false;
+  late bool _openFailed = widget.openFailed;
+
+  bool get _hosted => widget.hostedCard && widget.redirectUrl != null;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _start();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();
     super.dispose();
+  }
+
+  /// Back from the browser (or the network's prompt): look right away instead
+  /// of waiting for the next tick.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed || !mounted) return;
+    if (_state == _State.waiting) {
+      _check();
+    } else if (_state == _State.timeout && _hosted) {
+      _start();
+      _check();
+    }
+  }
+
+  Future<void> _reopen() async {
+    final ok = await widget.openUrl(Uri.parse(widget.redirectUrl!));
+    if (mounted && ok == _openFailed) setState(() => _openFailed = !ok);
   }
 
   void _start() {
@@ -153,7 +198,7 @@ class _PaymentPromptSheetState extends State<PaymentPromptSheet> {
       _State.success => l.promptSuccess,
       _State.failed => _payment.status == 'cancelled' ? l.failedCancelledTitle : l.checkoutTitleFailed,
       _State.timeout => l.promptTimeoutTitle,
-      _State.waiting => widget.mobileMoney ? l.promptTitle : l.promptCardTitle,
+      _State.waiting => _hosted ? l.promptHostedTitle : (widget.mobileMoney ? l.promptTitle : l.promptCardTitle),
     };
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 8, 24, 4),
@@ -190,6 +235,12 @@ class _PaymentPromptSheetState extends State<PaymentPromptSheet> {
               _PinNotice(text: l.promptPinNote),
               const SizedBox(height: 18),
               _WaitingLine(label: l.promptWaiting),
+            ] else if (_state == _State.waiting && _hosted) ...[
+              Text(l.promptHostedBody, style: text.bodyMedium, textAlign: TextAlign.center),
+              const SizedBox(height: 14),
+              _PinNotice(text: _openFailed ? l.payHostedOpenFailed : l.payHostedBody),
+              const SizedBox(height: 18),
+              _WaitingLine(label: l.promptWaiting),
             ] else if (_state == _State.waiting) ...[
               Text(l.promptCardBody, style: text.bodyMedium, textAlign: TextAlign.center),
               if (widget.redirectUrl != null) ...[
@@ -199,9 +250,11 @@ class _PaymentPromptSheetState extends State<PaymentPromptSheet> {
               const SizedBox(height: 18),
               _WaitingLine(label: l.promptWaiting),
             ] else if (_state == _State.timeout)
-              Text(l.promptTimeoutBody, style: text.bodyMedium, textAlign: TextAlign.center)
+              Text(_hosted ? l.promptHostedTimeoutBody : l.promptTimeoutBody,
+                  style: text.bodyMedium, textAlign: TextAlign.center)
             else if (_state == _State.failed)
-              Text(l.promptFailedBody, style: text.bodyMedium, textAlign: TextAlign.center)
+              Text(_hosted ? l.promptHostedFailedBody : l.promptFailedBody,
+                  style: text.bodyMedium, textAlign: TextAlign.center)
             else
               Text(context.l10n.successRef(_payment.reference), style: text.labelSmall),
             const SizedBox(height: 22),
@@ -213,6 +266,29 @@ class _PaymentPromptSheetState extends State<PaymentPromptSheet> {
   }
 
   List<Widget> _actions(AppLocalizations l) => switch (_state) {
+        _State.waiting when _hosted => [
+            PillButton(
+              key: const ValueKey('hosted-check'),
+              label: l.promptHostedPaid,
+              icon: Icons.refresh_rounded,
+              expand: true,
+              onPressed: _check,
+            ),
+            const SizedBox(height: 10),
+            PillButton(
+              key: const ValueKey('hosted-reopen'),
+              label: l.promptHostedReopen,
+              icon: Icons.open_in_new_rounded,
+              secondary: true,
+              expand: true,
+              onPressed: _reopen,
+            ),
+            const SizedBox(height: 6),
+            TextButton(
+              onPressed: () => _close(PromptOutcome.closed),
+              child: Text(l.checkoutFinishLater, style: TextStyle(color: AppColors.textMuted)),
+            ),
+          ],
         _State.waiting => [
             if (widget.mobileMoney)
               Text(l.promptNoPrompt, style: Theme.of(context).textTheme.labelSmall, textAlign: TextAlign.center),
@@ -224,7 +300,7 @@ class _PaymentPromptSheetState extends State<PaymentPromptSheet> {
           ],
         _State.timeout => [
             PillButton(
-              label: l.promptCheckAgain,
+              label: _hosted ? l.promptHostedPaid : l.promptCheckAgain,
               icon: Icons.refresh_rounded,
               expand: true,
               onPressed: () {

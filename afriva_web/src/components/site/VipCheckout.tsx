@@ -5,7 +5,7 @@ import { useLocale, useT } from "@/i18n/client";
 import { fmt } from "@/i18n/format";
 import { isVip, useAuth } from "@/lib/auth";
 import { cn, formatDate, formatMoney, formatNumber, planSummary } from "@/lib/format";
-import type { CheckoutOptions } from "@/lib/payments";
+import type { CheckoutOptions, PaymentReturn } from "@/lib/payments";
 import type { Plan } from "@/lib/types";
 import { Icon } from "../ui/Icon";
 import { PaymentPanel, TermsLine } from "./payments/PaymentPanel";
@@ -20,10 +20,12 @@ export function VipCheckout({
   plans,
   options,
   next,
+  paymentReturn,
 }: {
   plans: Plan[];
   options: CheckoutOptions | null;
   next?: string;
+  paymentReturn?: PaymentReturn | null;
 }) {
   const { common: tc, user: tu } = useT();
   const t = tu.vip;
@@ -34,8 +36,14 @@ export function VipCheckout({
   const checkoutRef = useRef<HTMLDivElement>(null);
 
   const plan = plans.find((p) => p.id === planId) ?? null;
-  // Come back to /vip (keeping the episode to resume) after logging in.
-  const loginHref = `/login?next=${encodeURIComponent(next ? `/vip?next=${encodeURIComponent(next)}` : "/vip")}`;
+  // Come back to /vip (keeping the episode to resume, or the card payment to confirm) after logging in.
+  const back = new URLSearchParams();
+  if (next) back.set("next", next);
+  if (paymentReturn) {
+    back.set("payment", paymentReturn.reference);
+    if (paymentReturn.cancelled) back.set("cancelled", "1");
+  }
+  const loginHref = `/login?next=${encodeURIComponent(back.size ? `/vip?${back}` : "/vip")}`;
 
   const pickPlan = (id: number) => {
     setPlanId(id);
@@ -141,7 +149,14 @@ export function VipCheckout({
           ) : (
             <p className="mt-4 text-sm text-text-muted">{t.choosePlan}</p>
           )}
-          <PaymentPanel plan={plan} loginHref={loginHref} next={next} initialOptions={options} />
+          <PaymentPanel
+            plan={plan}
+            loginHref={loginHref}
+            next={next}
+            initialOptions={options}
+            paymentReturn={paymentReturn}
+            onRetryCard={() => checkoutRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+          />
           <TermsLine />
         </div>
       </div>

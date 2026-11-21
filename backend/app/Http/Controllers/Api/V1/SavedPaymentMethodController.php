@@ -29,7 +29,8 @@ class SavedPaymentMethodController extends Controller
 
         return $this->ok([
             'mobile_money' => ['available' => $mobile->contains('available', true), 'networks' => $mobile],
-            'card' => ['available' => $cards->contains('available', true), 'brands' => $cards],
+            // hosted = cards are typed on the provider's secure page: show a "Pay with card" button, not card fields.
+            'card' => ['available' => $cards->contains('available', true), 'hosted' => $this->manager->hostedCards('card'), 'brands' => $cards],
             'demo' => (bool) config('payments.sandbox.auto_approve'),
         ]);
     }

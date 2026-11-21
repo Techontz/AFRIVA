@@ -1513,4 +1513,51 @@ class AppLocalizationsSw extends AppLocalizations {
 
   @override
   String get settingsPayments => 'Malipo';
+
+  @override
+  String get payHostedTitle => 'Lipa kwa kadi kwa usalama';
+
+  @override
+  String get payHostedBody =>
+      'Utaweka kadi yako kwenye ukurasa salama wa mshirika wetu wa malipo. Afriva haioni namba ya kadi yako.';
+
+  @override
+  String get payHostedPhoneLabel => 'Namba ya simu';
+
+  @override
+  String get payHostedPhoneHelper => 'Kwa risiti yako na taarifa za malipo.';
+
+  @override
+  String payHostedContinue(String amount) {
+    return 'Endelea kulipa kwa kadi kwa usalama · $amount';
+  }
+
+  @override
+  String get payHostedOpenFailed =>
+      'Imeshindikana kufungua ukurasa salama wa malipo. Gusa hapa chini kuufungua tena.';
+
+  @override
+  String get promptHostedTitle => 'Kamilisha malipo yako';
+
+  @override
+  String get promptHostedBody =>
+      'Maliza kulipa kwenye ukurasa salama wa kadi. Skrini hii itajisasisha yenyewe benki yako ikithibitisha.';
+
+  @override
+  String get promptHostedReopen => 'Fungua ukurasa salama tena';
+
+  @override
+  String get promptHostedPaid => 'Nimelipa, angalia tena';
+
+  @override
+  String get promptHostedTimeoutBody =>
+      'Bado hakuna uthibitisho. Kama umemaliza kulipa, angalia tena. La sivyo, jaribu tena.';
+
+  @override
+  String get promptHostedFailedBody =>
+      'Hakuna pesa iliyokatwa. Angalia taarifa za kadi yako kisha jaribu tena.';
+
+  @override
+  String get paymentMethodsCardHostedNote =>
+      'Kadi huwekwa kwenye ukurasa salama wa mshirika wetu wa malipo kila unapolipa.';
 }
